@@ -1,0 +1,56 @@
+.balances {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.balance-card {
+  padding: 1.25rem;
+  cursor: pointer;
+}
+
+.balance-card__currency {
+  margin: 0;
+  font-weight: 700;
+  color: var(--mat-sys-on-surface-variant, #616161);
+}
+
+.balance-card__available {
+  margin: 0.25rem 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.balance-card__detail {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant, #616161);
+}
+
+.section-heading {
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+}
+
+.treasury-form {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.treasury-form__reason {
+  flex: 1;
+  min-width: 200px;
+}
+
+.treasury-form__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.tx-table {
+  width: 100%;
+}

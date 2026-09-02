@@ -1,0 +1,40 @@
+<h1 class="page-title">Nouveau transfert</h1>
+
+<mat-button-toggle-group
+  class="direction-toggle"
+  [value]="direction()"
+  (change)="setDirection($event.value)"
+>
+  <mat-button-toggle value="SEND_XOF">J'envoie des XOF</mat-button-toggle>
+  <mat-button-toggle value="RECEIVE_CNY">Il recoit des CNY</mat-button-toggle>
+</mat-button-toggle-group>
+
+<p class="direction-hint">
+  @if (direction() === 'SEND_XOF') {
+    Indiquez le montant en XOF que vous souhaitez envoyer.
+  } @else {
+    Indiquez le montant en CNY que le beneficiaire doit recevoir.
+  }
+</p>
+
+@if (errorMessage()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+}
+
+<form [formGroup]="form" (ngSubmit)="submit()" class="form">
+  <mat-form-field appearance="outline" class="form__field amount-field">
+    <mat-label>Montant en {{ direction() === 'SEND_XOF' ? 'XOF' : 'CNY' }}</mat-label>
+    <input matInput type="number" min="1" [formControl]="amountControl" />
+    @if (amountControl.invalid && amountControl.touched) {
+      <mat-error>Saisissez un montant valide.</mat-error>
+    }
+  </mat-form-field>
+
+  <button mat-flat-button type="submit" class="form__submit brand-button" [disabled]="loading()">
+    @if (loading()) {
+      <mat-spinner diameter="20" />
+    } @else {
+      Obtenir un devis
+    }
+  </button>
+</form>

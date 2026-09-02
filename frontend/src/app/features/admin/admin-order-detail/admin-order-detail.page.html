@@ -1,0 +1,50 @@
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else if (order(); as o) {
+  <div class="order-header">
+    <div>
+      <p class="order-header__reference">{{ o.reference }}</p>
+      <p class="order-header__amounts">{{ o.amountXof | money: 'XOF' }} &rarr; {{ o.amountCny | money: 'CNY' }}</p>
+    </div>
+    <app-status-badge [status]="o.status" />
+  </div>
+
+  @if (o.status === 'PAYMENT_VERIFIED') {
+    <mat-card class="page-card">
+      <p>Le paiement a ete verifie. Vous pouvez creer le reglement CNY.</p>
+      <button mat-flat-button color="primary" (click)="createSettlement()" [disabled]="creatingSettlement()">
+        @if (creatingSettlement()) {
+          <mat-spinner diameter="20" />
+        } @else {
+          Creer le reglement
+        }
+      </button>
+    </mat-card>
+  }
+
+  <mat-card class="page-card">
+    <p class="section-heading">Beneficiaire</p>
+    <dl class="detail-list">
+      <div><dt>Type</dt><dd>{{ o.beneficiary.type }}</dd></div>
+      <div><dt>Nom</dt><dd>{{ o.beneficiary.fullName }}</dd></div>
+      <div><dt>Identifiant</dt><dd>{{ o.beneficiary.identifier }}</dd></div>
+      @if (o.beneficiary.bankName) {
+        <div><dt>Banque</dt><dd>{{ o.beneficiary.bankName }}</dd></div>
+      }
+    </dl>
+  </mat-card>
+
+  <mat-card class="page-card">
+    <p class="section-heading">Historique</p>
+    <ul class="timeline">
+      @for (entry of o.statusHistory; track entry.createdAt) {
+        <li>
+          <app-status-badge [status]="entry.toStatus" />
+          <span>{{ entry.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+        </li>
+      }
+    </ul>
+  </mat-card>
+
+  <a routerLink="/admin/orders" mat-stroked-button>Retour a la liste</a>
+}

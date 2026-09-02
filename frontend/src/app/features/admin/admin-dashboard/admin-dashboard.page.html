@@ -1,0 +1,13 @@
+<app-page-header title="Administration" subtitle="Gestion operationnelle de la plateforme" />
+
+<div class="section-grid">
+  @for (section of sections; track section.path) {
+    <a [routerLink]="section.path" class="section-card">
+      <mat-icon>{{ section.icon }}</mat-icon>
+      <div>
+        <p class="section-card__label">{{ section.label }}</p>
+        <p class="section-card__description">{{ section.description }}</p>
+      </div>
+    </a>
+  }
+</div>

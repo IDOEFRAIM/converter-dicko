@@ -1,0 +1,61 @@
+<app-page-header
+  title="Historique"
+  [subtitle]="totalElements() > 0 ? totalElements() + ' transfert' + (totalElements() > 1 ? 's' : '') + ' au total' : 'Vos ordres de transfert'"
+/>
+
+@if (!loading() && orders().length > 0) {
+  <mat-button-toggle-group
+    class="history-filter"
+    [value]="filter()"
+    (change)="setFilter($event.value)"
+    aria-label="Filtrer par statut"
+  >
+    <mat-button-toggle value="ALL">Tous</mat-button-toggle>
+    <mat-button-toggle value="IN_PROGRESS">En cours</mat-button-toggle>
+    <mat-button-toggle value="COMPLETED">Termines</mat-button-toggle>
+    <mat-button-toggle value="CLOSED">Clotures</mat-button-toggle>
+  </mat-button-toggle-group>
+}
+
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else if (errorMessage()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+} @else if (orders().length === 0) {
+  <app-empty-state title="Aucun transfert" description="Votre historique s'affichera ici." />
+} @else if (filteredOrders().length === 0) {
+  <app-empty-state title="Aucun resultat" description="Aucun transfert ne correspond a ce filtre." />
+} @else {
+  @for (order of filteredOrders(); track order.id) {
+    <a [routerLink]="['/orders', order.id]" class="history-row page-card">
+      <span class="history-row__icon" [class]="'history-row__icon--' + order.status">
+        <mat-icon>swap_horiz</mat-icon>
+      </span>
+      <div class="history-row__main">
+        <p class="history-row__reference">{{ order.reference }}</p>
+        <p class="history-row__date">{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</p>
+      </div>
+      <div class="history-row__amounts">
+        <p>{{ order.amountXof | money: 'XOF' }} &rarr; {{ order.amountCny | money: 'CNY' }}</p>
+        <app-status-badge [status]="order.status" />
+      </div>
+    </a>
+  }
+
+  @if (totalPages() > 1) {
+    <div class="pagination">
+      <button mat-icon-button (click)="previousPage()" [disabled]="page() === 0" aria-label="Page precedente">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <span>Page {{ page() + 1 }} / {{ totalPages() }}</span>
+      <button
+        mat-icon-button
+        (click)="nextPage()"
+        [disabled]="page() + 1 >= totalPages()"
+        aria-label="Page suivante"
+      >
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+  }
+}

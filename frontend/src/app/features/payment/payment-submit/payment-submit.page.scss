@@ -1,0 +1,29 @@
+.instructions {
+  color: var(--mat-sys-on-surface-variant, #616161);
+  margin: 0 0 1.25rem;
+  line-height: 1.5;
+}
+
+.upload-zone {
+  border: 2px dashed var(--mat-sys-outline-variant, #cfd8dc);
+  border-radius: 12px;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.upload-zone input[type='file'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.upload-zone__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--mat-sys-primary, #1565c0);
+}

@@ -1,0 +1,92 @@
+package com.converter.admin;
+
+import com.converter.common.api.ApiResponse;
+import com.converter.common.api.PageResponse;
+import com.converter.security.AuthenticatedUser;
+import com.converter.security.CurrentUser;
+import com.converter.user.domain.UserStatus;
+import com.converter.user.dto.AdminUserDetail;
+import com.converter.user.dto.AdminUserSummary;
+import com.converter.user.dto.BlockUserRequest;
+import com.converter.user.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.prepost.PreAuthorize;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
+
+/**
+ * Gestion des comptes clients, reservee aux administrateurs.
+ *
+ * <p>L'acces est deja restreint au niveau du {@code SecurityFilterChain}
+ * ({@code /api/admin/**} exige {@code ROLE_ADMIN}) : les annotations
+ * {@code @PreAuthorize} ci-dessous forment la seconde barriere,
+ * independante, decrite en Phase 1 (section J.2, risque 9).
+ */
+@RestController
+@RequestMapping("/api/admin/users")
+@SecurityRequirement(name = "bearer-jwt")
+@Tag(name = "Administration - Utilisateurs", description = "Consultation et blocage des comptes clients")
+public class AdminUserController {
+
+    private final UserService userService;
+
+    public AdminUserController(UserService userService) {
+        this.userService = userService;
+    }
+
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Lister les comptes",
+            description = "Recherche paginee par statut et par texte libre (nom ou telephone).")
+    public ResponseEntity<ApiResponse<PageResponse<AdminUserSummary>>> list(
+            @RequestParam(required = false) UserStatus status,
+            @RequestParam(required = false) String search,
+            @Parameter(hidden = true) @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.of(userService.search(status, search, pageable)));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Detail d'un compte")
+    public ResponseEntity<ApiResponse<AdminUserDetail>> detail(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.of(userService.findById(id)));
+    }
+
+    @PostMapping("/{id}/block")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Bloquer un compte",
+            description = "Desactive le compte immediatement : toute requete authentifiee "
+                    + "ulterieure avec un jeton deja emis pour ce compte sera rejetee "
+                    + "(403 USER_BLOCKED), sans attendre l'expiration du jeton.")
+    public ResponseEntity<ApiResponse<AdminUserDetail>> block(
+            @PathVariable UUID id,
+            @Valid @RequestBody BlockUserRequest request,
+            @AuthenticatedUser CurrentUser actor) {
+        AdminUserDetail result = userService.block(id, request, actor.getId());
+        return ResponseEntity.ok(ApiResponse.of(result, "Compte bloque."));
+    }
+
+    @PostMapping("/{id}/unblock")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Debloquer un compte")
+    public ResponseEntity<ApiResponse<AdminUserDetail>> unblock(
+            @PathVariable UUID id,
+            @AuthenticatedUser CurrentUser actor) {
+        AdminUserDetail result = userService.unblock(id, actor.getId());
+        return ResponseEntity.ok(ApiResponse.of(result, "Compte debloque."));
+    }
+}

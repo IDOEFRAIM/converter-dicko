@@ -1,0 +1,43 @@
+# =====================================================================
+#  Profil DEVELOPPEMENT
+#
+#  Objectif : l'application demarre avec une configuration VIERGE,
+#  sans qu'aucune variable d'environnement ne soit definie, contre le
+#  PostgreSQL lance par `docker compose up postgres`.
+#
+#  Les valeurs ci-dessous sont des identifiants LOCAUX de developpement,
+#  volontairement publics et sans valeur. Ce ne sont pas des secrets :
+#  le profil `prod` n'en herite d'aucune.
+# =====================================================================
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/converter}
+    username: ${DB_USERNAME:converter}
+    password: ${DB_PASSWORD:converter_local_dev}
+
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+
+app:
+  jwt:
+    # Cle de DEVELOPPEMENT UNIQUEMENT (>= 32 octets, exige par HS256).
+    # Elle est publique par construction et ne protege rien.
+    # Le profil `prod` n'a aucune valeur par defaut et refuse de demarrer
+    # sans JWT_SECRET.
+    secret: ${JWT_SECRET:dev-only-insecure-signing-key-please-override-in-production}
+
+  admin-seed:
+    enabled: ${ADMIN_SEED_ENABLED:true}
+    phone: ${ADMIN_PHONE:+22500000000}
+    # Vide volontairement : un mot de passe aleatoire est genere au
+    # demarrage et affiche UNE SEULE FOIS dans les logs.
+    password: ${ADMIN_PASSWORD:}
+
+logging:
+  level:
+    com.converter: DEBUG
+    org.springframework.security: INFO
+    org.hibernate.SQL: DEBUG

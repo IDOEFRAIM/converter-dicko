@@ -1,0 +1,48 @@
+<section class="hero">
+  <div class="hero__glow"></div>
+  <p class="hero__greeting">Bonjour {{ currentUser()?.firstName }}</p>
+  <h1 class="hero__title">Envoyez de l'argent en Chine</h1>
+  <p class="hero__subtitle">Taux transparent, suivi en temps reel, du depot au reglement.</p>
+  <a mat-flat-button routerLink="/quote/new" class="hero__cta">
+    <mat-icon>swap_horiz</mat-icon>
+    Nouveau transfert
+  </a>
+</section>
+
+<section class="quick-links">
+  <a routerLink="/wallet" class="quick-link">
+    <span class="quick-link__icon"><mat-icon>account_balance_wallet</mat-icon></span>
+    <span>Wallet</span>
+  </a>
+  <a routerLink="/preferred-rate" class="quick-link">
+    <span class="quick-link__icon"><mat-icon>trending_up</mat-icon></span>
+    <span>Taux preferentiel</span>
+  </a>
+</section>
+
+<section>
+  <h2 class="section-title">Ordres recents</h2>
+
+  @if (loading()) {
+    <div class="loading-row"><mat-spinner diameter="32" /></div>
+  } @else if (recentOrders().length === 0) {
+    <app-empty-state
+      title="Aucun ordre pour le moment"
+      description="Vos transferts apparaitront ici une fois crees."
+    />
+  } @else {
+    @for (order of recentOrders(); track order.id) {
+      <a [routerLink]="['/orders', order.id]" class="order-row page-card">
+        <div>
+          <p class="order-row__reference">{{ order.reference }}</p>
+          <p class="order-row__amount">{{ order.amountXof | money: 'XOF' }} &rarr; {{ order.amountCny | money: 'CNY' }}</p>
+        </div>
+        <app-status-badge [status]="order.status" />
+      </a>
+    }
+    <a routerLink="/history" class="section-link">
+      <mat-icon>history</mat-icon>
+      Voir tout mon historique
+    </a>
+  }
+</section>

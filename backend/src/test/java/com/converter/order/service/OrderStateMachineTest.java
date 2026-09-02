@@ -1,0 +1,66 @@
+package com.converter.order.service;
+
+import com.converter.common.exception.BusinessException;
+import com.converter.common.exception.ErrorCode;
+import com.converter.order.domain.OrderStatus;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+/** Pure, sans Spring : verifie la table de transitions dans son integralite. */
+class OrderStateMachineTest {
+
+    private final OrderStateMachine stateMachine = new OrderStateMachine();
+
+    @Test
+    void nominalPath_isEntirelyLegal() {
+        stateMachine.assertTransition(OrderStatus.AWAITING_PAYMENT, OrderStatus.PAYMENT_SUBMITTED);
+        stateMachine.assertTransition(OrderStatus.PAYMENT_SUBMITTED, OrderStatus.PAYMENT_VERIFIED);
+        stateMachine.assertTransition(OrderStatus.PAYMENT_VERIFIED, OrderStatus.PROCESSING);
+        stateMachine.assertTransition(OrderStatus.PROCESSING, OrderStatus.COMPLETED);
+    }
+
+    @Test
+    void alternativePaths_areLegal() {
+        stateMachine.assertTransition(OrderStatus.AWAITING_PAYMENT, OrderStatus.CANCELLED);
+        stateMachine.assertTransition(OrderStatus.AWAITING_PAYMENT, OrderStatus.EXPIRED);
+        stateMachine.assertTransition(OrderStatus.PAYMENT_SUBMITTED, OrderStatus.REJECTED);
+    }
+
+    @ParameterizedTest
+    @EnumSource(OrderStatus.class)
+    void terminalStates_acceptNoFurtherTransition(OrderStatus terminal) {
+        if (terminal != OrderStatus.COMPLETED && terminal != OrderStatus.CANCELLED
+                && terminal != OrderStatus.REJECTED && terminal != OrderStatus.EXPIRED) {
+            return;
+        }
+        for (OrderStatus target : OrderStatus.values()) {
+            assertThatThrownBy(() -> stateMachine.assertTransition(terminal, target))
+                    .as("%s -> %s doit etre refuse", terminal, target)
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> assertThat(((BusinessException) ex).errorCode())
+                            .isEqualTo(ErrorCode.INVALID_ORDER_STATE));
+        }
+    }
+
+    @Test
+    void skippingAStep_isIllegal() {
+        // AWAITING_PAYMENT ne peut pas sauter directement a PAYMENT_VERIFIED,
+        // PROCESSING ou COMPLETED.
+        assertThatThrownBy(() -> stateMachine.assertTransition(OrderStatus.AWAITING_PAYMENT, OrderStatus.PAYMENT_VERIFIED))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> stateMachine.assertTransition(OrderStatus.AWAITING_PAYMENT, OrderStatus.PROCESSING))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> stateMachine.assertTransition(OrderStatus.PAYMENT_SUBMITTED, OrderStatus.PROCESSING))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void reverseTransition_isIllegal() {
+        assertThatThrownBy(() -> stateMachine.assertTransition(OrderStatus.PAYMENT_VERIFIED, OrderStatus.PAYMENT_SUBMITTED))
+                .isInstanceOf(BusinessException.class);
+    }
+}

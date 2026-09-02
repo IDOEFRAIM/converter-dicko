@@ -1,0 +1,26 @@
+# =====================================================================
+#  Profil de test — utilise par tous les tests d'integration
+#  (@ActiveProfiles("test")).
+#
+#  La cle JWT et les identifiants de base de donnees ci-dessous ne sont
+#  pas des secrets : ce sont des valeurs locales, propres a l'execution
+#  des tests, sans aucune portee en dehors de la machine qui les fait
+#  tourner. `spring.datasource.url` est de toute facon ecrase a chaud
+#  par chaque test via @DynamicPropertySource, avec l'URL reelle du
+#  conteneur PostgreSQL demarre par Testcontainers.
+# =====================================================================
+
+app:
+  jwt:
+    secret: test-only-signing-key-not-for-production-use-please-1234567890
+    expiration-minutes: 120
+  admin-seed:
+    enabled: false
+  cors:
+    allowed-origins: http://localhost:4200
+
+logging:
+  level:
+    org.testcontainers: WARN
+    com.github.dockerjava: WARN
+    org.hibernate.SQL: WARN

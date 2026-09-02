@@ -1,0 +1,38 @@
+<h1 class="form-title">Connexion</h1>
+
+@if (sessionExpired()) {
+  <p class="form-notice form-notice--warn">Votre session a expire. Reconnectez-vous.</p>
+}
+@if (errorMessage()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+}
+
+<form [formGroup]="form" (ngSubmit)="submit()" class="form">
+  <mat-form-field appearance="outline" class="form__field">
+    <mat-label>Numero de telephone</mat-label>
+    <input matInput formControlName="phone" placeholder="+2250700000000" autocomplete="username" />
+    @if (form.controls.phone.invalid && form.controls.phone.touched) {
+      <mat-error>Le numero de telephone est obligatoire.</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="form__field">
+    <mat-label>Mot de passe</mat-label>
+    <input matInput type="password" formControlName="password" autocomplete="current-password" />
+    @if (form.controls.password.invalid && form.controls.password.touched) {
+      <mat-error>Le mot de passe est obligatoire.</mat-error>
+    }
+  </mat-form-field>
+
+  <button mat-flat-button class="brand-button form__submit" type="submit"  [disabled]="loading()">
+    @if (loading()) {
+      <mat-spinner diameter="20" />
+    } @else {
+      Se connecter
+    }
+  </button>
+</form>
+
+<p class="form-footer">
+  Pas encore de compte ? <a routerLink="/register">Creer un compte</a>
+</p>

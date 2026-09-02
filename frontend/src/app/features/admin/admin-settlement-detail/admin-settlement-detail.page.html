@@ -1,0 +1,80 @@
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else if (settlement(); as s) {
+  <div class="settlement-header">
+    <div>
+      <p class="settlement-header__beneficiary">{{ s.beneficiaryFullName }}</p>
+      <p class="settlement-header__amount">{{ s.amountCny | money: 'CNY' }} via {{ s.method }}</p>
+    </div>
+    <app-status-badge [status]="s.status" />
+  </div>
+
+  <mat-card class="page-card">
+    <p class="section-heading">Beneficiaire</p>
+    <dl class="detail-list">
+      <div><dt>Identifiant</dt><dd>{{ s.beneficiaryIdentifier }}</dd></div>
+      @if (s.beneficiaryBankName) {
+        <div><dt>Banque</dt><dd>{{ s.beneficiaryBankName }}</dd></div>
+      }
+    </dl>
+  </mat-card>
+
+  @if (s.status === 'PENDING') {
+    <mat-card class="page-card">
+      <p class="section-heading">Preuve de reglement</p>
+      @if (s.proofs.length > 0) {
+        <button mat-stroked-button (click)="viewProof()">
+          <mat-icon>attach_file</mat-icon>
+          Voir la preuve televersee
+        </button>
+      } @else {
+        <div class="upload-zone">
+          <input
+            type="file"
+            id="settlement-proof-file"
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            (change)="onFileSelected($event)"
+            [disabled]="uploading()"
+          />
+          <label for="settlement-proof-file" class="upload-zone__label">
+            @if (uploading()) {
+              <mat-spinner diameter="20" />
+            } @else {
+              Televerser une preuve (JPEG, PNG, WEBP ou PDF)
+            }
+          </label>
+        </div>
+      }
+    </mat-card>
+
+    <mat-card class="page-card">
+      <p class="section-heading">Executer le reglement</p>
+      <form [formGroup]="executeForm" (ngSubmit)="execute()" class="form">
+        <mat-form-field appearance="outline" class="form__field">
+          <mat-label>Reference du virement</mat-label>
+          <input matInput formControlName="settlementReference" />
+          @if (executeForm.controls.settlementReference.invalid && executeForm.controls.settlementReference.touched) {
+            <mat-error>La reference est obligatoire.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="form__field">
+          <mat-label>Notes (optionnel)</mat-label>
+          <textarea matInput formControlName="notes" rows="2"></textarea>
+        </mat-form-field>
+        <button mat-flat-button color="primary" type="submit" class="form__submit" [disabled]="executing()">
+          @if (executing()) {
+            <mat-spinner diameter="20" />
+          } @else {
+            Confirmer l'execution
+          }
+        </button>
+      </form>
+    </mat-card>
+  } @else {
+    <p class="form-notice form-notice--success">
+      Reglement execute — reference {{ s.settlementReference }}
+    </p>
+  }
+
+  <a routerLink="/admin/settlements" mat-stroked-button>Retour a la liste</a>
+}

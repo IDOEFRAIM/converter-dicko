@@ -1,0 +1,76 @@
+import { HttpClient } from '@angular/common/http';
+import { Injectable, computed, signal } from '@angular/core';
+import { Observable, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import { ApiResponse } from '../models/api-response.model';
+import { AuthResponse, CurrentUser, LoginRequest, RegisterRequest } from '../models/user.model';
+import { TokenStorageService } from './token-storage.service';
+
+/**
+ * Authentification et session courante.
+ *
+ * <p>La verite sur "qui est l'utilisateur et quel role a-t-il" vient
+ * exclusivement du backend (champ {@code roles} de la reponse de
+ * connexion, ou de {@code GET /api/auth/me}) — jamais decode ni deduit
+ * cote client a partir du contenu du jeton.
+ */
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private readonly baseUrl = `${environment.apiBaseUrl}/auth`;
+
+  private readonly currentUserSignal = signal<CurrentUser | null>(null);
+  private readonly initializedSignal = signal(false);
+
+  readonly currentUser = this.currentUserSignal.asReadonly();
+  readonly initialized = this.initializedSignal.asReadonly();
+  readonly isAuthenticated = computed(() => this.currentUserSignal() !== null);
+  readonly isAdmin = computed(() => (this.currentUserSignal()?.roles ?? []).includes('ADMIN'));
+
+  constructor(
+    private readonly http: HttpClient,
+    private readonly tokenStorage: TokenStorageService,
+  ) {}
+
+  login(request: LoginRequest): Observable<ApiResponse<AuthResponse>> {
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.baseUrl}/login`, request).pipe(
+      tap((response) => {
+        this.tokenStorage.setToken(response.data.accessToken);
+        this.currentUserSignal.set(response.data.user);
+      }),
+    );
+  }
+
+  register(request: RegisterRequest): Observable<ApiResponse<unknown>> {
+    return this.http.post<ApiResponse<unknown>>(`${this.baseUrl}/register`, request);
+  }
+
+  /** Recharge la session a partir du jeton persiste (rechargement de page). */
+  restoreSession(): Observable<ApiResponse<CurrentUser>> {
+    return this.http.get<ApiResponse<CurrentUser>>(`${this.baseUrl}/me`).pipe(
+      tap({
+        next: (response) => {
+          this.currentUserSignal.set(response.data);
+          this.initializedSignal.set(true);
+        },
+        error: () => {
+          this.tokenStorage.clear();
+          this.currentUserSignal.set(null);
+          this.initializedSignal.set(true);
+        },
+      }),
+    );
+  }
+
+  hasToken(): boolean {
+    return this.tokenStorage.getToken() !== null;
+  }
+
+  markInitialized(): void {
+    this.initializedSignal.set(true);
+  }
+
+  logout(): void {
+    this.tokenStorage.clear();
+    this.currentUserSignal.set(null);
+  }
+}

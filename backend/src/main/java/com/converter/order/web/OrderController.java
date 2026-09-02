@@ -1,0 +1,100 @@
+package com.converter.order.web;
+
+import com.converter.common.api.ApiResponse;
+import com.converter.common.api.PageResponse;
+import com.converter.common.idempotency.IdempotencyGuard;
+import com.converter.order.dto.CancelOrderRequest;
+import com.converter.order.dto.CreateOrderRequest;
+import com.converter.order.dto.OrderDetailResponse;
+import com.converter.order.dto.OrderSummaryResponse;
+import com.converter.order.service.OrderService;
+import com.converter.security.AuthenticatedUser;
+import com.converter.security.CurrentUser;
+import com.fasterxml.jackson.core.type.TypeReference;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
+
+/**
+ * Cycle de vie client d'un ordre. Un ordre n'est jamais cree
+ * directement a partir d'un montant : il reference exclusivement un
+ * {@code Quote} deja accepte (voir {@code OrderService}). Ownership
+ * appliquee comme partout ailleurs : 404, jamais 403.
+ */
+@RestController
+@RequestMapping("/api/v1/orders")
+@SecurityRequirement(name = "bearer-jwt")
+@Tag(name = "Ordres", description = "Creation et suivi des ordres client")
+public class OrderController {
+
+    private static final String CREATE_ENDPOINT = "POST /api/v1/orders";
+
+    private final OrderService orderService;
+    private final IdempotencyGuard idempotencyGuard;
+
+    public OrderController(OrderService orderService, IdempotencyGuard idempotencyGuard) {
+        this.orderService = orderService;
+        this.idempotencyGuard = idempotencyGuard;
+    }
+
+    @PostMapping
+    @Operation(summary = "Creer un ordre a partir d'un devis accepte",
+            description = "Le devis doit appartenir au client et etre au statut ACCEPTED. "
+                    + "Un devis ne peut produire qu'un seul ordre. En-tete Idempotency-Key "
+                    + "optionnel : un rejeu (timeout, double clic) avec la meme cle et le meme "
+                    + "corps ne cree jamais un second ordre, la reponse d'origine est rejouee.")
+    public ResponseEntity<ApiResponse<OrderDetailResponse>> create(
+            @Valid @RequestBody CreateOrderRequest request,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @AuthenticatedUser CurrentUser currentUser) {
+        return idempotencyGuard.guard(currentUser.getId(), CREATE_ENDPOINT, idempotencyKey, request,
+                new TypeReference<ApiResponse<OrderDetailResponse>>() {
+                },
+                () -> {
+                    OrderDetailResponse response = orderService.create(request, currentUser.getId());
+                    return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(response, "Ordre cree."));
+                });
+    }
+
+    @GetMapping
+    @Operation(summary = "Lister mes ordres")
+    public ResponseEntity<ApiResponse<PageResponse<OrderSummaryResponse>>> list(
+            @AuthenticatedUser CurrentUser currentUser,
+            @Parameter(hidden = true) @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.of(orderService.listMine(currentUser.getId(), pageable)));
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Detail d'un ordre")
+    public ResponseEntity<ApiResponse<OrderDetailResponse>> get(
+            @PathVariable UUID id,
+            @AuthenticatedUser CurrentUser currentUser) {
+        return ResponseEntity.ok(ApiResponse.of(orderService.get(id, currentUser.getId())));
+    }
+
+    @PostMapping("/{id}/cancel")
+    @Operation(summary = "Annuler un ordre",
+            description = "Uniquement depuis AWAITING_PAYMENT. Libere la reservation de tresorerie.")
+    public ResponseEntity<ApiResponse<OrderDetailResponse>> cancel(
+            @PathVariable UUID id,
+            @Valid @RequestBody CancelOrderRequest request,
+            @AuthenticatedUser CurrentUser currentUser) {
+        OrderDetailResponse response = orderService.cancel(id, currentUser.getId(), request.reason());
+        return ResponseEntity.ok(ApiResponse.of(response, "Ordre annule."));
+    }
+}

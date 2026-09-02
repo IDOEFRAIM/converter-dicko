@@ -1,0 +1,85 @@
+<h1 class="form-title">Soumettre le paiement</h1>
+
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else {
+  @if (errorMessage()) {
+    <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+  }
+
+  @if (!payment(); as p) {
+    @if (order(); as o) {
+      <p class="instructions">
+        Envoyez <strong>{{ o.amountXof | money: 'XOF' }}</strong> via Mobile Money, puis renseignez la
+        reference de la transaction ci-dessous.
+      </p>
+
+      <form [formGroup]="form" (ngSubmit)="submitPayment()" class="form">
+        <mat-form-field appearance="outline" class="form__field">
+          <mat-label>Methode de paiement</mat-label>
+          <mat-select formControlName="method">
+            @for (option of methods(); track option.value) {
+              <mat-option [value]="option.value">{{ option.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form__field">
+          <mat-label>Montant envoye (XOF)</mat-label>
+          <input matInput type="number" formControlName="receivedAmountXof" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form__field">
+          <mat-label>Reference de transaction</mat-label>
+          <input matInput formControlName="transactionReference" />
+          @if (form.controls.transactionReference.invalid && form.controls.transactionReference.touched) {
+            <mat-error>La reference est obligatoire.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form__field">
+          <mat-label>Numero du payeur (optionnel)</mat-label>
+          <input matInput formControlName="payerPhone" />
+        </mat-form-field>
+
+        <button mat-flat-button class="brand-button form__submit" type="submit"  [disabled]="submitting()">
+          @if (submitting()) {
+            <mat-spinner diameter="20" />
+          } @else {
+            Declarer le paiement
+          }
+        </button>
+      </form>
+    }
+  } @else {
+    <p class="form-notice form-notice--success">
+      Paiement declare. Televersez une preuve (capture d'ecran ou recu) pour finaliser.
+    </p>
+
+    @if (!proofUploaded()) {
+      <div class="upload-zone">
+        <input
+          type="file"
+          id="proof-file"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+          (change)="onFileSelected($event)"
+          [disabled]="uploading()"
+        />
+        <label for="proof-file" class="upload-zone__label">
+          @if (uploading()) {
+            <mat-spinner diameter="20" />
+          } @else {
+            Choisir un fichier (JPEG, PNG, WEBP ou PDF)
+          }
+        </label>
+      </div>
+    } @else {
+      <p class="form-notice form-notice--success">
+        Preuve enregistree. Votre paiement est en cours de verification.
+      </p>
+      <button mat-flat-button class="brand-button form__submit" (click)="goToOrder()" >
+        Retour a l'ordre
+      </button>
+    }
+  }
+}
