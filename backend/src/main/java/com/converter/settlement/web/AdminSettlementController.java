@@ -9,6 +9,7 @@ import com.converter.settlement.dto.ExecuteSettlementRequest;
 import com.converter.settlement.dto.SettlementProofResponse;
 import com.converter.settlement.dto.SettlementResponse;
 import com.converter.settlement.service.SettlementService;
+import com.converter.storage.ProofDownload;
 import com.converter.storage.exception.StorageException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.swagger.v3.oas.annotations.Operation;
@@ -100,14 +101,16 @@ public class AdminSettlementController {
     }
 
     @GetMapping("/settlements/{id}/proofs/{proofId}")
-    @Operation(summary = "Telecharger une preuve de reglement")
+    @Operation(summary = "Visualiser une preuve de reglement",
+            description = "Servi avec son type MIME reel (verifie par signature binaire a l'upload) pour permettre "
+                    + "un apercu en ligne, jamais l'en-tete brut fourni par le client.")
     public ResponseEntity<Resource> downloadProof(@PathVariable UUID id, @PathVariable UUID proofId) {
-        Resource resource = settlementService.downloadProof(id, proofId);
+        ProofDownload proof = settlementService.downloadProof(id, proofId);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
                 .header("X-Content-Type-Options", "nosniff")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(resource);
+                .contentType(MediaType.parseMediaType(proof.contentType()))
+                .body(proof.resource());
     }
 
     @PostMapping("/settlements/{id}/execute")

@@ -9,9 +9,11 @@ import com.converter.order.domain.Beneficiary;
 import com.converter.order.domain.Order;
 import com.converter.order.domain.OrderStatus;
 import com.converter.order.domain.OrderStatusHistory;
+import com.converter.order.dto.BeneficiaryRequest;
 import com.converter.order.dto.BeneficiaryResponse;
 import com.converter.order.dto.CreateOrderRequest;
 import com.converter.order.dto.OrderDetailResponse;
+import com.converter.order.dto.OrderFeasibilityResponse;
 import com.converter.order.dto.OrderStatusHistoryResponse;
 import com.converter.order.dto.OrderSummaryResponse;
 import com.converter.order.repository.BeneficiaryRepository;
@@ -23,8 +25,13 @@ import com.converter.quote.repository.QuoteRepository;
 import com.converter.security.OwnershipService;
 import com.converter.settings.domain.SettingKey;
 import com.converter.settings.service.SettingsService;
+import com.converter.supplier.domain.Supplier;
+import com.converter.supplier.domain.SupplierStatus;
+import com.converter.supplier.repository.SupplierRepository;
 import com.converter.treasury.domain.Currency;
 import com.converter.treasury.service.TreasuryService;
+import com.converter.user.domain.User;
+import com.converter.user.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -60,6 +67,8 @@ public class OrderService {
     private final BeneficiaryRepository beneficiaryRepository;
     private final OrderStatusHistoryRepository historyRepository;
     private final QuoteRepository quoteRepository;
+    private final SupplierRepository supplierRepository;
+    private final UserRepository userRepository;
     private final OrderStateMachine stateMachine;
     private final TreasuryService treasuryService;
     private final SettingsService settingsService;
@@ -71,6 +80,8 @@ public class OrderService {
                         BeneficiaryRepository beneficiaryRepository,
                         OrderStatusHistoryRepository historyRepository,
                         QuoteRepository quoteRepository,
+                        SupplierRepository supplierRepository,
+                        UserRepository userRepository,
                         OrderStateMachine stateMachine,
                         TreasuryService treasuryService,
                         SettingsService settingsService,
@@ -81,6 +92,8 @@ public class OrderService {
         this.beneficiaryRepository = beneficiaryRepository;
         this.historyRepository = historyRepository;
         this.quoteRepository = quoteRepository;
+        this.supplierRepository = supplierRepository;
+        this.userRepository = userRepository;
         this.stateMachine = stateMachine;
         this.treasuryService = treasuryService;
         this.settingsService = settingsService;
@@ -92,6 +105,26 @@ public class OrderService {
     // -----------------------------------------------------------------
     // Creation
     // -----------------------------------------------------------------
+
+    /**
+     * Indique, <b>avant</b> la saisie du beneficiaire, si un ordre pourra etre cree a partir de
+     * ce devis : le devis appartient bien a l'utilisateur, il est {@code ACCEPTED}, et la
+     * liquidite CNY disponible couvre actuellement son montant (si la reservation est active).
+     * Lecture seule, aucun solde de tresorerie renvoye — voir {@link OrderFeasibilityResponse}.
+     */
+    @Transactional(readOnly = true)
+    public OrderFeasibilityResponse checkFeasibility(UUID quoteId, UUID userId) {
+        Quote quote = quoteRepository.findById(quoteId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.QUOTE_NOT_FOUND,
+                        "Devis introuvable : " + quoteId));
+        ownershipService.assertOwnedBy(quote.getUserId(), userId, ErrorCode.QUOTE_NOT_FOUND,
+                "Devis introuvable : " + quoteId);
+
+        boolean reservationEnabled = settingsService.getBoolean(SettingKey.TREASURY_RESERVE_ON_ORDER);
+        boolean sufficient = !reservationEnabled
+                || treasuryService.snapshot(Currency.CNY).available().compareTo(quote.getAmountCny()) >= 0;
+        return new OrderFeasibilityResponse(quote.getId(), quote.getAmountCny(), reservationEnabled, sufficient);
+    }
 
     @Transactional
     public OrderDetailResponse create(CreateOrderRequest request, UUID userId) {
@@ -115,14 +148,19 @@ public class OrderService {
         }
 
         assertWithinAmountBounds(quote.getAmountXof());
+        assertKycVerifiedIfRequired(userId, quote.getAmountXof());
         assertOpenOrderLimitNotReached(userId);
+
+        // Resolu et valide AVANT toute ecriture : un fournisseur invalide/inactif/d'un autre
+        // utilisateur ne doit jamais laisser un Order orphelin sans Beneficiary derriere lui.
+        BeneficiaryRequest beneficiaryRequest = resolveBeneficiaryRequest(request, userId);
 
         Instant now = clock.instant();
         Duration paymentWindow = Duration.ofMinutes(settingsService.getInt(SettingKey.ORDER_PAYMENT_WINDOW_MINUTES));
         String reference = orderRepository.nextReference();
         Order order = new Order(reference, userId, quote.getId(), quote.getAmountXof(), quote.getAmountCny(),
                 quote.getCustomerRate(), quote.getFeeXof(), quote.getNetAmountXof(), request.note(),
-                now, now.plus(paymentWindow));
+                now, now.plus(paymentWindow), request.supplierId(), request.purpose(), request.purposeDetails());
         Order saved;
         try {
             saved = orderRepository.saveAndFlush(order);
@@ -134,9 +172,9 @@ public class OrderService {
                     "Ce devis a deja ete utilise pour creer un ordre.");
         }
 
-        Beneficiary beneficiary = new Beneficiary(saved.getId(), request.beneficiary().type(),
-                request.beneficiary().fullName(), request.beneficiary().identifier(),
-                request.beneficiary().bankName(), request.beneficiary().bankBranch(), now);
+        Beneficiary beneficiary = new Beneficiary(saved.getId(), beneficiaryRequest.type(),
+                beneficiaryRequest.fullName(), beneficiaryRequest.identifier(),
+                beneficiaryRequest.bankName(), beneficiaryRequest.bankBranch(), now);
         beneficiaryRepository.save(beneficiary);
 
         recordHistory(saved.getId(), null, OrderStatus.AWAITING_PAYMENT, userId, null, now);
@@ -147,12 +185,46 @@ public class OrderService {
             orderRepository.save(saved);
         }
 
+        String supplierMetadata = request.supplierId() == null ? "" : ",\"supplierId\":\"" + request.supplierId() + "\"";
         auditService.record(userId, null, AuditAction.ORDER_CREATED, "Order", saved.getId().toString(),
-                "{\"quoteId\":\"" + quote.getId() + "\",\"reference\":\"" + reference + "\"}");
+                "{\"quoteId\":\"" + quote.getId() + "\",\"reference\":\"" + reference + "\"" + supplierMetadata + "}");
         log.info("Ordre {} cree pour {} a partir du devis {}", reference, userId, quote.getId());
 
         return toDetail(saved, beneficiary, List.of(
                 new OrderStatusHistoryResponse(null, OrderStatus.AWAITING_PAYMENT, userId, null, now)));
+    }
+
+    /**
+     * Exactement l'un de {@code beneficiary} ou {@code supplierId} doit etre fourni. Lorsqu'un
+     * fournisseur est utilise, ses coordonnees sont copiees dans un {@link BeneficiaryRequest}
+     * ordinaire : le reste du flux (creation du snapshot {@link Beneficiary}) reste strictement
+     * identique, qu'il vienne d'une saisie directe ou d'un fournisseur enregistre.
+     */
+    private BeneficiaryRequest resolveBeneficiaryRequest(CreateOrderRequest request, UUID userId) {
+        if (request.supplierId() != null) {
+            if (request.beneficiary() != null) {
+                throw new BusinessException(ErrorCode.VALIDATION_ERROR,
+                        "Fournir soit un beneficiaire, soit un fournisseur enregistre (supplierId), jamais les deux.");
+            }
+            Supplier supplier = supplierRepository.findById(request.supplierId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.SUPPLIER_NOT_FOUND,
+                            "Fournisseur introuvable : " + request.supplierId()));
+            ownershipService.assertOwnedBy(supplier.getOwnerUserId(), userId, ErrorCode.SUPPLIER_NOT_FOUND,
+                    "Fournisseur introuvable : " + request.supplierId());
+            if (supplier.getStatus() != SupplierStatus.ACTIVE) {
+                throw new BusinessException(ErrorCode.SUPPLIER_INACTIVE,
+                        "Ce fournisseur est desactive et ne peut plus etre utilise pour un nouvel ordre.");
+            }
+            // Nom legal si disponible (traçabilite financiere), sinon le nom d'affichage du carnet.
+            String fullName = supplier.getLegalName() != null ? supplier.getLegalName() : supplier.getDisplayName();
+            return new BeneficiaryRequest(supplier.getType(), fullName, supplier.getAccountNumber(),
+                    supplier.getBankName(), supplier.getBankBranch());
+        }
+        if (request.beneficiary() == null) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR,
+                    "Un beneficiaire ou un fournisseur enregistre (supplierId) est obligatoire.");
+        }
+        return request.beneficiary();
     }
 
     // -----------------------------------------------------------------
@@ -317,6 +389,26 @@ public class OrderService {
         }
     }
 
+    /**
+     * KYC obligatoire (inclus) a partir de {@code SettingKey.KYC_REQUIRED_THRESHOLD_XOF} —
+     * verification minimale (drapeau administrateur, voir {@code User#verifyKyc}), jamais un
+     * moteur de conformite complet. Seuil configurable, jamais code en dur (meme convention que
+     * {@link #assertWithinAmountBounds}).
+     */
+    private void assertKycVerifiedIfRequired(UUID userId, BigDecimal amountXof) {
+        BigDecimal threshold = settingsService.getDecimal(SettingKey.KYC_REQUIRED_THRESHOLD_XOF);
+        if (amountXof.compareTo(threshold) < 0) {
+            return;
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "Utilisateur introuvable : " + userId));
+        if (!user.isKycVerified()) {
+            throw new BusinessException(ErrorCode.KYC_VERIFICATION_REQUIRED,
+                    "La verification d'identite (KYC) est obligatoire pour un ordre de " + amountXof
+                            + " XOF ou plus (seuil actuel : " + threshold + " XOF).");
+        }
+    }
+
     private void assertOpenOrderLimitNotReached(UUID userId) {
         int maxOpen = settingsService.getInt(SettingKey.MAX_OPEN_ORDERS_PER_USER);
         long openOrders = orderRepository.countOpenOrdersByUser(userId);
@@ -377,7 +469,8 @@ public class OrderService {
                 new BeneficiaryResponse(beneficiary.getType(), beneficiary.getFullName(),
                         beneficiary.getIdentifier(), beneficiary.getBankName(), beneficiary.getBankBranch()),
                 history, order.getCreatedAt(), order.getUpdatedAt(), order.getPaymentDeadlineAt(),
-                order.getCompletedAt(), order.getCancelledAt());
+                order.getCompletedAt(), order.getCancelledAt(),
+                order.getSupplierId(), order.getPurpose(), order.getPurposeDetails());
     }
 
     private static OrderSummaryResponse toSummary(Order order) {

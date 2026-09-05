@@ -11,11 +11,11 @@ import com.converter.quote.domain.QuoteDirection;
 import com.converter.quote.dto.CreateQuoteRequest;
 import com.converter.quote.dto.QuoteResponse;
 import com.converter.quote.repository.QuoteRepository;
-import com.converter.rate.domain.MarketRate;
+import com.converter.rate.cost.CurrentCostRate;
+import com.converter.rate.cost.provider.CostRateProvider;
 import com.converter.rate.engine.AmountBasis;
 import com.converter.rate.engine.PricingResult;
 import com.converter.rate.engine.RateEngine;
-import com.converter.rate.provider.RateProvider;
 import com.converter.security.OwnershipService;
 import com.converter.settings.domain.SettingKey;
 import com.converter.settings.service.SettingsService;
@@ -31,8 +31,9 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Orchestration du parcours devis : intention client -> RateProvider ->
- * RateEngine -> snapshot immuable -> transitions controlees.
+ * Orchestration du parcours devis : intention client -> CostRateProvider
+ * (breakEvenRate) -> RateEngine (+ marge) -> snapshot immuable ->
+ * transitions controlees.
  *
  * <p>Aucune borne min/max de montant n'est appliquee ici : ces bornes
  * (deja definies dans {@code system_settings} en Phase 2,
@@ -48,7 +49,7 @@ public class QuoteService {
     private static final Logger log = LoggerFactory.getLogger(QuoteService.class);
 
     private final QuoteRepository quoteRepository;
-    private final RateProvider rateProvider;
+    private final CostRateProvider costRateProvider;
     private final RateEngine rateEngine;
     private final SettingsService settingsService;
     private final OwnershipService ownershipService;
@@ -57,7 +58,7 @@ public class QuoteService {
     private final Clock clock;
 
     public QuoteService(QuoteRepository quoteRepository,
-                        RateProvider rateProvider,
+                        CostRateProvider costRateProvider,
                         RateEngine rateEngine,
                         SettingsService settingsService,
                         OwnershipService ownershipService,
@@ -65,7 +66,7 @@ public class QuoteService {
                         NotificationService notificationService,
                         Clock clock) {
         this.quoteRepository = quoteRepository;
-        this.rateProvider = rateProvider;
+        this.costRateProvider = costRateProvider;
         this.rateEngine = rateEngine;
         this.settingsService = settingsService;
         this.ownershipService = ownershipService;
@@ -77,31 +78,45 @@ public class QuoteService {
     /**
      * Cree un devis, snapshot financier immuable.
      *
-     * <p>La lecture de la cotation courante ({@link RateProvider#currentRate})
-     * est verrouillee (voir {@code RateSourceRepository#findCurrentForPricing})
-     * et se deroule dans <b>cette meme transaction</b> : si une
-     * publication administrative est en cours au meme instant, cette
-     * transaction attend qu'elle se termine avant de lire, ou la bloque
-     * jusqu'a son propre commit — dans tous les cas, le devis cree
-     * reflete toujours une cotation qui etait reellement courante au
-     * moment ou la transaction s'est validee, jamais une valeur
-     * entre-deux incoherente.
+     * <p>Depuis la Phase 3.1, le taux avant marge n'est plus lu depuis
+     * {@code RateSource} mais depuis {@link CostRateProvider#currentRate()}
+     * — le {@code breakEvenRate} de la derniere {@code DailyCostRateConfiguration}
+     * publiee (voir docs/ARCHITECTURE.md, Partie I, section G.7).
+     * <b>Modele "montant de reference"</b> : ce {@code breakEvenRate} a
+     * ete calcule une seule fois, au moment de la publication
+     * administrative, pour le {@code referenceAmountXof} choisi par
+     * l'administrateur — jamais recalcule ici pour le montant reel de
+     * <em>ce</em> devis. {@code CostRateCalculator} n'est pas invoque
+     * dans cette methode. Le systeme ne pretend donc pas calculer un
+     * cout de revient specifique a chaque transaction ; il applique un
+     * taux de cout journalier, exactement comme {@code marketRate}
+     * l'etait avant lui.
+     *
+     * <p>Aucun verrou n'est necessaire ici : contrairement a {@code rate_sources},
+     * {@code daily_cost_rate_configurations} n'a pas de notion de ligne
+     * "courante" a clore avant d'en inserer une nouvelle — chaque
+     * publication insere une ligne complete et immuable, et PostgreSQL
+     * (MVCC) garantit qu'une lecture concurrente voit toujours soit
+     * l'ancienne ligne entiere, soit la nouvelle entiere, jamais un
+     * melange des deux.
      */
     @Transactional
     public QuoteResponse create(CreateQuoteRequest request, UUID userId) {
         AmountBasis basis = toAmountBasis(request);
         BigDecimal amount = extractAmount(request, basis);
 
-        MarketRate marketRate = rateProvider.currentRate(RateProvider.DEFAULT_CURRENCY_PAIR);
+        CurrentCostRate costRate = costRateProvider.currentRate();
         BigDecimal marginPercentage = settingsService.getDecimal(SettingKey.DEFAULT_MARGIN_PERCENTAGE);
         BigDecimal feePercentage = settingsService.getDecimal(SettingKey.DEFAULT_FEE_PERCENTAGE);
         BigDecimal fixedFeeXof = settingsService.getDecimal(SettingKey.DEFAULT_FIXED_FEE_XOF);
 
-        PricingResult pricing = rateEngine.price(basis, amount, marketRate, marginPercentage, feePercentage, fixedFeeXof);
+        PricingResult pricing = rateEngine.price(basis, amount, costRate.breakEvenRate(), marginPercentage,
+                feePercentage, fixedFeeXof);
 
         Instant now = clock.instant();
         Duration validity = settingsService.getMinutes(SettingKey.RATE_LOCK_DURATION_MINUTES);
-        Quote quote = new Quote(userId, request.direction(), pricing, marketRate.rateSourceId(), now, now.plus(validity));
+        Quote quote = new Quote(userId, request.direction(), pricing, costRate.costConfigurationId(), now,
+                now.plus(validity));
         Quote saved = quoteRepository.save(quote);
 
         auditService.record(userId, null, AuditAction.QUOTE_CREATED, "Quote", saved.getId().toString(), null);

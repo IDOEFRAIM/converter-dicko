@@ -6,6 +6,7 @@ import com.converter.common.api.PageResponse;
 import com.converter.common.exception.BusinessException;
 import com.converter.common.exception.ErrorCode;
 import com.converter.common.exception.ResourceNotFoundException;
+import com.converter.common.util.JsonUtil;
 import com.converter.user.domain.User;
 import com.converter.user.domain.UserStatus;
 import com.converter.user.dto.AdminUserDetail;
@@ -82,7 +83,7 @@ public class UserService {
         User saved = userRepository.save(user);
 
         auditService.record(actorId, null, AuditAction.USER_BLOCKED,
-                "User", id.toString(), "{\"reason\":" + jsonString(request.reason()) + "}");
+                "User", id.toString(), "{\"reason\":" + JsonUtil.jsonString(request.reason()) + "}");
         log.info("Compte {} bloque par {} : {}", id, actorId, request.reason());
 
         return toDetail(saved);
@@ -106,6 +107,44 @@ public class UserService {
         return toDetail(saved);
     }
 
+    /**
+     * Verification minimale (drapeau administrateur) — voir {@code User#verifyKyc}. Idempotent :
+     * verifier un compte deja verifie n'est pas un echec, meme convention que {@link #block}.
+     */
+    @Transactional
+    public AdminUserDetail verifyKyc(UUID id, UUID actorId) {
+        User user = userRepository.findById(id).orElseThrow(() -> ResourceNotFoundException.user(id));
+
+        if (user.isKycVerified()) {
+            return toDetail(user);
+        }
+
+        user.verifyKyc(actorId, Instant.now());
+        User saved = userRepository.save(user);
+
+        auditService.record(actorId, null, AuditAction.USER_KYC_VERIFIED, "User", id.toString(), null);
+        log.info("Identite (KYC) verifiee pour le compte {} par {}", id, actorId);
+
+        return toDetail(saved);
+    }
+
+    @Transactional
+    public AdminUserDetail revokeKyc(UUID id, UUID actorId) {
+        User user = userRepository.findById(id).orElseThrow(() -> ResourceNotFoundException.user(id));
+
+        if (!user.isKycVerified()) {
+            return toDetail(user);
+        }
+
+        user.revokeKyc();
+        User saved = userRepository.save(user);
+
+        auditService.record(actorId, null, AuditAction.USER_KYC_REVOKED, "User", id.toString(), null);
+        log.info("Verification d'identite (KYC) revoquee pour le compte {} par {}", id, actorId);
+
+        return toDetail(saved);
+    }
+
     private static AdminUserSummary toSummary(User user) {
         return new AdminUserSummary(
                 user.getId(),
@@ -113,6 +152,7 @@ public class UserService {
                 user.fullName(),
                 user.getStatus(),
                 user.getCreatedAt(),
+                user.isKycVerified(),
                 0L,
                 BigDecimal.ZERO);
     }
@@ -131,6 +171,8 @@ public class UserService {
                 user.getLastLoginAt(),
                 user.getBlockedAt(),
                 user.getBlockedReason(),
+                user.isKycVerified(),
+                user.getKycVerifiedAt(),
                 0L,
                 BigDecimal.ZERO);
     }
@@ -148,7 +190,4 @@ public class UserService {
         return (trimmed == null || trimmed.isEmpty()) ? "%" : "%" + trimmed + "%";
     }
 
-    private static String jsonString(String raw) {
-        return "\"" + raw.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
-    }
 }

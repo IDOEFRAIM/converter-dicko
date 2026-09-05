@@ -5,21 +5,25 @@
   <a routerLink="/quote/new" mat-stroked-button>Nouveau devis</a>
 } @else if (quote(); as q) {
   <mat-card class="quote-card">
-    <p class="quote-card__label">
-      {{ q.direction === 'SEND_XOF' ? 'Vous envoyez' : 'Le beneficiaire recoit' }}
-    </p>
+    <div class="quote-flow">
+      <div class="quote-flow__block">
+        <p class="quote-flow__label">Vous envoyez</p>
+        <p class="quote-flow__amount metric">{{ q.amountXof | money: 'XOF' }}</p>
+      </div>
 
-    <div class="quote-card__amounts">
-      <span class="quote-card__amount">{{ q.amountXof | money: 'XOF' }}</span>
-      <mat-icon>arrow_forward</mat-icon>
-      <span class="quote-card__amount quote-card__amount--accent">{{ q.amountCny | money: 'CNY' }}</span>
+      <div class="quote-flow__arrow" aria-hidden="true">
+        <mat-icon>arrow_downward</mat-icon>
+      </div>
+
+      <div class="quote-flow__block">
+        <p class="quote-flow__label">Le beneficiaire recoit</p>
+        <p class="quote-flow__amount quote-flow__amount--accent metric">&asymp; {{ q.amountCny | money: 'CNY' }}</p>
+      </div>
     </div>
 
+    <p class="quote-rate">1 CNY = {{ q.customerRate }} XOF</p>
+
     <dl class="quote-card__details">
-      <div>
-        <dt>Taux applique</dt>
-        <dd>1 CNY = {{ q.customerRate }} XOF</dd>
-      </div>
       <div>
         <dt>Frais</dt>
         <dd>{{ q.feeXof | money: 'XOF' }}</dd>

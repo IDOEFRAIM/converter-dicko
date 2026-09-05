@@ -14,7 +14,9 @@ type KnownStatus =
   | 'ACTIVE'
   | 'ACCEPTED'
   | 'PENDING'
-  | 'EXECUTED';
+  | 'EXECUTED'
+  | 'INACTIVE'
+  | 'TRIGGERED';
 
 const LABELS: Record<string, string> = {
   AWAITING_PAYMENT: 'En attente de paiement',
@@ -32,6 +34,8 @@ const LABELS: Record<string, string> = {
   PENDING: 'En attente',
   EXECUTED: 'Execute',
   STARTED: 'Demarre',
+  INACTIVE: 'Desactive',
+  TRIGGERED: 'Declenchee',
 };
 
 /** Categorie visuelle : determine la couleur, independamment du module d'origine du statut. */
@@ -51,6 +55,8 @@ const TONE: Record<string, 'neutral' | 'positive' | 'negative' | 'progress'> = {
   STARTED: 'progress',
   PENDING: 'neutral',
   EXECUTED: 'positive',
+  INACTIVE: 'neutral',
+  TRIGGERED: 'positive',
 };
 
 /** Pastille de statut reutilisable pour Quote/Order/Payment/Settlement. */

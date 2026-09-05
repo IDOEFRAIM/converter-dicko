@@ -16,6 +16,9 @@ public record AdminUserSummary(
         UserStatus status,
         Instant createdAt,
 
+        @Schema(description = "Identite verifiee (KYC)")
+        boolean kycVerified,
+
         @Schema(description = "Nombre total d'ordres crees par ce compte")
         long orderCount,
 

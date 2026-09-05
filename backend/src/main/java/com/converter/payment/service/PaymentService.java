@@ -5,6 +5,7 @@ import com.converter.audit.service.AuditService;
 import com.converter.common.exception.BusinessException;
 import com.converter.common.exception.ErrorCode;
 import com.converter.common.api.PageResponse;
+import com.converter.common.util.JsonUtil;
 import com.converter.notification.domain.NotificationType;
 import com.converter.notification.service.NotificationService;
 import com.converter.order.domain.Order;
@@ -24,13 +25,13 @@ import com.converter.settings.domain.SettingKey;
 import com.converter.settings.service.SettingsService;
 import com.converter.storage.FileStorageService;
 import com.converter.storage.FileValidator;
+import com.converter.storage.ProofDownload;
 import com.converter.storage.StoredFile;
 import com.converter.storage.exception.InvalidFileException;
 import com.converter.treasury.domain.Currency;
 import com.converter.treasury.service.TreasuryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.Resource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -193,7 +194,7 @@ public class PaymentService {
     }
 
     @Transactional(readOnly = true)
-    public Resource downloadProof(UUID paymentId, UUID proofId, UUID userId) {
+    public ProofDownload downloadProof(UUID paymentId, UUID proofId, UUID userId) {
         Payment payment = paymentRepository.findById(paymentId).orElseThrow(() -> notFoundPayment(paymentId));
         Order order = orderService.getEntityOrThrow(payment.getOrderId());
         ownershipService.assertOwnedBy(order.getUserId(), userId, ErrorCode.PAYMENT_NOT_FOUND,
@@ -202,7 +203,7 @@ public class PaymentService {
                 .filter(p -> p.getId().equals(proofId))
                 .findFirst()
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "Preuve introuvable : " + proofId));
-        return fileStorageService.load(proof.getStorageKey());
+        return toProofDownload(proof);
     }
 
     // -----------------------------------------------------------------
@@ -210,12 +211,23 @@ public class PaymentService {
     // -----------------------------------------------------------------
 
     @Transactional(readOnly = true)
-    public Resource adminDownloadProof(UUID paymentId, UUID proofId) {
+    public ProofDownload adminDownloadProof(UUID paymentId, UUID proofId) {
         PaymentProof proof = proofRepository.findByPaymentIdOrderByUploadedAtAsc(paymentId).stream()
                 .filter(p -> p.getId().equals(proofId))
                 .findFirst()
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "Preuve introuvable : " + proofId));
-        return fileStorageService.load(proof.getStorageKey());
+        return toProofDownload(proof);
+    }
+
+    /**
+     * {@code proof.getContentType()} est deja verifie par signature binaire a l'upload
+     * ({@link com.converter.storage.FileValidator}, allowlist stricte image/PDF) — jamais un
+     * en-tete client de confiance aveugle, donc sans risque a reservir tel quel (contrairement a
+     * {@code application/octet-stream} force, qui empechait tout apercu en ligne cote admin).
+     */
+    private ProofDownload toProofDownload(PaymentProof proof) {
+        return new ProofDownload(fileStorageService.load(proof.getStorageKey()), proof.getContentType(),
+                proof.getFileName());
     }
 
     @Transactional(readOnly = true)
@@ -267,7 +279,7 @@ public class PaymentService {
         orderService.transitionToRejected(payment.getOrderId(), actorId, reason);
 
         auditService.record(actorId, null, AuditAction.PAYMENT_REJECTED, "Payment", paymentId.toString(),
-                "{\"reason\":" + jsonString(reason) + "}");
+                "{\"reason\":" + JsonUtil.jsonString(reason) + "}");
         log.info("Paiement {} rejete par {} : {}", paymentId, actorId, reason);
 
         return toResponse(payment, loadProofs(paymentId));
@@ -308,10 +320,6 @@ public class PaymentService {
 
     private BusinessException notFoundPayment(UUID paymentId) {
         return new BusinessException(ErrorCode.PAYMENT_NOT_FOUND, "Paiement introuvable : " + paymentId);
-    }
-
-    private static String jsonString(String raw) {
-        return "\"" + raw.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
     }
 
     private static PaymentProofResponse toProofResponse(PaymentProof proof) {

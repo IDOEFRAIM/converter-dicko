@@ -56,7 +56,7 @@ class OrderFlowIT extends AbstractOrderPipelineIT {
         createOrder(user, quote.id(), alipayBeneficiary());
 
         ResponseEntity<ErrorResponse> second = restTemplate.exchange("/api/v1/orders", HttpMethod.POST,
-                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null),
+                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null, null, null, null),
                         auth(user)),
                 ErrorResponse.class);
 
@@ -75,7 +75,7 @@ class OrderFlowIT extends AbstractOrderPipelineIT {
                 new BigDecimal("50000"), null));
 
         ResponseEntity<ErrorResponse> response = restTemplate.exchange("/api/v1/orders", HttpMethod.POST,
-                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null),
+                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null, null, null, null),
                         auth(user)),
                 ErrorResponse.class);
 
@@ -93,7 +93,7 @@ class OrderFlowIT extends AbstractOrderPipelineIT {
 
         String intruder = tokenFor(createUser(RoleCode.USER));
         ResponseEntity<ErrorResponse> response = restTemplate.exchange("/api/v1/orders", HttpMethod.POST,
-                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null),
+                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null, null, null, null),
                         auth(intruder)),
                 ErrorResponse.class);
 
@@ -152,7 +152,10 @@ class OrderFlowIT extends AbstractOrderPipelineIT {
         String admin = adminToken();
         publishRate(admin, "85.000000");
         resetMarginToZero();
-        String user = tokenFor(createUser(RoleCode.USER));
+        // Le montant requis pour ce test depasse largement le seuil KYC : l'utilisateur doit
+        // etre verifie au prealable, sinon KYC_VERIFICATION_REQUIRED masquerait le cas teste ici.
+        com.converter.user.domain.User userEntity = verifyKyc(createUser(RoleCode.USER));
+        String user = tokenFor(userEntity);
 
         BigDecimal availableCny = treasurySnapshot(admin, Currency.CNY).available();
         BigDecimal requiredXof = availableCny.add(new BigDecimal("500000")).multiply(new BigDecimal("85"))
@@ -166,12 +169,62 @@ class OrderFlowIT extends AbstractOrderPipelineIT {
         QuoteResponse quote = createAcceptedQuote(user, requiredXof.toPlainString());
 
         ResponseEntity<ErrorResponse> response = restTemplate.exchange("/api/v1/orders", HttpMethod.POST,
-                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null),
+                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null, null, null, null),
                         auth(user)),
                 ErrorResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response.getBody().code()).isEqualTo("INSUFFICIENT_TREASURY");
+    }
+
+    @Test
+    void feasibility_beforeBeneficiary_reflectsCnyLiquidity() {
+        String admin = adminToken();
+        publishRate(admin, "85.000000");
+        depositCny(admin, "1000000");
+        String user = tokenFor(createUser(RoleCode.USER));
+        QuoteResponse quote = createAcceptedQuote(user, "100000");
+
+        var ok = restTemplate.exchange(
+                "/api/v1/orders/feasibility?quoteId=" + quote.id(), HttpMethod.GET,
+                new HttpEntity<>(auth(user)),
+                new ParameterizedTypeReference<ApiResponse<com.converter.order.dto.OrderFeasibilityResponse>>() {
+                });
+        assertThat(ok.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(ok.getBody().data().quoteId()).isEqualTo(quote.id());
+        assertThat(ok.getBody().data().amountCny()).isEqualByComparingTo(quote.amountCny());
+        assertThat(ok.getBody().data().settlementReservationEnabled()).isTrue();
+        assertThat(ok.getBody().data().sufficientLiquidity()).isTrue();
+
+        // Devis d'un autre utilisateur -> 404, jamais 403, jamais de fuite.
+        String other = tokenFor(createUser(RoleCode.USER));
+        var forbidden = restTemplate.exchange(
+                "/api/v1/orders/feasibility?quoteId=" + quote.id(), HttpMethod.GET,
+                new HttpEntity<>(auth(other)), ErrorResponse.class);
+        assertThat(forbidden.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void feasibility_isFalse_whenCnyLiquidityCannotCoverAmount() {
+        String admin = adminToken();
+        publishRate(admin, "85.000000");
+        resetMarginToZero();
+        String user = tokenFor(createUser(RoleCode.USER));
+
+        BigDecimal availableCny = treasurySnapshot(admin, Currency.CNY).available();
+        BigDecimal requiredXof = availableCny.add(new BigDecimal("500000")).multiply(new BigDecimal("85"))
+                .setScale(0, java.math.RoundingMode.UP);
+        settingsService.update(com.converter.settings.domain.SettingKey.MAX_ORDER_AMOUNT_CFA,
+                requiredXof.toPlainString(), createUser(RoleCode.ADMIN).getId());
+        QuoteResponse quote = createAcceptedQuote(user, requiredXof.toPlainString());
+
+        var response = restTemplate.exchange(
+                "/api/v1/orders/feasibility?quoteId=" + quote.id(), HttpMethod.GET,
+                new HttpEntity<>(auth(user)),
+                new ParameterizedTypeReference<ApiResponse<com.converter.order.dto.OrderFeasibilityResponse>>() {
+                });
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().data().sufficientLiquidity()).isFalse();
     }
 
     @Test
@@ -184,7 +237,7 @@ class OrderFlowIT extends AbstractOrderPipelineIT {
         QuoteResponse quote = createAcceptedQuote(user, "1000");
 
         ResponseEntity<ErrorResponse> response = restTemplate.exchange("/api/v1/orders", HttpMethod.POST,
-                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null),
+                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null, null, null, null),
                         auth(user)),
                 ErrorResponse.class);
 

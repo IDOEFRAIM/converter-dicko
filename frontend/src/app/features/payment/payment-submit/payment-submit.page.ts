@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,6 +11,7 @@ import { OrderService } from '../../../core/services/order.service';
 import { PaymentService } from '../../../core/services/payment.service';
 import { SettingsService } from '../../../core/services/settings.service';
 import { extractErrorMessage } from '../../../core/services/api-error.util';
+import { IdempotencyAttempt } from '../../../core/services/idempotency.util';
 import { OrderDetail } from '../../../core/models/order.model';
 import { Payment, PaymentMethod } from '../../../core/models/payment.model';
 import { MoneyPipe } from '../../../shared/pipes/money.pipe';
@@ -59,6 +61,8 @@ export class PaymentSubmitPage implements OnInit {
   readonly proofUploaded = signal(false);
   readonly methods = signal<{ value: PaymentMethod; label: string }[]>([]);
 
+  private readonly idempotency = new IdempotencyAttempt();
+
   readonly form = new FormGroup({
     method: new FormControl<PaymentMethod>('MOBILE_MONEY', { nonNullable: true, validators: [Validators.required] }),
     receivedAmountXof: new FormControl<number | null>(null, { validators: [Validators.required, Validators.min(1)] }),
@@ -102,25 +106,41 @@ export class PaymentSubmitPage implements OnInit {
       this.form.markAllAsTouched();
       return;
     }
+    const value = this.form.getRawValue();
+    const request = {
+      method: value.method,
+      receivedAmountXof: String(value.receivedAmountXof),
+      transactionReference: value.transactionReference,
+      payerPhone: value.payerPhone || null,
+    };
+    // Ex. apres un 409 DUPLICATE_TRANSACTION_REFERENCE : l'utilisateur corrige la reference,
+    // le corps change => nouvelle cle, pas de 409 IDEMPOTENCY_KEY_REUSED parasite.
+    const idempotencyKey = this.idempotency.keyFor({ orderId: order.id, ...request });
+
     this.submitting.set(true);
     this.errorMessage.set(null);
-    const value = this.form.getRawValue();
 
     this.paymentService
-      .submit(order.id, {
-        method: value.method,
-        receivedAmountXof: String(value.receivedAmountXof),
-        transactionReference: value.transactionReference,
-        payerPhone: value.payerPhone || null,
-      })
+      .submit(order.id, request, idempotencyKey)
       .subscribe({
         next: (response) => {
           this.submitting.set(false);
+          this.idempotency.complete();
           this.payment.set(response.data);
         },
         error: (error) => {
           this.submitting.set(false);
-          this.errorMessage.set(extractErrorMessage(error));
+          // Panne reseau (statut 0) : l'issue reelle cote serveur est inconnue -- la cle
+          // d'idempotence est CONSERVEE (voir IdempotencyAttempt.keyFor, non appelee ici) donc
+          // un nouveau clic avec le meme formulaire rejoue exactement la meme tentative, sans
+          // risque de double declaration. Jamais annoncer un echec certain dans ce cas precis.
+          if (error instanceof HttpErrorResponse && error.status === 0) {
+            this.errorMessage.set(
+              'Impossible de confirmer la reponse du serveur. Vous pouvez reessayer en toute securite.',
+            );
+          } else {
+            this.errorMessage.set(extractErrorMessage(error));
+          }
         },
       });
   }

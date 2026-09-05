@@ -28,5 +28,14 @@ public enum TreasuryTransactionType {
     RELEASE,
 
     /** Correction comptable administrative, motif obligatoire. */
-    ADJUSTMENT
+    ADJUSTMENT,
+
+    /**
+     * Remboursement XOF au client (voir {@code refund}), distinct de {@code WITHDRAWAL} :
+     * decaissement reel, mais jamais lie a une reservation CNY ni a un {@code Settlement} — un
+     * {@code WITHDRAWAL} raconte "nous avons paye le beneficiaire en Chine", un {@code REFUND}
+     * raconte "nous avons rendu ses XOF au client". Les fusionner rendrait la reconciliation
+     * ambigue (impossible de distinguer les deux evenements economiques a la lecture du ledger).
+     */
+    REFUND
 }

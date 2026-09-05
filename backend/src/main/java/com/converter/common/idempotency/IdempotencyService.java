@@ -99,4 +99,41 @@ public class IdempotencyService {
     public void releasePending(UUID userId, String endpoint, String idemKey) {
         repository.deletePending(userId, endpoint, idemKey);
     }
+
+    /**
+     * Recupere les captures restees "en attente" (jamais completees) au-dela de
+     * {@code pendingTimeout} — repond au scenario d'un crash serveur survenu entre {@link #tryInsert}
+     * (qui a deja commite, dans sa propre transaction) et {@link #complete}/{@link #releasePending}
+     * (jamais atteints).
+     *
+     * <p><b>Preuve que cette suppression ne peut jamais toucher une operation reellement
+     * committee</b> : {@link IdempotencyGuard#guard} appelle {@link #complete} avec la propagation
+     * par defaut ({@code REQUIRED}) — {@code complete} rejoint donc <em>la meme transaction
+     * physique</em> que l'action metier qu'il accompagne. Les deux ne peuvent donc que committer
+     * ensemble ou echouer ensemble : il n'existe structurellement aucun etat ou l'action metier a
+     * commite pendant que {@code responseStatus} serait reste {@code NULL}. Une ligne encore
+     * {@code pending} passe {@code pendingTimeout} ne peut donc signifier qu'une chose : sa
+     * transaction ne s'est jamais terminee (crash, ou echec deja rattrape par
+     * {@link #releasePending} — auquel cas la ligne n'existe deja plus).
+     *
+     * <p><b>Limite assumee, non dissimulee</b> : cette preuve garantit qu'aucune transaction
+     * <em>committee</em> n'est jamais touchee. Elle ne garantit PAS, en toute rigueur
+     * mathematique, qu'aucune transaction n'est encore <em>en cours d'execution</em> au moment de
+     * la recuperation — seule une marge de securite tres large (le defaut, {@code
+     * idempotency.pending-timeout-ms}, largement superieure a la duree reelle de n'importe quelle
+     * des operations gardees, qui n'effectuent aucun I/O externe) rend ce scenario negligeable en
+     * pratique. Voir docs/ARCHITECTURE.md pour le detail de ce raisonnement.
+     *
+     * @return le nombre de captures effectivement recuperees par cet appel
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public int reclaimStalePending(Duration pendingTimeout) {
+        Instant threshold = clock.instant().minus(pendingTimeout);
+        int reclaimed = repository.deleteStalePendingOlderThan(threshold);
+        if (reclaimed > 0) {
+            log.info("Idempotence : {} cle(s) 'pending' recuperee(s) (plus vieille(s) que {})",
+                    reclaimed, pendingTimeout);
+        }
+        return reclaimed;
+    }
 }

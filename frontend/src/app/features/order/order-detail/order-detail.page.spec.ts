@@ -22,8 +22,12 @@ function baseOrder(status: string) {
     statusHistory: [{ fromStatus: null, toStatus: 'AWAITING_PAYMENT', changedBy: 'u1', reason: null, createdAt: '2026-01-01T10:00:00Z' }],
     createdAt: '2026-01-01T10:00:00Z',
     updatedAt: '2026-01-01T10:00:00Z',
+    paymentDeadlineAt: '2026-01-02T10:00:00Z',
     completedAt: null,
     cancelledAt: null,
+    supplierId: null as string | null,
+    purpose: null as string | null,
+    purposeDetails: null as string | null,
   };
 }
 
@@ -74,6 +78,68 @@ describe('OrderDetailPage', () => {
     order.rejectionReason = 'Preuve illisible';
     await createWith(order);
     expect(fixture.nativeElement.textContent).toContain('Preuve illisible');
+  });
+
+  it('derives a status message purely from the backend status, for every status', async () => {
+    await createWith(baseOrder('AWAITING_PAYMENT'));
+    expect(fixture.componentInstance.statusMessage()?.title).toBe('En attente de paiement');
+    expect(fixture.nativeElement.textContent).toContain('Envoyez le montant indique');
+  });
+
+  it('shows the "Payer a nouveau" action only when a supplier is known', async () => {
+    const withSupplier = baseOrder('COMPLETED');
+    withSupplier.supplierId = 'sup-1';
+    await createWith(withSupplier);
+    const payAgainLink = fixture.nativeElement.querySelector('a[href*="pay-again"]');
+    expect(payAgainLink).not.toBeNull();
+    expect(payAgainLink.getAttribute('href')).toContain('sup-1');
+  });
+
+  it('never shows "Payer a nouveau" when no supplier is attached to the order', async () => {
+    await createWith(baseOrder('COMPLETED'));
+    expect(fixture.nativeElement.querySelector('a[href*="pay-again"]')).toBeNull();
+  });
+
+  it('shows the purpose only when present, and purposeDetails only when non-empty', async () => {
+    const withPurpose = baseOrder('COMPLETED');
+    withPurpose.purpose = 'IMPORT_GOODS';
+    withPurpose.purposeDetails = 'Materiel electronique';
+    await createWith(withPurpose);
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Materiel electronique');
+  });
+
+  it('never fabricates purpose details text when purposeDetails is empty', async () => {
+    const withPurpose = baseOrder('COMPLETED');
+    withPurpose.purpose = 'IMPORT_GOODS';
+    await createWith(withPurpose);
+    expect(fixture.nativeElement.textContent).not.toContain('undefined');
+  });
+
+  it('shows the receipt download action only once the order is COMPLETED', async () => {
+    await createWith(baseOrder('COMPLETED'));
+    expect(fixture.nativeElement.textContent).toContain('Telecharger le justificatif');
+  });
+
+  it('never shows the receipt download action before completion', async () => {
+    await createWith(baseOrder('PROCESSING'));
+    expect(fixture.nativeElement.textContent).not.toContain('Telecharger le justificatif');
+  });
+
+  it('frames the receipt CTA in a dedicated "Justificatif" zone, distinct from the payment CTA', async () => {
+    await createWith(baseOrder('COMPLETED'));
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Justificatif');
+    expect(text).toContain('Votre transfert est termine.');
+    expect(text).not.toContain('Payer maintenant');
+  });
+
+  it('re-enables the receipt button after a failed download, so the user can retry', async () => {
+    await createWith(baseOrder('COMPLETED'));
+    const httpTesting = TestBed.inject(HttpTestingController);
+    fixture.componentInstance.downloadReceipt();
+    httpTesting.expectOne('/api/v1/orders/o1/receipt').flush(null, { status: 500, statusText: 'Error' });
+    expect(fixture.componentInstance.downloadingReceipt()).toBe(false);
   });
 
   it('shows a not-found message on a 404 (own resource missing or inaccessible)', async () => {

@@ -14,7 +14,18 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 })
 export class AdminDashboardPage {
   readonly sections = [
-    { path: '/admin/rates', icon: 'currency_exchange', label: 'Taux', description: 'Publier le taux manuel courant' },
+    {
+      path: '/admin/cost-rates',
+      icon: 'calculate',
+      label: 'Coût de revient',
+      description: 'Publier les paramètres du jour — requis pour la création de devis',
+    },
+    {
+      path: '/admin/rates',
+      icon: 'currency_exchange',
+      label: 'Taux préférentiel',
+      description: 'Taux de marché manuel (module taux préférentiel uniquement)',
+    },
     { path: '/admin/orders', icon: 'receipt_long', label: 'Ordres', description: 'Consulter tous les ordres' },
     { path: '/admin/payments', icon: 'payments', label: 'Paiements', description: 'Verifier les paiements soumis' },
     { path: '/admin/settlements', icon: 'send', label: 'Reglements', description: 'Executer les reglements CNY' },

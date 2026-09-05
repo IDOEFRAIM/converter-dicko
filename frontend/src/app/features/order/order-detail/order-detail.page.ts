@@ -1,8 +1,6 @@
-import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -10,8 +8,11 @@ import { OrderService } from '../../../core/services/order.service';
 import { SettlementService } from '../../../core/services/settlement.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { extractErrorMessage } from '../../../core/services/api-error.util';
-import { OrderDetail } from '../../../core/models/order.model';
+import { openPendingTab, resolveBlobTab } from '../../../core/services/file-download.util';
+import { ORDER_STATUS_MESSAGES, OrderDetail } from '../../../core/models/order.model';
+import { PURPOSE_LABELS } from '../../../core/models/common.model';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
+import { CorridorComponent } from '../../../shared/components/corridor/corridor.component';
 import { MoneyPipe } from '../../../shared/pipes/money.pipe';
 import { openConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
@@ -26,12 +27,11 @@ const BENEFICIARY_TYPE_LABELS: Record<string, string> = {
   standalone: true,
   imports: [
     RouterLink,
-    DatePipe,
     MatButtonModule,
-    MatCardModule,
     MatIconModule,
     MatProgressSpinnerModule,
     StatusBadgeComponent,
+    CorridorComponent,
     MoneyPipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -49,11 +49,26 @@ export class OrderDetailPage implements OnInit {
   readonly order = signal<OrderDetail | null>(null);
   readonly loading = signal(true);
   readonly cancelling = signal(false);
+  readonly downloadingReceipt = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
+  readonly purposeLabel = computed(() => {
+    const purpose = this.order()?.purpose;
+    return purpose ? PURPOSE_LABELS[purpose] : null;
+  });
+
+  /** Carte reglement dediee : uniquement pertinente une fois le paiement verifie. */
   readonly settlementView = computed(() => {
     const order = this.order();
-    return order ? this.settlementService.deriveFromOrder(order) : null;
+    if (!order || (order.status !== 'PROCESSING' && order.status !== 'COMPLETED')) {
+      return null;
+    }
+    return this.settlementService.deriveFromOrder(order);
+  });
+
+  readonly statusMessage = computed(() => {
+    const order = this.order();
+    return order ? ORDER_STATUS_MESSAGES[order.status] : null;
   });
 
   readonly beneficiaryTypeLabel = computed(() => {
@@ -90,6 +105,31 @@ export class OrderDetailPage implements OnInit {
     if (order) {
       this.router.navigate(['/orders', order.id, 'payment']);
     }
+  }
+
+  /**
+   * Telecharge le justificatif PDF. L'onglet est ouvert de maniere synchrone AVANT l'appel
+   * reseau (contrainte anti-popup des navigateurs), puis redirige vers le blob une fois recu
+   * — le PDF vient du backend, jamais reconstruit ici.
+   */
+  downloadReceipt(): void {
+    const order = this.order();
+    if (!order || this.downloadingReceipt()) {
+      return;
+    }
+    const tab = openPendingTab();
+    this.downloadingReceipt.set(true);
+    this.orderService.downloadReceipt(order.id).subscribe({
+      next: (blob) => {
+        this.downloadingReceipt.set(false);
+        resolveBlobTab(tab, blob);
+      },
+      error: (error) => {
+        this.downloadingReceipt.set(false);
+        tab?.close();
+        this.notification.error(extractErrorMessage(error));
+      },
+    });
   }
 
   cancel(): void {

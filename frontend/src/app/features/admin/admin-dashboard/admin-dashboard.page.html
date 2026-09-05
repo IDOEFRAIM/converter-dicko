@@ -3,7 +3,7 @@
 <div class="section-grid">
   @for (section of sections; track section.path) {
     <a [routerLink]="section.path" class="section-card">
-      <mat-icon>{{ section.icon }}</mat-icon>
+      <span class="section-card__icon"><mat-icon>{{ section.icon }}</mat-icon></span>
       <div>
         <p class="section-card__label">{{ section.label }}</p>
         <p class="section-card__description">{{ section.description }}</p>

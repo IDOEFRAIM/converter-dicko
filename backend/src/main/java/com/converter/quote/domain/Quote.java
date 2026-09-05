@@ -19,16 +19,26 @@ import java.util.UUID;
  * Devis client — snapshot financier immuable.
  *
  * <p><b>Invariant central de cette phase</b> : une fois cree, aucune
- * colonne financiere de cette entite ({@code marketRate},
+ * colonne financiere de cette entite ({@code breakEvenRate},
  * {@code marginPercentage}, {@code customerRate}, les champs de frais,
  * {@code amountXof}, {@code amountCny}, {@code netAmountXof}) n'est
  * <i>jamais</i> modifiee — il n'existe d'ailleurs aucun mutateur pour
  * ces champs. Seules trois methodes de transition existent
  * ({@link #accept}, {@link #cancel}, {@link #expire}), et elles ne
  * touchent que {@code status} et l'horodatage de la transition. Une
- * republication ulterieure du taux manuel, de la marge ou des frais
+ * republication ulterieure de la configuration de cout ou de la marge
  * n'a donc structurellement aucun moyen d'atteindre un {@code Quote}
  * deja cree.
+ *
+ * <p><b>Phase 3.1</b> : le taux avant marge n'est plus une cotation de
+ * marche saisie manuellement ({@code RateSource}), mais le cout de
+ * revient calcule par {@code CostRateCalculator} a partir de la
+ * derniere {@code DailyCostRateConfiguration} — voir
+ * docs/ARCHITECTURE.md, Partie I, section G.7. {@code costConfigurationId}
+ * remplace {@code rateSourceId} : il pointe desormais vers
+ * {@code daily_cost_rate_configurations}, jamais vers {@code rate_sources}.
+ * {@code RateSource}/{@code RateProvider} restent utilises ailleurs dans
+ * le backend (notamment {@code preferredrate}), mais plus par ce flux.
  */
 @Entity
 @Table(name = "quotes")
@@ -47,8 +57,8 @@ public class Quote extends BaseEntity {
     @Column(name = "amount_cny", nullable = false, precision = 19, scale = 2)
     private BigDecimal amountCny;
 
-    @Column(name = "market_rate", nullable = false, precision = 18, scale = 6)
-    private BigDecimal marketRate;
+    @Column(name = "break_even_rate", nullable = false, precision = 18, scale = 6)
+    private BigDecimal breakEvenRate;
 
     @Column(name = "margin_percentage", nullable = false, precision = 6, scale = 4)
     private BigDecimal marginPercentage;
@@ -68,8 +78,8 @@ public class Quote extends BaseEntity {
     @Column(name = "net_amount_xof", nullable = false, precision = 19, scale = 2)
     private BigDecimal netAmountXof;
 
-    @Column(name = "rate_source_id", nullable = false)
-    private UUID rateSourceId;
+    @Column(name = "cost_configuration_id", nullable = false)
+    private UUID costConfigurationId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 16)
@@ -98,21 +108,21 @@ public class Quote extends BaseEntity {
     public Quote(UUID userId,
                 QuoteDirection direction,
                 PricingResult pricing,
-                UUID rateSourceId,
+                UUID costConfigurationId,
                 Instant createdAt,
                 Instant expiresAt) {
         this.userId = userId;
         this.direction = direction;
         this.amountXof = pricing.amountXof();
         this.amountCny = pricing.amountCny();
-        this.marketRate = pricing.marketRate();
+        this.breakEvenRate = pricing.baseRate();
         this.marginPercentage = pricing.marginPercentage();
         this.customerRate = pricing.customerRate();
         this.feePercentage = pricing.feePercentage();
         this.fixedFeeXof = pricing.fixedFeeXof();
         this.feeXof = pricing.feeXof();
         this.netAmountXof = pricing.netAmountXof();
-        this.rateSourceId = rateSourceId;
+        this.costConfigurationId = costConfigurationId;
         this.status = QuoteStatus.ACTIVE;
         this.createdAt = createdAt;
         this.expiresAt = expiresAt;
@@ -188,8 +198,8 @@ public class Quote extends BaseEntity {
         return amountCny;
     }
 
-    public BigDecimal getMarketRate() {
-        return marketRate;
+    public BigDecimal getBreakEvenRate() {
+        return breakEvenRate;
     }
 
     public BigDecimal getMarginPercentage() {
@@ -216,8 +226,8 @@ public class Quote extends BaseEntity {
         return netAmountXof;
     }
 
-    public UUID getRateSourceId() {
-        return rateSourceId;
+    public UUID getCostConfigurationId() {
+        return costConfigurationId;
     }
 
     public QuoteStatus getStatus() {

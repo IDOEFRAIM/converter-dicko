@@ -93,6 +93,24 @@ public class TreasuryService {
                 "{\"currency\":\"" + currency + "\",\"amount\":\"" + amount + "\",\"orderId\":\"" + orderId + "\"}");
     }
 
+    /**
+     * Rembourse le client : decaissement direct du solde XOF, hors reservation (le montant
+     * rembourse n'a jamais ete reserve — seule la liquidite CNY l'est, a la creation de l'Order).
+     * Distinct de {@link #consume} par construction : {@code REFUND} ne touche jamais
+     * {@code reservedBalance} ni la reservation CNY de l'ordre, et n'a donc aucun effet sur un
+     * {@code Settlement} deja execute ou a venir (voir {@code RefundService}).
+     */
+    @Transactional
+    public void refund(Currency currency, BigDecimal amount, UUID orderId, UUID performedBy, String reason) {
+        TreasuryAccount account = loadForUpdate(currency);
+        account.withdrawUnreserved(amount, clock.instant());
+        accountRepository.save(account);
+        record(account, TreasuryTransactionType.REFUND, amount, orderId, performedBy, reason);
+        auditService.record(performedBy, null, AuditAction.TREASURY_REFUNDED,
+                "TreasuryAccount", account.getId().toString(),
+                "{\"currency\":\"" + currency + "\",\"amount\":\"" + amount + "\",\"orderId\":\"" + orderId + "\"}");
+    }
+
     /** Consomme une reservation : decaissement reel a l'execution d'un Settlement. */
     @Transactional
     public void consume(Currency currency, BigDecimal amount, UUID orderId, UUID performedBy) {

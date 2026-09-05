@@ -27,6 +27,12 @@ public record AdminUserDetail(
         @Schema(description = "Motif du blocage, null si le compte est actif")
         String blockedReason,
 
+        @Schema(description = "Identite verifiee (KYC) -- necessaire pour un ordre au-dela du seuil configure")
+        boolean kycVerified,
+
+        @Schema(description = "Horodatage de la verification KYC, null si non verifie")
+        Instant kycVerifiedAt,
+
         long orderCount,
         BigDecimal totalAmountCfa
 ) {

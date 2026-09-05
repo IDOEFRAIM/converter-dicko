@@ -93,6 +93,458 @@ La liste complète des écarts conception ↔ code est tenue dans **[BACKEND.md 
 - Trésorerie : verrou pessimiste + `CHECK (reserved_balance <= balance)` + index unique `(order_id, type)` contre le double décaissement.
 - Sécurité : RBAC double barrière, 404 (jamais 403) sur ressource d'autrui, JWT stateless avec revalidation du compte à chaque requête, anti brute-force par IP, CORS strict.
 
+## 0.F Évolution Burkina Faso ↔ Chine (Phases 1-8, 2026-09-03)
+
+> Complète la table de 0.A sans la réécrire — cette évolution s'ajoute au socle déjà stable
+> au 2026-09-01, décrit ci-dessus. Backend passé de 20 à 26 migrations Flyway au fil de ces
+> huit phases (voir les rapports de clôture de chaque phase pour le détail exact des tests).
+> Phase 3 et Phase 7 n'ont nécessité aucune migration. Suite complète à la clôture de la
+> Phase 8 : **437 tests, 0 échec, 0 erreur** (405 avant la Phase 8, +32 dans la Phase 8).
+
+- **Phase 1 — `supplier`** (`V21`) : carnet de fournisseurs/bénéficiaires réutilisable, isolé
+  par `owner_user_id`. **Distinct** du snapshot immuable `order.domain.Beneficiary` (inchangé) :
+  un `Supplier` n'est jamais la source de vérité d'un règlement déjà effectué, ses champs ne
+  sont copiés dans un `Beneficiary` qu'au moment de la création d'un `Order`.
+- **Phase 2 — lien traçable + motif** (`V22`, `V23`) : `orders.supplier_id` (FK nullable, sans
+  cascade — un fournisseur désactivé reste référencé par l'historique) et
+  `orders.purpose`/`orders.purpose_details` (nullable). `OrderService.create()` accepte
+  désormais `supplierId` **ou** `beneficiary` (exactement l'un des deux), jamais les deux
+  comme source du même snapshot.
+- **Phase 3 — suivi de transaction** : `GET /api/v1/orders/{id}/tracking`, vue agrégée en
+  lecture seule — **aucune seconde machine d'état**. Documentation ci-dessous.
+- **Phase 4 — payer à nouveau** : `POST /api/v1/suppliers/{id}/pay-again`, orchestration pure
+  (`RepeatPaymentService`) au-dessus de `QuoteService.create`/`accept` et `OrderService.create`
+  — **aucune logique financière propre**, aucun taux/frais/montant CNY d'une transaction passée
+  jamais réutilisé. Documentation ci-dessous.
+- **Phase 5 — historique public du taux client** : `GET /api/v1/rates/history`
+  (`public_rate_snapshots`, `V24`) — série temporelle append-only du seul `customerRate`,
+  jamais le `breakEvenRate` interne. Documentation ci-dessous.
+- **Phase 6 — alertes de taux** : `POST /api/v1/rate-alerts`, `GET /api/v1/rate-alerts`,
+  `POST /api/v1/rate-alerts/{id}/cancel` (`rate_alerts`, `V25`) — notification, jamais une
+  transaction financière : aucun `Quote`/`Order`/`Payment`/`Settlement`/réservation
+  `Wallet`/`Treasury`. Documentation ci-dessous.
+- **Phase 7 — justificatif de transaction (PDF)** : `GET /api/v1/orders/{id}/receipt` —
+  photographie documentaire des snapshots déjà figés (`Order`/`Payment`/`Settlement`/
+  `Refund`/`Beneficiary`), aucun recalcul, aucune migration. Documentation ci-dessous.
+- **Phase 8 — profil professionnel, historique enrichi, reporting** (`V26`) :
+  `business_profiles` (`UNIQUE(user_id)`), module racine `business` (`profile` + `reporting`).
+  `GET`/`PUT /api/v1/business-profile` (upsert idempotent), `GET /api/v1/orders/history`
+  (historique filtrable/paginé, ouvert à **tout** utilisateur authentifié),
+  `GET /api/v1/business/payments/summary` (agrégation SQL `GROUP BY`, réservée aux profils
+  Business). La distinction PERSONAL/BUSINESS est portée **exclusivement** par l'existence
+  d'une ligne `business_profiles` — **aucune colonne `accountType` sur `users`**. Aucun
+  contact avec le pipeline financier : `business` ne dépend d'aucun de
+  `Quote`/`Order`/`Payment`/`Settlement`/`Treasury`/`Wallet` en écriture. Documentation
+  ci-dessous.
+
+### `GET /api/v1/orders/{id}/tracking`
+
+- **Authentification** : JWT requis (`Authorization: Bearer ...`), comme tout `/api/v1/**`.
+  Sans jeton → `401 AUTHENTICATION_REQUIRED`.
+- **Ownership** : strictement le propriétaire de l'ordre. Ordre d'un autre utilisateur ou
+  inexistant → `404 ORDER_NOT_FOUND` dans les deux cas (jamais `403`, même convention que
+  partout ailleurs — voir `OwnershipService`).
+- **Réponse** (`OrderTrackingResponse`) :
+  ```json
+  {
+    "orderId": "uuid",
+    "currentStatus": "PROCESSING",
+    "createdAt": "2026-09-03T10:00:00Z",
+    "completedAt": null,
+    "timeline": [
+      { "code": "ORDER_CREATED", "status": "AWAITING_PAYMENT", "occurredAt": "...", "label": "Ordre cree" },
+      { "code": "PAYMENT_SUBMITTED", "status": "PAYMENT_SUBMITTED", "occurredAt": "...", "label": "Paiement declare" }
+    ]
+  }
+  ```
+  `currentStatus`/`completedAt` sont lus directement depuis `Order`, jamais recalculés depuis
+  la timeline. `TrackingEvent.status` est renseigné uniquement pour les événements qui
+  correspondent réellement à une valeur de `OrderStatus` (dérivés d'`OrderStatusHistory`) ;
+  `null` pour les événements d'enrichissement. `label` est une commodité d'affichage, jamais
+  une source de vérité — le frontend doit tester `code`.
+- **Codes d'événement** (`TrackingEventCode`, catalogue fermé) :
+  - Dérivés d'`OrderStatusHistory` (source principale, jamais dupliquée) : `ORDER_CREATED`,
+    `PAYMENT_SUBMITTED`, `PAYMENT_VERIFIED`, `PROCESSING`, `COMPLETED`, `CANCELLED`,
+    `REJECTED`, `EXPIRED`.
+  - Enrichissement, uniquement quand l'information n'existe dans **aucune** valeur
+    d'`OrderStatus` : `PAYMENT_REJECTED` (`Payment.rejectedAt`, absent d'`OrderStatus`),
+    `SETTLEMENT_EXECUTED` (`Settlement.executedAt`, aucun état intermédiaire entre
+    `PROCESSING` et `COMPLETED`), `REFUND_PENDING`/`REFUND_PROCESSED` (`Refund`, jamais
+    reflété sur `Order.status` — voir ci-dessous).
+- **Cas terminaux** (`CANCELLED`/`REJECTED`/`EXPIRED`) : la timeline s'arrête proprement,
+  aucun événement postérieur n'est jamais fabriqué (garanti par construction : ces
+  enrichissements ne sont ajoutés que si l'entité correspondante existe réellement avec le
+  bon statut, ce qui n'est structurellement pas possible après un état terminal).
+- **Remboursement** : `Order.status` ne connaît **aucune** valeur `REFUNDED` (décision
+  déjà actée, voir `RefundService`) — un remboursement reste une vérité portée entièrement
+  par `Refund`, jamais copiée sur l'ordre. Le tracking expose au plus un événement
+  `REFUND_PENDING` ou `REFUND_PROCESSED` (le remboursement actif du paiement, jamais un
+  `REJECTED` historique), sans jamais modifier `currentStatus`.
+- **Performance** : au plus 5 lectures ciblées par appel (ordre, historique, paiement,
+  règlement, remboursement — chacun par clé, jamais de boucle) ; aucun `findAll()`.
+
+### `POST /api/v1/suppliers/{supplierId}/pay-again`
+
+**Principe** : une nouvelle entrée utilisateur dans le workflow financier existant, jamais un
+raccourci. `Supplier` enregistré → **nouveau** `Quote` (pricing courant, jamais celui d'une
+transaction passée) → **nouvel** `Order`. Aucun `Payment`/`Settlement` créé, aucune trésorerie
+manipulée au-delà de la réservation déjà déclenchée par toute création d'ordre normale
+(`TREASURY_RESERVE_ON_ORDER`).
+
+- **Authentification** : JWT requis. Sans jeton → `401 AUTHENTICATION_REQUIRED`.
+- **Ownership** : fournisseur d'un autre utilisateur ou inexistant → `404 SUPPLIER_NOT_FOUND`
+  dans les deux cas (jamais `403`). Fournisseur désactivé → `409 SUPPLIER_INACTIVE`.
+- **Requête** (`PayAgainRequest`) :
+  ```json
+  { "amountXof": 1000000, "purpose": "IMPORT_GOODS", "purposeDetails": "Paiement fournisseur electronique" }
+  ```
+  `amountXof` est **toujours explicitement fourni par le client** — jamais déduit du dernier
+  paiement à ce fournisseur. `purpose` est optionnel : si omis, le motif par défaut du
+  fournisseur (s'il en a un) est utilisé ; s'il est fourni, il a toujours priorité.
+- **Réponse** : `OrderDetailResponse`, le même DTO que `POST /api/v1/orders` (`201 CREATED`) —
+  aucune réponse parallèle. `supplierId` y référence le fournisseur utilisé, `quoteId` référence
+  le **nouveau** devis créé pour cet appel (jamais un `quoteId` réutilisé).
+- **Idempotence** : en-tête `Idempotency-Key` optionnel, même contrat que partout ailleurs
+  (`user + endpoint + clé`, l'identifiant du fournisseur fait partie de l'identité de
+  l'endpoint) — un rejeu avec la même clé et le même corps renvoie le même `Order`, jamais un
+  second ; même clé et corps différent → `409 IDEMPOTENCY_KEY_REUSED`.
+- **Snapshot** : le `Beneficiary` du nouvel `Order` est une copie figée des coordonnées du
+  fournisseur **au moment de l'appel** — une modification ultérieure du fournisseur n'affecte
+  jamais un ordre déjà créé (même invariant que la Phase 2, prouvé par test dédié).
+- **Frontière transactionnelle** : `RepeatPaymentService.payAgain` est `@Transactional`
+  (propagation REQUIRED, la valeur par défaut) — les appels internes à `QuoteService`/
+  `OrderService` (chacun déjà `@Transactional` indépendamment, inchangé) rejoignent cette même
+  transaction physique : si la création de l'ordre échoue, le nouveau devis est annulé avec le
+  reste, jamais orphelin. Aucune frontière transactionnelle *existante* n'est modifiée — les
+  endpoints normaux (créer un devis, l'accepter, créer un ordre séparément) restent chacun dans
+  leur propre transaction HTTP, exactement comme avant.
+- **DECISION REQUIRED** : `RateLimitFilter` ne couvre aujourd'hui que `/api/v1/quotes`,
+  `/api/v1/orders` et `/api/v1/orders/*/payments` — `/api/v1/suppliers/*/pay-again` (qui peut
+  pourtant créer un `Order`) n'est **pas** couvert par la limite de volume existante. Gap
+  identifié, non corrigé unilatéralement dans cette mission (voir le rapport de clôture de
+  Phase 4).
+
+### `GET /api/v1/rates/history` (Phase 5)
+
+**Frontière de confidentialité** — jamais négociable :
+
+```
+RAW / INTERNAL COST
+        ↓
+BREAK-EVEN                 (confidentiel, daily_cost_rate_configurations — jamais exposé)
+        ↓
+COMMERCIAL PRICING          (RateEngine.applyMargin — SEULE formule, jamais dupliquée)
+        ↓
+PUBLIC CUSTOMER RATE        (public_rate_snapshots — la seule chose que ce endpoint renvoie)
+```
+
+- **Table** `public_rate_snapshots` (`V24`) : `id, currency_pair, customer_rate, recorded_at`.
+  Append-only (`@Immutable`) — pas d'UPDATE/DELETE métier, chaque publication de configuration de
+  coût crée une nouvelle ligne, les précédentes ne sont **jamais** recalculées.
+- **Intégration** : `CostRateAdminService.publish()` appelle additivement
+  `PublicRateSnapshotService.record(breakEvenRate, pair, now)`, dans la **même transaction**
+  (propagation REQUIRED) — atomique avec la persistance de `DailyCostRateConfiguration`, sans
+  changer sa validation, son calcul de break-even, son audit ni sa frontière transactionnelle.
+  `PublicRateSnapshotService` ne dépend **jamais** de `DailyCostRateConfiguration`/son
+  repository — garantie structurelle qu'aucune donnée interne ne peut fuiter par ce chemin.
+- **Calcul** : `RateEngine.applyMargin(breakEvenRate, marginPercentage)` — la marge
+  effectivement active **au moment de la publication** (`SettingsService`), jamais recalculée
+  après coup. Aucune formule de pricing dupliquée.
+- **Convention de taux** : identique aux devis — `1 CNY = customerRate XOF`.
+- **DTO public** (`PublicRateHistoryEntry`) : `currencyPair, customerRate, recordedAt`
+  uniquement — jamais `breakEvenRate`, marge, frais, `costConfigurationId`, ni aucune donnée de
+  `rate_sources`/`daily_cost_rate_configurations`.
+- **Sécurité** : authentifié (tout utilisateur, pas admin-only) — `/api/v1/**` comme le reste
+  des endpoints client ; "public" signifie ici *jamais réservé à l'administration*, pas
+  *anonyme* (seul `/api/settings/public` l'est réellement dans ce backend). Anonyme → `401`.
+- **Pagination/tri** : `?pair=XOF/CNY&from=...&to=...&page=&size=`. Tri **fixe**
+  `recordedAt DESC, id DESC` (le plus récent en premier, tie-breaker déterministe) — non
+  négociable par le client, tout paramètre de tri qu'il fournirait est ignoré. Pair non
+  supportée → `400 VALIDATION_ERROR` (une seule paire supportée aujourd'hui, `XOF/CNY` — schéma
+  et requêtes déjà prêts pour d'autres paires sans réécriture).
+- **Compatibilité `Quote`** : la publication d'un nouveau taux ne modifie jamais le
+  `customerRate` déjà figé d'un `Quote` existant — deux séries de données distinctes (série
+  temporelle publique vs. snapshot par transaction), vérifié par test dédié.
+- Les endpoints admin existants (`GET /api/admin/rates`, `GET /api/admin/cost-rates`)
+  restent inchangés — ce endpoint est une projection client distincte, pas un remplacement.
+
+### `/api/v1/rate-alerts` (Phase 6)
+
+**Principe** : une intention utilisateur persistante ("préviens-moi quand le taux client public
+XOF/CNY atteint mon objectif"), jamais une transaction financière.
+
+```
+USER TARGET → PUBLIC CUSTOMER RATE (public_rate_snapshots) → COMPARISON → TRIGGER → notification
+```
+
+**Distinct de `preferred_rate_requests`** (module déjà présent avant cette mission) : une
+`PreferredRateRequest` immobilise un montant sur le `Wallet` dès sa création et déclenche un
+**échange réel** (`Exchange`) quand la cible est atteinte. Une `RateAlert` ne porte **aucun
+montant** et ne déclenche jamais rien de financier — uniquement une notification `IN_APP`. Les
+deux coexistent délibérément, aucune des deux n'est une duplication de l'autre.
+
+- **Table** `rate_alerts` (`V25`) : `id, user_id, currency_pair, direction, target_rate,
+  comparison, status, created_at, expires_at, triggered_at, cancelled_at, expired_at, version`.
+  Contrairement à `public_rate_snapshots` (append-only), cette table a un cycle de vie :
+  `ACTIVE → TRIGGERED | CANCELLED | EXPIRED`, chaque transition finale, jamais l'inverse.
+- **`direction`** réutilise `PreferredRateDirection` (`XOF_TO_CNY`, déjà existant), pas
+  `QuoteDirection` : ce dernier décrit quel montant le client fournit à un devis (`SEND_XOF`/
+  `RECEIVE_CNY`), non pertinent ici puisqu'une alerte ne porte aucun montant.
+  `PreferredRateDirection` décrit déjà exactement le même concept — un sens de conversion,
+  extensible plus tard, sans montant associé — sans dupliquer un troisième enum. Une seule
+  valeur existe aujourd'hui, cohérente avec `currency_pair = 'XOF/CNY'` : les deux ne peuvent
+  jamais se contredire.
+- **`comparison`** (`RateComparison` : `LESS_THAN_OR_EQUAL`, `GREATER_THAN_OR_EQUAL`) encapsule
+  la règle de déclenchement — `RateAlert.isSatisfiedBy(currentRate)` délègue à
+  `comparison.isSatisfied(...)`, jamais un `if` dispersé dans le contrôleur ou le scheduler.
+  Comparaison exclusivement via `BigDecimal.compareTo` (jamais `==`/`double`), cas d'égalité
+  explicitement couvert (`83.50 <= 83.50 = true`). Seul `LESS_THAN_OR_EQUAL` est utilisé
+  aujourd'hui (cas standard XOF/CNY, `1 CNY = X XOF`) ; `GREATER_THAN_OR_EQUAL` existe pour un
+  sens futur sans changer le modèle.
+- **Source du taux courant** : `PublicRateSnapshotService.latestCustomerRate(currencyPair)`
+  (nouvelle méthode additive, Phase 6 — n'existait pas en Phase 5), qui délègue à
+  `PublicRateSnapshotRepository.findFirstByCurrencyPairOrderByRecordedAtDescIdDesc` (même
+  ordre déterministe que `search`, Phase 5). Ni `breakEvenRate`, ni marge interne, ni
+  `daily_cost_rate_configurations`/`rate_sources` ne sont jamais consultés par `RateAlertService`
+  — garantie structurelle, comme pour `PublicRateSnapshotService` lui-même. Absence de taux
+  publié pour la paire → évaluation ignorée silencieusement (ni déclenchée, ni marquée en échec),
+  réévaluée au passage suivant du scheduler.
+- **Expiration** : `expires_at` optionnel (`null` = jamais). Si fournie à la création, doit être
+  strictement future (`400 VALIDATION_ERROR` sinon). L'expiration l'emporte toujours sur
+  l'évaluation du taux — `RateAlertService.processOne` teste `isPastDeadline` avant même de lire
+  le dernier taux public : une alerte expirée n'est jamais déclenchée, même si sa cible serait
+  par ailleurs satisfaite.
+- **Scheduler** (`RateAlertScheduler`) : même patron que `PreferredRateScheduler`/
+  `OrderExpirationScheduler`/`IdempotencyPendingCleanupScheduler` — `fixedDelay` (jamais
+  `fixedRate`, aucun chevauchement intra-instance), une transaction par alerte
+  (`RateAlertService#processOne`), `catch RuntimeException` par élément pour qu'un échec ponctuel
+  n'affecte jamais les autres candidats. Fréquence par défaut 5 minutes
+  (`rate-alert.scheduler.fixed-delay-ms`), configuration d'infrastructure (`application.yml`),
+  jamais `SettingsService` — cohérent avec les trois autres schedulers du projet.
+- **Concurrence/atomicité** : `RateAlertRepository.findByIdForUpdate` (verrou pessimiste
+  `PESSIMISTIC_WRITE`, même patron que `PreferredRateRequestRepository`) chargé au tout début de
+  `processOne`, avec un double-check du statut immédiatement après (`!= ACTIVE → no-op`). Deux
+  passages concurrents (deux instances du scheduler, ou un scheduler et une annulation
+  utilisateur simultanés) se sérialisent proprement sur la même ligne : un seul déclenchement,
+  une seule notification — prouvé par test dédié (deux threads, `ExecutorService`, assertion sur
+  le statut final et le nombre exact de notifications).
+- **Notification** : `NotificationType.RATE_ALERT_TRIGGERED` (nouvelle valeur, catalogue
+  `notifications.type` étendu en `V25` selon le même patron additif que `V16`/`ORDER_EXPIRED` —
+  `DROP`/`ADD CONSTRAINT`, seule façon d'étendre un `CHECK` PostgreSQL). Réutilise
+  `NotificationService.create(...)`, déjà `REQUIRES_NEW` et déjà tolérant à l'échec (absorbe
+  toute exception, renvoie `null`) — aucune infrastructure de notification nouvelle.
+- **Ordre transactionnel du déclenchement** : `alert.trigger(now)` (mutation en mémoire, flush à
+  la fin de la transaction) précède l'audit (`AuditService.recordSystem`, `REQUIRES_NEW`) puis la
+  notification (`NotificationService.create`, `REQUIRES_NEW`) — jamais l'inverse. Un échec de
+  notification ne fait donc jamais revenir l'alerte à `ACTIVE` ; c'est l'ordre inverse
+  (notifier puis marquer) qui exposerait à une double notification si une exception survenait
+  entre les deux. Même principe que `PreferredRateService#trigger`. **Limite connue, documentée
+  plutôt que corrigée par une nouvelle infrastructure (pas d'outbox/event bus introduit pour
+  cette feature)** : `REQUIRES_NEW` peut valider l'audit/la notification avant que la transaction
+  englobante (qui porte la transition `ACTIVE → TRIGGERED`) ne commit elle-même ; un crash exactement
+  dans cette fenêtre laisserait une alerte encore `ACTIVE` en base après une notification déjà
+  envoyée, exposée à une seconde notification au passage suivant. Risque déjà accepté par le
+  code existant (`PreferredRateService` a la même fenêtre), non nouveau à cette phase.
+- **Ownership** : `OwnershipService.assertOwnedBy`, convention `404` partout (jamais `403`) —
+  alerte d'autrui ou inexistante → `404 RATE_ALERT_NOT_FOUND`, y compris pour l'annulation.
+- **Doublons** : plusieurs alertes identiques (même utilisateur, même paire, même cible) sont
+  autorisées — aucune contrainte `UNIQUE` arbitraire. Le scheduler garantit qu'une alerte
+  individuelle n'est jamais déclenchée deux fois, indépendamment du nombre d'alertes similaires.
+- **Rate limiting — DECISION REQUIRED** : `RateLimitFilter` ne couvre aujourd'hui que
+  `/api/v1/quotes`, `/api/v1/orders`, `/api/v1/orders/*/payments` et (Phase 4)
+  `/api/v1/suppliers/*/pay-again` — `/api/v1/rate-alerts` (`POST`) et
+  `/api/v1/rate-alerts/*/cancel` (`POST`) n'y figurent pas. Gap identifié, non corrigé
+  unilatéralement dans cette mission (zone sensible, `RateLimitFilter` non modifié) : ces
+  endpoints ne créent ni ne déplacent aucune valeur financière (contrairement à `pay-again`), le
+  risque d'abus est donc jugé plus faible ; à réévaluer si le volume d'utilisateurs augmente.
+- **Audit** : `RATE_ALERT_CREATED`, `RATE_ALERT_CANCELLED` (acteur = l'utilisateur, `AuditService.record`),
+  `RATE_ALERT_TRIGGERED` (`AuditService.recordSystem`, déclenché par le scheduler, sans acteur
+  humain) — uniquement ces trois mutations significatives, jamais la lecture de la liste ni
+  l'expiration (transition silencieuse, cohérente avec le fait qu'elle ne résulte d'aucune action).
+- **DTO** (`RateAlertResponse`) : volontairement sans `currentRate`/`gap` (contrairement à
+  `PreferredRateRequestResponse`) — évite de recalculer une cotation à chaque lecture, ce qui
+  garde `list`/`get` strictement `readOnly = true`, sans le contournement de verrouillage que
+  `PreferredRateService` doit faire pour la même raison.
+- **Persistance des transitions** : `TRIGGERED`/`CANCELLED`/`EXPIRED` sont des états relus tels
+  quels depuis PostgreSQL, jamais déduits d'un état en mémoire du scheduler — un redémarrage de
+  l'application ne change rien à l'état d'une alerte déjà finalisée, et
+  `RateAlertService#activeAlertIds` n'y ré-inclut jamais une alerte non `ACTIVE`.
+
+### `GET /api/v1/orders/{id}/receipt` (Phase 7)
+
+**Principe** : une photographie documentaire de la transaction historique, jamais une nouvelle
+source de vérité.
+
+```
+Persisted financial data (Order/Payment/Settlement/Refund/Beneficiary)
+        ↓
+TransferReceiptModel
+        ↓
+ReceiptPdfGenerator (PDFBox)
+```
+
+et jamais `Order → recalcul du pricing courant → PDF`.
+
+- **Package** `order.receipt` (`model`/`pdf`/`service`), sibling des autres sous-packages
+  d'`order` — le justificatif est directement lié à l'`Order`, pas un module racine séparé.
+  Endpoint ajouté additivement sur le `OrderController` existant, même patron que
+  `/{id}/tracking` (Phase 3) : aucune mutation, aucun changement aux endpoints déjà en place.
+- **Librairie PDF** : aucune dépendance PDF préexistante (audit `pom.xml`) — Apache PDFBox
+  ajouté (licence Apache 2.0, projet Apache Software Foundation ; jamais iText 7/AGPL). Rendu
+  texte simple (pas de HTML/CSS), suffisant pour un document à sections fixes.
+- **Modèle** (`TransferReceiptModel`) : uniquement des champs réellement portés par les entités
+  — `orderId`/`transactionReference` (`Order.reference`)/dates/statut/montants/`customerRate`
+  viennent exclusivement des colonnes déjà figées d'`Order` (copie du `Quote` au moment de sa
+  création). `paymentReference` = `Payment.transactionReference`, `settlementReference` =
+  `Settlement.settlementReference` — jamais une référence documentaire inventée. `currencyPair`
+  n'est pas une colonne d'`Order` : réutilise la constante déjà existante
+  `RateProvider.DEFAULT_CURRENCY_PAIR` (même choix que les Phases 5/6), pas un nouveau champ.
+- **`OrderReceiptService`** : aucune dépendance vers `RateEngine`/`SettingsService`/tout pricing
+  courant — garantie structurelle identique à `PublicRateSnapshotService` (Phase 5) et
+  `RateAlertService` (Phase 6). Chargement ciblé par identifiant exact (ordre, bénéficiaire,
+  client, paiement, règlement, remboursement), jamais de `findAll` — même patron que
+  `OrderTrackingService`.
+- **Bénéficiaire** : exclusivement le snapshot `Beneficiary` de l'ordre, jamais le `Supplier`
+  courant — une modification ultérieure du fournisseur (banque/compte) n'a donc structurellement
+  aucun effet sur un justificatif déjà émis, prouvé par test dédié (banque A/compte 1111 à la
+  création, fournisseur modifié en banque B/2222 ensuite, justificatif toujours banque A/1111
+  masqué).
+- **Minimisation des données sensibles** : l'identifiant du bénéficiaire (compte bancaire/Alipay/
+  WeChat) est **masqué** (`******1234`, mêmes 4 derniers caractères que `SupplierService#mask`)
+  — décision volontairement plus stricte que la vue détail d'un `Supplier` (qui renvoie le
+  compte en clair à son propriétaire) : un PDF est un document exportable/imprimable/partageable,
+  un risque de fuite plus élevé qu'une réponse JSON éphémère.
+- **Disponibilité** : uniquement pour un `Order` `COMPLETED` — `409 INVALID_ORDER_STATE` sinon
+  (code déjà existant, réutilisé, aucun nouveau code d'erreur). Aucun justificatif provisoire
+  inventé pour un ordre encore en cours.
+- **Remboursement (`Refund`)** : section optionnelle, affichée uniquement si un `Refund` existe
+  pour le paiement, **quel que soit son statut** (y compris `REJECTED`, contrairement à la
+  timeline de suivi de la Phase 3 qui masque un `REJECTED` historique) — le justificatif doit
+  représenter fidèlement ce qui existe réellement. `Order.status` reste `COMPLETED` dans tous les
+  cas : un remboursement n'annule jamais rétroactivement le transfert initial (même invariant que
+  `Refund` lui-même).
+- **Storage** : **option A retenue — génération à la demande, aucune persistance.** Le module
+  `FileStorageService` existant ne permet pas de clé déterministe (`store(...)` génère toujours
+  un chemin `{répertoire}/{année}/{mois}/{uuid}.{ext}`, jamais dérivé de l'appelant) ; répliquer
+  ce pattern pour le justificatif aurait exigé une nouvelle colonne (clé de stockage) sur
+  `Order`, donc une migration — explicitement déconseillée par la mission en l'absence de besoin
+  réel. Le document est petit (quelques Ko de texte), reproductible à l'identique à chaque appel
+  (section "déterminisme" ci-dessous) : régénérer à la demande est strictement équivalent à le
+  relire, sans le coût d'une migration ni d'un fichier orphelin non suivi en base.
+- **Déterminisme** : le même `Order` produit toujours le même contenu financier/bénéficiaire —
+  aucun horodatage de génération (`generatedAt`) inséré dans le document, pour rester simple à
+  tester et rigoureusement déterministe.
+- **Sécurité / ownership** : authentifié (`401` sinon), `OwnershipService.assertOwnedBy` — ordre
+  d'un autre utilisateur ou inexistant → `404 ORDER_NOT_FOUND` dans les deux cas, jamais `403`
+  (aucune fuite d'existence). `Content-Type: application/pdf`,
+  `Content-Disposition: attachment; filename="transaction-{reference}.pdf"` (nom dérivé de la
+  référence générée côté serveur, jamais d'une entrée utilisateur), `X-Content-Type-Options:
+  nosniff`. Aucune URL publique/pré-signée — le PDF transite uniquement en streaming contrôlé par
+  le backend, jamais un lien permanent.
+- **Lecture seule** : `@Transactional(readOnly = true)`, aucun verrou pessimiste (aucune mutation
+  à protéger — contrairement au reste du pipeline financier). Aucune notification, aucun audit
+  dédié (une simple consultation de document ne l'exige pas ; le projet n'a pas de politique
+  d'audit de téléchargement à réutiliser).
+- **Rate limiting** : `RateLimitFilter` ne limite aujourd'hui que des endpoints `POST` d'écriture
+  — `GET /api/v1/orders/{id}/receipt` n'y est pas soumis, comme toute lecture du backend. Signalé
+  sans être corrigé : la génération (rendu texte, quelques Ko) reste légère, mais deviendrait un
+  point à surveiller si le document se complexifiait (mise en page riche, images) ou si le volume
+  d'utilisateurs augmentait significativement.
+
+### Phase 8 — profil professionnel, historique enrichi, reporting Business
+
+**Principe** : « ONE financial core, MULTIPLE customer experiences ». Rien ici ne crée, ne
+modifie ni ne déclenche une transaction — `business` est un module de **lecture et de profil**
+posé à côté du pipeline, jamais dedans.
+
+#### `business_profiles` (`V26`) et la distinction PERSONAL/BUSINESS
+
+- **Table** : `id, user_id (UNIQUE), business_name, business_type, registration_number?,
+  country, city?, address?, created_at, updated_at, version`. `business_type` ∈
+  `IMPORTER | MERCHANT | SERVICES | OTHER` (`CHECK`, jamais un type ENUM PostgreSQL — même
+  convention que tout le schéma). Aucun index ajouté : l'index `btree` créé par
+  `UNIQUE(user_id)` couvre déjà la seule requête de lecture (`findByUserId`/`existsByUserId`).
+- **Aucune colonne `accountType` sur `users`** (décision d'architecture) : un utilisateur est
+  `BUSINESS` **si et seulement si** une ligne `business_profiles` existe pour lui, `PERSONAL`
+  sinon. Cette règle est encapsulée dans `BusinessProfileService.isBusinessUser(userId)` —
+  jamais dispersée en `if (profile != null)` dans un contrôleur.
+- **Hors périmètre volontaire** : aucun statut KYC (`PENDING_KYC`/`VERIFIED`/`REJECTED`/
+  `SUSPENDED`), aucune vérification RCCM/fiscale, aucun document légal. `registration_number`
+  reste optionnel. Ce n'est pas un moteur de conformité entreprise.
+
+#### `GET` / `PUT /api/v1/business-profile`
+
+- Ressource **singleton par utilisateur**, jamais adressée par identifiant dans l'URL.
+- `PUT` **idempotent** (`UpsertBusinessProfileRequest`) : crée si absent (`201`), met à jour
+  sinon (`200`). Le propriétaire vient **exclusivement** de l'utilisateur authentifié —
+  `userId` n'est jamais un champ du corps.
+- `GET` sans profil → `404 BUSINESS_PROFILE_NOT_FOUND` (jamais `403`) : l'utilisateur est alors
+  simplement `PERSONAL`.
+- **Concurrence** : deux `PUT` concurrents pour le même utilisateur ne peuvent pas créer deux
+  lignes — `uq_business_profiles_user` le garantit côté PostgreSQL ; la violation est convertie
+  en `409 DUPLICATE_RESOURCE` par `GlobalExceptionHandler` (aucun code de conversion ajouté).
+  Prouvé par test (`twoConcurrentCreations_forSameUser_resultInExactlyOneProfile`).
+- **Audit** : `BUSINESS_PROFILE_CREATED` / `BUSINESS_PROFILE_UPDATED` (nouvelles valeurs
+  `AuditAction`). Aucun audit sur les `GET` (profil, historique, résumé) — pas de politique
+  d'audit de lecture dans le projet.
+
+#### `GET /api/v1/orders/history` — historique enrichi
+
+- **Ouvert à tout utilisateur authentifié** (Personal comme Business) : même pipeline financier
+  pour les deux, l'historique n'est pas une fonction « premium ».
+- `OrderHistoryService` : simple projection en lecture seule au-dessus d'`Order`, aucune
+  mutation, aucune seconde source de vérité — même séparation que `OrderTrackingService`.
+- **Filtres tous optionnels** : `status`, `purpose`, `supplierId`, `from`, `to`
+  (`from <= createdAt < to`). Implémentés en JPQL avec le patron **paire
+  `hasXxx` (boolean) / `xxx` (valeur)** — jamais `:x IS NULL` seul (voir la note sur le bug de
+  type PostgreSQL plus bas). `userId` n'est **jamais** optionnel : un `supplierId` appartenant
+  à un autre utilisateur ne renvoie jamais ses données, il ne produit simplement aucun
+  résultat.
+- **Tri fixe** `createdAt DESC, id DESC`, non négociable par l'appelant : seuls le numéro et la
+  taille de page d'un `Pageable` fourni sont retenus (même convention que
+  `PublicRateSnapshotService`/`RateAlertService`).
+- **Vérité financière** : `amountXof`/`amountCny`/`feeXof`/`customerRate` proviennent
+  exclusivement des colonnes déjà figées d'`Order` (copie du `Quote`) — jamais un recalcul avec
+  le pricing courant.
+- **Pagination PostgreSQL** : `Page<Order>` via `OrderRepository.searchHistory(...)`, jamais un
+  `findAll()` global suivi d'un filtrage Java.
+
+#### `GET /api/v1/business/payments/summary` — reporting consolidé
+
+- **Réservé aux profils Business** : `isBusinessUser(userId) == false` → `404
+  BUSINESS_PROFILE_NOT_FOUND` (jamais `403` — convention du backend).
+- **Agrégation SQL** : `OrderRepository.aggregateByStatus(...)` (`SELECT new
+  OrderStatusAggregate(o.status, COUNT(o), COALESCE(SUM(...)))  ... GROUP BY o.status`) —
+  jamais un chargement des ordres suivi d'une somme Java. Une ligne par statut, consommée par
+  `BusinessPaymentReportService`.
+- **Convention de comptage** (la spec ne la fixait pas, documentée ici et dans le rapport de
+  clôture) : `transferCount`/`completedCount`/`cancelledCount`/`rejectedCount` portent sur
+  **tous les ordres** du périmètre ; `totalAmountXof`/`totalAmountCny`/`totalFeesXof` ne
+  somment que les ordres `COMPLETED` — un ordre annulé/rejeté n'a jamais déplacé d'argent,
+  l'inclure gonflerait un « volume traité » fictif.
+- **Séparation `Refund` / `Order`** : un `Refund` n'est **jamais** un transfert. Un
+  remboursement sur un ordre `COMPLETED` ne modifie ni `completedCount` ni aucun total (prouvé
+  par test `summary_refundOnCompletedOrder_neverAltersTheTotals`). `Order.status` ne connaît
+  aucune valeur `REFUNDED` — invariant déjà acté (voir Phase 3, `RefundService`).
+- **Vérité financière** : mêmes colonnes figées d'`Order`, aucune dépendance vers
+  `RateEngine`/`SettingsService`/tout pricing courant.
+
+#### Note — `AuditLogRepository.search` et l'inférence de type PostgreSQL
+
+Les vérifications d'audit de bout en bout de la Phase 8 ont révélé une **limitation
+préexistante** (hors périmètre de correction de cette phase) : `AuditLogRepository.search`
+utilise le patron `(:p IS NULL OR col = :p)` pour chaque filtre optionnel. Sous le protocole
+étendu de PostgreSQL, un paramètre dont l'unique occurrence syntaxique exploitable est
+`$n IS NULL` (ici la borne temporelle `from`) n'a **pas de type inférable au moment du
+Parse** → `ERROR: could not determine data type of parameter $n`, y compris quand une valeur
+concrète est passée (l'échec est au *parse*, avant le *bind*). Ce chemin n'avait jamais été
+exercé par un test avant la Phase 8. **Traitement retenu** : un finder dérivé additif
+`AuditLogRepository.findByEntityTypeAndEntityIdOrderByCreatedAtDesc(...)` (aucun paramètre
+optionnel, aucune modification de `search`), utilisé par les tests d'audit de la Phase 8.
+`search` — et l'endpoint `GET /api/admin/audit-logs` qui s'appuie dessus — reste à corriger
+(migration vers le patron `hasXxx`/`xxx` déjà employé par les Phases 5/8, ou `COALESCE`) :
+**RISQUE documenté**, à traiter dans le « Final Backend Audit / Pre-production Hardening ».
+
 ---
 
 # Partie I — Révision architecturale (Phase 2.5)
@@ -364,6 +816,8 @@ Une **simulation** reste stateless (comme en Phase 1) : elle interroge le `RateE
 
 Lorsque le client **confirme**, le système crée un `Quote` — snapshot immuable :
 
+> `marketRate`/`rateSourceId` ci-dessous `[SUPERSEDED → voir §G.7]` : depuis la Phase 3.1, ces colonnes s'appellent `breakEvenRate`/`costConfigurationId` et proviennent de `DailyCostRateConfiguration`, plus de `RateSource`. Le reste de ce tableau (marge, frais de service, montants) reste exact.
+
 | Champ | Rôle |
 |---|---|
 | `quoteId` | Identifiant public |
@@ -397,6 +851,54 @@ Quote expire
 Point important, différent d'une lecture naïve de la Phase 1 : le verrou démarre **à la création du devis confirmé**, pas à la simple simulation. Une simulation peut être répétée indéfiniment sans jamais démarrer de compte à rebours.
 
 Si le taux de marché change **entre la simulation et la confirmation** (le client a mis du temps à valider), le système ne fige pas silencieusement un taux obsolète : la confirmation renvoie `409 RATE_CHANGED` avec les nouvelles conditions, et le client doit obtenir un nouveau devis avant de continuer. Une fois le `Quote` créé et confirmé, en revanche, il est **immuable** jusqu'à son expiration ou sa consommation par un `Order` — exactement le comportement de verrouillage déjà spécifié en Phase 1, seul le point de départ change.
+
+### G.7 Phase 3.1 — le `Quote` se price depuis le coût de revient (`breakEvenRate`), plus depuis `RateSource`
+
+**Ce qui a changé** : G.4/G.5 ci-dessus décrivaient un `marketRate` saisi manuellement (`RateSource` → `ManualRateProvider`) comme base du `customerRate`. Depuis la Phase 3.1, cette base est le **coût de revient réel** de la chaîne d'approvisionnement XOF → USD → CNY, calculé par `CostRateCalculator` à partir de la dernière `DailyCostRateConfiguration` publiée par un administrateur. `market_rate`/`rate_source_id` sur `quotes` sont renommés `break_even_rate`/`cost_configuration_id` (migration `V18`).
+
+```
+DailyCostRateConfiguration (rateXofUsd, rateUsdCny, feeXofUsdPercent, feeUsdCnyFixedUsd, referenceAmountXof)
+        │
+        ▼
+CostRateCalculator.calculateBreakEven(...)          ← XOF -> USD -> CNY, AUCUNE marge ici
+        │
+        ▼
+breakEvenRate   (coût interne, XOF par CNY — JAMAIS exposé au client)
+        │
+        ▼
+RateEngine.price(basis, amount, breakEvenRate, marginPercentage, feePercentage, fixedFeeXof)
+        │                              │                    │
+        │                       + marge commerciale   + frais de service (axe séparé,
+        │                         (décision business)   inchangé depuis la Phase 3 :
+        ▼                                                SettingsService)
+customerRate = breakEvenRate × (1 + marginPercentage/100)   ← seule valeur exposée au client
+        │
+        ▼
+Quote (snapshot immuable : breakEvenRate, marginPercentage, customerRate, feeXof, netAmountXof, amountCny)
+```
+
+**Exemple numérique** (paramètres du jour, montant de référence 1 000 000 XOF) :
+
+| Entrée | Valeur |
+|---|---|
+| `rateXofUsd` | 583 |
+| `rateUsdCny` | 6.70 |
+| `feeXofUsdPercent` | 0.01 (fraction, = 1 %) |
+| `feeUsdCnyFixedUsd` | 1.50 USD |
+
+`netXof = 990 000` → `usdReceived ≈ 1698.1132` → `usdNet ≈ 1696.6132` → `cnyReceived ≈ 11 367.3085` → **`breakEvenRate ≈ 87.971572` XOF/CNY**. Avec une marge commerciale de 2 % : `customerRate = 87.971572 × 1.02 ≈ 89.730 XOF/CNY` — c'est cette seule valeur, plus les frais de service (`feePercentage`/`fixedFeeXof`, inchangés), que voit le client dans son `Quote`.
+
+**Ce qui n'a pas changé** :
+- `RateEngine` reste inchangé dans sa logique (arrondis, frais de service, sens SEND_XOF/RECEIVE_CNY) — seul son paramètre d'entrée passe de `MarketRate` (type spécifique à `rate.domain`) à un simple `BigDecimal baseRate`, qu'il ne cherche jamais à interpréter. Le moteur n'a donc jamais eu besoin de savoir d'où vient ce taux.
+- `RateSource`/`RateProvider`/`ManualRateProvider`/`AdminRateController` (`/api/admin/rates`) restent pleinement fonctionnels et **ne sont pas dépréciés** : `preferredrate` (`PreferredRateService`/`PreferredRateScheduler`) continue de s'appuyer dessus pour évaluer si le taux cible d'un client est atteint. Seule la création de `Quote` change de source.
+- `DailyCostRateConfiguration` n'a pas de notion de ligne « courante » à clôturer (contrairement à `rate_sources`) : chaque publication insère simplement une nouvelle ligne complète et immuable. La lecture de la configuration la plus récente (`ORDER BY created_at DESC LIMIT 1`) n'a donc besoin d'aucun verrou pessimiste — la garantie MVCC de PostgreSQL suffit à exclure qu'une transaction concurrente lise un mélange de deux publications.
+- Un `Quote` déjà créé reste un snapshot immuable : republier une configuration de coût ou changer la marge le lendemain ne le modifie jamais (mêmes garanties qu'en Phase 3).
+- `breakEvenRate` et `marginPercentage` ne sont, comme `marketRate` avant eux, **jamais exposés** dans `QuoteResponse` — seuls `customerRate`, les montants et les frais de service le sont.
+
+**Trois notions à ne jamais fusionner**, chacune indépendamment auditable :
+1. **Coût** (`feeXofUsdPercent`/`feeUsdCnyFixedUsd`) — le prix payé dans la chaîne d'approvisionnement, entre dans `breakEvenRate`.
+2. **Marge** (`marginPercentage`) — la décision commerciale appliquée par-dessus `breakEvenRate` par `RateEngine.applyMargin`.
+3. **Frais de service** (`feePercentage`/`fixedFeeXof`) — facturés explicitement au client, calculés par `RateEngine` sur le montant XOF, totalement indépendants de 1 et 2.
 
 ---
 

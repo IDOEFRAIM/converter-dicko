@@ -1,9 +1,19 @@
 <mat-toolbar class="toolbar">
   <span class="toolbar__brand">
-    <span class="toolbar__mark"><mat-icon>currency_exchange</mat-icon></span>
+    <span class="toolbar__mark"><img src="logo.png" alt="" /></span>
     Converter
   </span>
   <span class="toolbar__spacer"></span>
+  <button mat-icon-button [matMenuTriggerFor]="moreMenu" aria-label="Plus" class="toolbar__avatar">
+    <mat-icon>apps</mat-icon>
+  </button>
+  <mat-menu #moreMenu="matMenu">
+    <a mat-menu-item routerLink="/rates"><mat-icon>show_chart</mat-icon><span>Historique du taux</span></a>
+    <a mat-menu-item routerLink="/rate-alerts"><mat-icon>notifications_active</mat-icon><span>Alertes de taux</span></a>
+    <a mat-menu-item routerLink="/wallet"><mat-icon>account_balance_wallet</mat-icon><span>Portefeuille</span></a>
+    <a mat-menu-item routerLink="/preferred-rate"><mat-icon>tune</mat-icon><span>Taux preferentiel</span></a>
+    <a mat-menu-item routerLink="/business"><mat-icon>business_center</mat-icon><span>Espace pro</span></a>
+  </mat-menu>
   <button mat-icon-button routerLink="/notifications" aria-label="Notifications" class="toolbar__avatar">
     <mat-icon [matBadge]="unreadCount() > 0 ? unreadCount() : null" matBadgeColor="warn" matBadgeSize="small">
       notifications
@@ -29,6 +39,10 @@
   <a routerLink="/quote/new" routerLinkActive="bottom-nav__link--active" class="bottom-nav__link">
     <span class="bottom-nav__icon"><mat-icon>swap_horiz</mat-icon></span>
     <span>Envoyer</span>
+  </a>
+  <a routerLink="/suppliers" routerLinkActive="bottom-nav__link--active" class="bottom-nav__link">
+    <span class="bottom-nav__icon"><mat-icon>contacts</mat-icon></span>
+    <span>Fournisseurs</span>
   </a>
   <a routerLink="/history" routerLinkActive="bottom-nav__link--active" class="bottom-nav__link">
     <span class="bottom-nav__icon"><mat-icon>history</mat-icon></span>

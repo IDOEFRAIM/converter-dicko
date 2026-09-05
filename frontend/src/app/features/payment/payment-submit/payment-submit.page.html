@@ -1,17 +1,24 @@
-<h1 class="form-title">Soumettre le paiement</h1>
+<h1 class="form-title">Paiement du transfert</h1>
 
 @if (loading()) {
   <div class="loading-row"><mat-spinner diameter="32" /></div>
 } @else {
-  @if (errorMessage()) {
-    <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
-  }
-
   @if (!payment(); as p) {
     @if (order(); as o) {
+      <div class="panel payment-summary">
+        <p class="payment-summary__label">A payer</p>
+        <p class="payment-summary__amount metric">{{ o.amountXof | money: 'XOF' }}</p>
+        <p class="payment-summary__reference">Reference du transfert : #{{ o.reference }}</p>
+      </div>
+
+      @if (errorMessage()) {
+        <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+      }
+
+      <p class="step-label">1. Effectuez le paiement</p>
       <p class="instructions">
-        Envoyez <strong>{{ o.amountXof | money: 'XOF' }}</strong> via Mobile Money, puis renseignez la
-        reference de la transaction ci-dessous.
+        Envoyez <strong>{{ o.amountXof | money: 'XOF' }}</strong> via l'un des moyens ci-dessous, puis renseignez la
+        reference de la transaction.
       </p>
 
       <form [formGroup]="form" (ngSubmit)="submitPayment()" class="form">
@@ -42,11 +49,12 @@
           <input matInput formControlName="payerPhone" />
         </mat-form-field>
 
-        <button mat-flat-button class="brand-button form__submit" type="submit"  [disabled]="submitting()">
+        <button mat-flat-button class="brand-button form__submit" type="submit" [disabled]="submitting()">
           @if (submitting()) {
             <mat-spinner diameter="20" />
+            <span>Envoi en cours...</span>
           } @else {
-            Declarer le paiement
+            Envoyer le paiement
           }
         </button>
       </form>
@@ -56,7 +64,12 @@
       Paiement declare. Televersez une preuve (capture d'ecran ou recu) pour finaliser.
     </p>
 
+    @if (errorMessage()) {
+      <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+    }
+
     @if (!proofUploaded()) {
+      <p class="step-label">2. Ajoutez la preuve</p>
       <div class="upload-zone">
         <input
           type="file"

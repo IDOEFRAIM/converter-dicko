@@ -1,0 +1,125 @@
+<app-page-header
+  title="Espace professionnel"
+  [subtitle]="isBusiness() ? 'Votre profil et le suivi consolide de vos paiements' : 'Enregistrez votre entreprise pour acceder au reporting'"
+/>
+
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else if (errorMessage()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+} @else {
+
+  @if (isBusiness() && !editing()) {
+    <mat-card class="page-card">
+      <div class="business-profile__head">
+        <div>
+          <p class="business-profile__name">{{ profile()!.businessName }}</p>
+          <p class="business-profile__type">{{ typeLabels[profile()!.businessType] }}</p>
+        </div>
+        <button mat-stroked-button (click)="startEdit()">
+          <mat-icon>edit</mat-icon> Modifier
+        </button>
+      </div>
+      <dl class="detail-list">
+        @if (profile()!.registrationNumber) {
+          <div><dt>Immatriculation</dt><dd>{{ profile()!.registrationNumber }}</dd></div>
+        }
+        <div><dt>Pays</dt><dd>{{ profile()!.country }}</dd></div>
+        @if (profile()!.city) { <div><dt>Ville</dt><dd>{{ profile()!.city }}</dd></div> }
+        @if (profile()!.address) { <div><dt>Adresse</dt><dd>{{ profile()!.address }}</dd></div> }
+        <div><dt>Depuis le</dt><dd>{{ profile()!.createdAt | date: 'dd/MM/yyyy' }}</dd></div>
+      </dl>
+    </mat-card>
+  }
+
+  @if (showForm()) {
+    @if (!isBusiness()) {
+      <p class="form-notice">
+        Vous n'avez pas encore de profil professionnel. Le creer active le reporting consolide ;
+        cela ne change rien a vos transferts existants.
+      </p>
+    }
+    <form class="form" [formGroup]="form" (ngSubmit)="save()">
+      <mat-form-field appearance="outline" class="form__field">
+        <mat-label>Nom de l'entreprise</mat-label>
+        <input matInput formControlName="businessName" maxlength="160" autocomplete="organization" />
+        @if (form.controls.businessName.invalid && form.controls.businessName.touched) {
+          <mat-error>Le nom de l'entreprise est obligatoire.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form__field">
+        <mat-label>Type d'activite</mat-label>
+        <mat-select formControlName="businessType">
+          @for (option of typeOptions; track option.value) {
+            <mat-option [value]="option.value">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form__field">
+        <mat-label>Numero d'immatriculation (optionnel)</mat-label>
+        <input matInput formControlName="registrationNumber" maxlength="60" autocomplete="off" />
+      </mat-form-field>
+
+      <div class="form__row">
+        <mat-form-field appearance="outline" class="form__field">
+          <mat-label>Pays</mat-label>
+          <input matInput formControlName="country" maxlength="100" autocomplete="country-name" />
+          @if (form.controls.country.invalid && form.controls.country.touched) {
+            <mat-error>Le pays est obligatoire.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="form__field">
+          <mat-label>Ville (optionnel)</mat-label>
+          <input matInput formControlName="city" maxlength="100" autocomplete="address-level2" />
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="form__field">
+        <mat-label>Adresse (optionnel)</mat-label>
+        <input matInput formControlName="address" maxlength="255" autocomplete="street-address" />
+      </mat-form-field>
+
+      <div class="form__actions">
+        @if (isBusiness()) {
+          <button mat-stroked-button type="button" (click)="cancelEdit()" [disabled]="saving()">Annuler</button>
+        }
+        <button mat-flat-button class="brand-button" type="submit" [disabled]="saving()">
+          @if (saving()) {
+            <mat-spinner diameter="20" />
+          } @else {
+            {{ isBusiness() ? 'Enregistrer' : 'Creer le profil' }}
+          }
+        </button>
+      </div>
+    </form>
+  }
+
+  @if (isBusiness()) {
+    <h2 class="business-section-title">Reporting consolide</h2>
+    @if (summaryLoading()) {
+      <div class="loading-row"><mat-spinner diameter="28" /></div>
+    } @else if (summaryError()) {
+      <p class="form-notice form-notice--warn">{{ summaryError() }}</p>
+    } @else if (summary(); as s) {
+      <div class="kpi-grid">
+        <div class="kpi"><span class="kpi__value">{{ s.transferCount }}</span><span class="kpi__label">Transferts</span></div>
+        <div class="kpi"><span class="kpi__value">{{ s.completedCount }}</span><span class="kpi__label">Termines</span></div>
+        <div class="kpi"><span class="kpi__value">{{ s.cancelledCount }}</span><span class="kpi__label">Annules</span></div>
+        <div class="kpi"><span class="kpi__value">{{ s.rejectedCount }}</span><span class="kpi__label">Rejetes</span></div>
+      </div>
+      <mat-card class="page-card">
+        <dl class="detail-list">
+          <div><dt>Total envoye (termines)</dt><dd>{{ s.totalAmountXof | money: 'XOF' }}</dd></div>
+          <div><dt>Total recu en Chine</dt><dd>{{ s.totalAmountCny | money: 'CNY' }}</dd></div>
+          <div><dt>Total des frais</dt><dd>{{ s.totalFeesXof | money: 'XOF' }}</dd></div>
+        </dl>
+        <p class="business-note">
+          Montants agreges a partir des seuls ordres termines. Les remboursements ne sont pas
+          comptes comme des transferts.
+        </p>
+      </mat-card>
+    }
+  }
+}

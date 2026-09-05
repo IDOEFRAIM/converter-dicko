@@ -1,3 +1,35 @@
+.payment-summary {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.payment-summary__label {
+  margin: 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--mat-sys-on-surface-variant, #757575);
+}
+
+.payment-summary__amount {
+  margin: 0.25rem 0;
+  font-size: 1.75rem;
+  color: var(--brand-navy, #1b325e);
+}
+
+.payment-summary__reference {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant, #616161);
+}
+
+.step-label {
+  margin: 0 0 0.375rem;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--brand-navy, #1b325e);
+}
+
 .instructions {
   color: var(--mat-sys-on-surface-variant, #616161);
   margin: 0 0 1.25rem;
@@ -25,5 +57,12 @@
   gap: 0.5rem;
   cursor: pointer;
   font-weight: 600;
-  color: var(--mat-sys-primary, #1565c0);
+  color: var(--brand-navy, #1b325e);
+}
+
+.form__submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }

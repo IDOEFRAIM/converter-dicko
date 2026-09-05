@@ -1,61 +1,91 @@
-<app-page-header
-  title="Historique"
-  [subtitle]="totalElements() > 0 ? totalElements() + ' transfert' + (totalElements() > 1 ? 's' : '') + ' au total' : 'Vos ordres de transfert'"
-/>
+<app-page-header title="Historique" subtitle="Tous vos transferts vers la Chine" />
 
-@if (!loading() && orders().length > 0) {
-  <mat-button-toggle-group
-    class="history-filter"
-    [value]="filter()"
-    (change)="setFilter($event.value)"
-    aria-label="Filtrer par statut"
-  >
-    <mat-button-toggle value="ALL">Tous</mat-button-toggle>
-    <mat-button-toggle value="IN_PROGRESS">En cours</mat-button-toggle>
-    <mat-button-toggle value="COMPLETED">Termines</mat-button-toggle>
-    <mat-button-toggle value="CLOSED">Clotures</mat-button-toggle>
-  </mat-button-toggle-group>
-}
+<form class="history-filters" [formGroup]="filters" (ngSubmit)="applyFilters()">
+  <mat-form-field appearance="outline">
+    <mat-label>Statut</mat-label>
+    <mat-select formControlName="status">
+      <mat-option [value]="''">Tous</mat-option>
+      @for (status of statusOptions; track status) {
+        <mat-option [value]="status">{{ status }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Motif</mat-label>
+    <mat-select formControlName="purpose">
+      <mat-option [value]="''">Tous</mat-option>
+      @for (option of purposeOptions; track option.value) {
+        <mat-option [value]="option.value">{{ option.label }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Fournisseur</mat-label>
+    <mat-select formControlName="supplierId">
+      <mat-option [value]="''">Tous</mat-option>
+      @for (supplier of suppliers(); track supplier.id) {
+        <mat-option [value]="supplier.id">{{ supplier.displayName }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Du</mat-label>
+    <input matInput type="date" formControlName="from" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Au</mat-label>
+    <input matInput type="date" formControlName="to" />
+  </mat-form-field>
+
+  <div class="history-filters__actions">
+    <button mat-stroked-button type="button" (click)="resetFilters()">Reinitialiser</button>
+    <button mat-flat-button class="brand-button" type="submit">Filtrer</button>
+  </div>
+</form>
 
 @if (loading()) {
   <div class="loading-row"><mat-spinner diameter="32" /></div>
 } @else if (errorMessage()) {
   <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
 } @else if (orders().length === 0) {
-  <app-empty-state title="Aucun transfert" description="Votre historique s'affichera ici." />
-} @else if (filteredOrders().length === 0) {
-  <app-empty-state title="Aucun resultat" description="Aucun transfert ne correspond a ce filtre." />
+  <app-empty-state
+    title="Aucun transfert"
+    description="Aucun ordre ne correspond a ces criteres."
+  />
 } @else {
-  @for (order of filteredOrders(); track order.id) {
-    <a [routerLink]="['/orders', order.id]" class="history-row page-card">
-      <span class="history-row__icon" [class]="'history-row__icon--' + order.status">
-        <mat-icon>swap_horiz</mat-icon>
-      </span>
-      <div class="history-row__main">
-        <p class="history-row__reference">{{ order.reference }}</p>
-        <p class="history-row__date">{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</p>
-      </div>
-      <div class="history-row__amounts">
-        <p>{{ order.amountXof | money: 'XOF' }} &rarr; {{ order.amountCny | money: 'CNY' }}</p>
-        <app-status-badge [status]="order.status" />
-      </div>
-    </a>
-  }
+  <p class="history-count">{{ totalElements() }} transfert(s)</p>
+  <ul class="history-list">
+    @for (order of orders(); track order.id) {
+      <li>
+        <a [routerLink]="['/orders', order.id]" class="page-card history-card">
+          <div class="history-card__main">
+            <div class="history-card__top">
+              <span class="history-card__reference">{{ order.reference }}</span>
+              <app-status-badge [status]="order.status" />
+            </div>
+            <p class="history-card__amounts">
+              {{ order.amountXof | money: 'XOF' }} &rarr; {{ order.amountCny | money: 'CNY' }}
+            </p>
+            <p class="history-card__meta">
+              @if (order.purpose) { {{ purposeLabels[order.purpose] }} · }
+              {{ order.createdAt | date: 'dd/MM/yyyy' }}
+            </p>
+          </div>
+          <mat-icon>chevron_right</mat-icon>
+        </a>
+      </li>
+    }
+  </ul>
 
   @if (totalPages() > 1) {
-    <div class="pagination">
-      <button mat-icon-button (click)="previousPage()" [disabled]="page() === 0" aria-label="Page precedente">
-        <mat-icon>chevron_left</mat-icon>
-      </button>
+    <div class="history-pager">
+      <button mat-stroked-button (click)="previousPage()" [disabled]="page() === 0">Precedent</button>
       <span>Page {{ page() + 1 }} / {{ totalPages() }}</span>
-      <button
-        mat-icon-button
-        (click)="nextPage()"
-        [disabled]="page() + 1 >= totalPages()"
-        aria-label="Page suivante"
-      >
-        <mat-icon>chevron_right</mat-icon>
-      </button>
+      <button mat-stroked-button (click)="nextPage()" [disabled]="page() + 1 >= totalPages()">Suivant</button>
     </div>
   }
 }

@@ -23,13 +23,14 @@
   height: 34px;
   flex: 0 0 auto;
   border-radius: 10px;
-  background: var(--brand-gradient);
-  color: #fff;
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
 
-  mat-icon {
-    font-size: 19px;
-    width: 19px;
-    height: 19px;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
 }
 
@@ -39,7 +40,7 @@
   font-weight: 800;
   font-size: 1rem;
   letter-spacing: -0.01em;
-  color: #0a2a70;
+  color: var(--brand-navy, #1b325e);
 
   small {
     font-weight: 600;
@@ -76,9 +77,9 @@ mat-nav-list a[mat-list-item] {
 }
 
 .admin-nav-active {
-  --mat-list-list-item-label-text-color: #1a56db;
-  --mat-list-list-item-leading-icon-color: #1a56db;
-  background: rgba(26, 86, 219, 0.08);
+  --mat-list-list-item-label-text-color: var(--brand-navy, #1b325e);
+  --mat-list-list-item-leading-icon-color: var(--brand-navy, #1b325e);
+  background: rgba(27, 50, 94, 0.08);
   font-weight: 700;
 }
 

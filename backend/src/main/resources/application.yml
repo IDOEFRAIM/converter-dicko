@@ -69,7 +69,15 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        # "metrics" ajoute (audit de fermeture) : Micrometer core est deja
+        # present transitivement via spring-boot-starter-actuator, aucune
+        # nouvelle dependance (pas de registre Prometheus, non necessaire
+        # pour le pilote). Donne a un operateur authentifie une visibilite
+        # minimale (distribution des codes HTTP via http.server.requests,
+        # sante JVM) sans aucun outil externe. Meme niveau d'exposition que
+        # "info" deja present : authentifie, pas necessairement ADMIN (voir
+        # SecurityConfig — seul /actuator/health/** est public).
+        include: health,info,metrics
   endpoint:
     health:
       probes:
@@ -102,6 +110,17 @@ app:
     max-attempts: ${LOGIN_MAX_ATTEMPTS:5}
     lock-duration-minutes: ${LOGIN_LOCK_MINUTES:15}
 
+  # Anti-abus/flooding sur l'inscription et les endpoints d'ecriture
+  # authentifies les plus exposes (devis, ordre, soumission de paiement).
+  # Voir RateLimitFilter : limite de volume par IP, jamais remise a zero
+  # par un succes (contrairement a login-protection, qui protege contre le
+  # bourrage d'identifiants).
+  abuse-protection:
+    register-max-attempts: ${ABUSE_REGISTER_MAX_ATTEMPTS:5}
+    register-window-minutes: ${ABUSE_REGISTER_WINDOW_MINUTES:15}
+    write-max-attempts: ${ABUSE_WRITE_MAX_ATTEMPTS:60}
+    write-window-minutes: ${ABUSE_WRITE_WINDOW_MINUTES:5}
+
   storage:
     # Hors racine web : jamais servi statiquement, uniquement via un
     # endpoint authentifie qui verifie la propriete de la ressource.
@@ -115,6 +134,12 @@ app:
     last-name: ${ADMIN_LAST_NAME:Administrator}
 
 logging:
+  # %X{requestId} : identifiant de correlation par requete (voir RequestIdFilter), present dans
+  # CHAQUE ligne de log via le seul point d'extension officiellement documente pour enrichir le
+  # pattern par defaut de Spring Boot sans le redefinir entierement (moins fragile qu'un pattern
+  # console/file complet recopie a la main).
+  pattern:
+    level: "%5p [%X{requestId}]"
   level:
     root: INFO
     com.converter: INFO

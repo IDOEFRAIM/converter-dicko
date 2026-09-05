@@ -1,5 +1,7 @@
 package com.converter.support;
 
+import com.converter.rate.cost.dto.CostRateConfigurationResponse;
+import com.converter.rate.cost.dto.PublishCostRateConfigurationRequest;
 import com.converter.rate.dto.PublishRateRequest;
 import com.converter.rate.dto.RateSourceResponse;
 import com.converter.quote.dto.CreateQuoteRequest;
@@ -22,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 /**
  * Socle partage des tests d'integration Rate Engine + Quote : creation
@@ -58,7 +61,19 @@ public abstract class AbstractRateQuoteIT extends AbstractIntegrationTest {
                 createUser(RoleCode.ADMIN).getId());
     }
 
+    /**
+     * KYC deja verifie par defaut : l'immense majorite des tests de cette suite ne portent pas
+     * sur la verification d'identite elle-meme, seulement sur un flux (paiement, remboursement,
+     * fournisseur, tracking...) qui cree incidemment un ordre — souvent au-dela du seuil KYC
+     * (voir {@code SettingKey.KYC_REQUIRED_THRESHOLD_XOF}). Verifier par defaut evite de repeter
+     * {@code verifyKyc(...)} dans des dizaines de fichiers sans rapport avec le KYC. Les tests qui
+     * portent specifiquement sur la verification d'identite utilisent {@link #createUnverifiedUser}.
+     */
     protected User createUser(RoleCode roleCode) {
+        return verifyKyc(createUnverifiedUser(roleCode));
+    }
+
+    protected User createUnverifiedUser(RoleCode roleCode) {
         Role role = roleRepository.findByCode(roleCode).orElseThrow();
         User user = new User(uniquePhone(), passwordEncoder.encode("irrelevant-for-tests"), "Test", roleCode.name());
         user.addRole(role);
@@ -69,10 +84,28 @@ public abstract class AbstractRateQuoteIT extends AbstractIntegrationTest {
         return jwtService.generateToken(user);
     }
 
+    /** Marque l'utilisateur comme verifie (KYC), necessaire pour un ordre au-dela du seuil configure. */
+    protected User verifyKyc(User user) {
+        user.verifyKyc(user.getId(), java.time.Instant.now());
+        return userRepository.saveAndFlush(user);
+    }
+
     protected String adminToken() {
         return tokenFor(createUser(RoleCode.ADMIN));
     }
 
+    /**
+     * Publie a la fois un taux manuel ({@code rate_sources}, toujours
+     * utilise par {@code preferredrate}) et une configuration de cout
+     * ({@code daily_cost_rate_configurations}, utilisee par la creation
+     * de devis depuis la Phase 3.1) dont le {@code breakEvenRate}
+     * calcule est <b>exactement</b> {@code cfaPerCny} : en choisissant
+     * {@code rateUsdCny = 1} et des frais nuls, {@code breakEvenRate =
+     * rateXofUsd / 1 = rateXofUsd}, ce qui permet a tous les tests
+     * existants de continuer a raisonner sur "le taux publie" sans
+     * changement, tout en exercant reellement le nouveau chemin de
+     * cout.
+     */
     protected RateSourceResponse publishRate(String adminToken, String cfaPerCny) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(adminToken);
@@ -80,6 +113,38 @@ public abstract class AbstractRateQuoteIT extends AbstractIntegrationTest {
                 "/api/admin/rates", HttpMethod.POST,
                 new HttpEntity<>(new PublishRateRequest(new BigDecimal(cfaPerCny), "test"), headers),
                 new ParameterizedTypeReference<ApiResponse<RateSourceResponse>>() {
+                });
+        publishCostRate(adminToken, cfaPerCny);
+        return response.getBody().data();
+    }
+
+    protected CostRateConfigurationResponse publishCostRate(String adminToken, String breakEvenRate) {
+        return publishCostRate(adminToken, breakEvenRate, "1", "0", "0", "1000000");
+    }
+
+    /** Variante avec les vrais parametres de la chaine XOF -&gt; USD -&gt; CNY, pour les tests qui veulent verifier le calcul du breakEvenRate lui-meme plutot que de le forcer a une valeur donnee. */
+    protected CostRateConfigurationResponse publishCostRate(String adminToken, String rateXofUsd, String rateUsdCny,
+                                                            String feeXofUsdPercent, String feeUsdCnyFixedUsd,
+                                                            String referenceAmountXof) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(adminToken);
+        ResponseEntity<ApiResponse<CostRateConfigurationResponse>> response = restTemplate.exchange(
+                "/api/admin/cost-rates", HttpMethod.POST,
+                new HttpEntity<>(new PublishCostRateConfigurationRequest(
+                        LocalDate.now(), new BigDecimal(rateXofUsd), new BigDecimal(rateUsdCny),
+                        new BigDecimal(feeXofUsdPercent), new BigDecimal(feeUsdCnyFixedUsd),
+                        new BigDecimal(referenceAmountXof), "test"), headers),
+                new ParameterizedTypeReference<ApiResponse<CostRateConfigurationResponse>>() {
+                });
+        return response.getBody().data();
+    }
+
+    protected CostRateConfigurationResponse currentCostRateConfiguration(String adminToken) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(adminToken);
+        ResponseEntity<ApiResponse<CostRateConfigurationResponse>> response = restTemplate.exchange(
+                "/api/admin/cost-rates/current", HttpMethod.GET, new HttpEntity<>(headers),
+                new ParameterizedTypeReference<ApiResponse<CostRateConfigurationResponse>>() {
                 });
         return response.getBody().data();
     }

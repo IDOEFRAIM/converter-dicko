@@ -12,5 +12,7 @@ public enum NotificationType {
     PREFERRED_RATE_EXPIRED,
     EXCHANGE_CANCELLED,
     /** L'ordre a expire faute de paiement dans le delai imparti ; sa reservation a ete liberee (passe 2, P2-1). */
-    ORDER_EXPIRED
+    ORDER_EXPIRED,
+    /** Le taux client public a atteint l'objectif d'une {@code RateAlert} (Phase 6). */
+    RATE_ALERT_TRIGGERED
 }

@@ -1,48 +1,113 @@
-<section class="hero">
-  <div class="hero__glow"></div>
+<section class="hero panel">
   <p class="hero__greeting">Bonjour {{ currentUser()?.firstName }}</p>
-  <h1 class="hero__title">Envoyez de l'argent en Chine</h1>
-  <p class="hero__subtitle">Taux transparent, suivi en temps reel, du depot au reglement.</p>
-  <a mat-flat-button routerLink="/quote/new" class="hero__cta">
-    <mat-icon>swap_horiz</mat-icon>
-    Nouveau transfert
-  </a>
-</section>
 
-<section class="quick-links">
-  <a routerLink="/wallet" class="quick-link">
-    <span class="quick-link__icon"><mat-icon>account_balance_wallet</mat-icon></span>
-    <span>Wallet</span>
-  </a>
-  <a routerLink="/preferred-rate" class="quick-link">
-    <span class="quick-link__icon"><mat-icon>trending_up</mat-icon></span>
-    <span>Taux preferentiel</span>
+  <app-corridor />
+
+  <div class="hero__rate-row">
+    <div class="hero__rate-block">
+      <span class="hero__rate-label">Taux du moment</span>
+      @if (loading()) {
+        <mat-spinner diameter="24" />
+      } @else if (latestRate(); as rate) {
+        <span class="hero__rate metric">1 CNY = {{ rate.customerRate }} XOF</span>
+        <span class="hero__rate-date">Mis a jour le {{ rate.recordedAt | date: 'dd/MM HH:mm' }}</span>
+      } @else {
+        <span class="hero__rate-date">Taux non disponible pour le moment.</span>
+      }
+    </div>
+  </div>
+
+  <a mat-flat-button routerLink="/quote/new" class="hero__cta brand-button">
+    <mat-icon>storefront</mat-icon>
+    Payer un fournisseur
   </a>
 </section>
 
 <section>
-  <h2 class="section-title">Ordres recents</h2>
+  <h2 class="section-title">Derniere operation</h2>
 
   @if (loading()) {
     <div class="loading-row"><mat-spinner diameter="32" /></div>
-  } @else if (recentOrders().length === 0) {
+  } @else if (lastOrder(); as order) {
+    <div class="panel last-order">
+      <div class="last-order__main">
+        <p class="last-order__name">{{ lastOrderSupplierName() ?? order.reference }}</p>
+        <p class="last-order__amount">
+          {{ order.amountXof | money: 'XOF' }} &rarr; {{ order.amountCny | money: 'CNY' }}
+        </p>
+        <app-status-badge [status]="order.status" />
+      </div>
+      <div class="last-order__actions">
+        <a mat-stroked-button [routerLink]="['/orders', order.id, 'tracking']">
+          <mat-icon>timeline</mat-icon>
+          Suivre
+        </a>
+        @if (order.supplierId) {
+          <a mat-flat-button class="brand-button" [routerLink]="['/suppliers', order.supplierId, 'pay-again']">
+            Payer a nouveau
+          </a>
+        }
+      </div>
+    </div>
+  } @else {
     <app-empty-state
-      title="Aucun ordre pour le moment"
-      description="Vos transferts apparaitront ici une fois crees."
+      title="Aucune operation pour le moment"
+      description="Payez votre premier fournisseur chinois pour voir vos operations apparaitre ici."
+    />
+  }
+</section>
+
+<section>
+  <div class="section-header">
+    <h2 class="section-title">Fournisseurs</h2>
+    <a routerLink="/suppliers" class="section-header__link">Tout voir</a>
+  </div>
+
+  @if (suppliersLoading()) {
+    <div class="loading-row"><mat-spinner diameter="32" /></div>
+  } @else if (favoriteSuppliers().length === 0) {
+    <app-empty-state
+      title="Aucun fournisseur favori"
+      description="Ajoutez un fournisseur et marquez-le favori pour le retrouver ici."
     />
   } @else {
-    @for (order of recentOrders(); track order.id) {
-      <a [routerLink]="['/orders', order.id]" class="order-row page-card">
-        <div>
-          <p class="order-row__reference">{{ order.reference }}</p>
-          <p class="order-row__amount">{{ order.amountXof | money: 'XOF' }} &rarr; {{ order.amountCny | money: 'CNY' }}</p>
-        </div>
-        <app-status-badge [status]="order.status" />
+    <div class="supplier-chips">
+      @for (supplier of favoriteSuppliers(); track supplier.id) {
+        <a [routerLink]="['/suppliers', supplier.id]" class="supplier-chip">{{ supplier.displayName }}</a>
+      }
+      <a routerLink="/suppliers/new" class="supplier-chip supplier-chip--add">
+        <mat-icon>add</mat-icon>
       </a>
-    }
-    <a routerLink="/history" class="section-link">
-      <mat-icon>history</mat-icon>
-      Voir tout mon historique
-    </a>
+    </div>
   }
+</section>
+
+<section>
+  <div class="section-header">
+    <h2 class="section-title">Taux</h2>
+    <a routerLink="/rates" class="section-header__link">Historique</a>
+  </div>
+
+  <div class="panel rate-panel">
+    @if (sparklinePoints()) {
+      <svg
+        class="rate-panel__chart"
+        [attr.viewBox]="'0 0 ' + sparklineWidth + ' ' + sparklineHeight"
+        preserveAspectRatio="none"
+        role="img"
+        aria-label="Evolution recente du taux client"
+      >
+        <polyline
+          [attr.points]="sparklinePoints()"
+          fill="none"
+          stroke="var(--brand-navy, #1b325e)"
+          stroke-width="2"
+        />
+      </svg>
+    }
+    <a routerLink="/rate-alerts" mat-stroked-button class="rate-panel__cta">
+      <mat-icon>notifications_active</mat-icon>
+      Creer une alerte
+    </a>
+  </div>
 </section>

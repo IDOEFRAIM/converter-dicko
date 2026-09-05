@@ -33,7 +33,10 @@ public enum SettingKey {
     /** Ecart tolere, en XOF, entre le montant recu declare et le montant attendu d'un paiement ; 0 = exact (passe 2, P2-2). */
     PAYMENT_AMOUNT_TOLERANCE_XOF(SettingType.DECIMAL),
     /** Age maximal, en minutes, d'une cotation encore consideree CURRENT ; 0 = pas de controle de fraicheur (passe 2, P2-7). */
-    RATE_MAX_AGE_MINUTES(SettingType.INTEGER);
+    RATE_MAX_AGE_MINUTES(SettingType.INTEGER),
+
+    /** Montant XOF (inclus) a partir duquel la verification d'identite (KYC) est obligatoire pour creer un ordre. */
+    KYC_REQUIRED_THRESHOLD_XOF(SettingType.DECIMAL);
 
     private final SettingType type;
 

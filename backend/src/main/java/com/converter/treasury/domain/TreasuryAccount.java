@@ -110,7 +110,21 @@ public class TreasuryAccount extends BaseEntity {
         }
     }
 
+    /**
+     * Decaissement direct, hors reservation (ex. remboursement client) : ne touche jamais
+     * {@code reservedBalance}, contrairement a {@link #consume}. La garde compare au disponible
+     * ({@code available()}), pas au seul {@code balance} : meme si XOF n'a aujourd'hui aucune
+     * reservation active, ce decaissement ne doit jamais pouvoir faire passer {@code balance}
+     * sous {@code reservedBalance} — invariant identique a celui deja applique dans {@code adjust()}.
+     * Garde applicative explicite, en complement (jamais en remplacement) de
+     * {@code ck_treasury_accounts_balance_positive} : un solde insuffisant doit produire une
+     * erreur metier claire, pas une violation SQL opaque.
+     */
     public void withdrawUnreserved(BigDecimal amount, Instant now) {
+        if (amount.compareTo(this.available()) > 0) {
+            throw new BusinessException(ErrorCode.INSUFFICIENT_TREASURY,
+                    "Solde " + currency + " insuffisant : disponible " + this.available() + ", demande " + amount + ".");
+        }
         this.balance = this.balance.subtract(amount);
         this.updatedAt = now;
     }

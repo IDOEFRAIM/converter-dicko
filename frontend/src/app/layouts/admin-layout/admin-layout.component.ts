@@ -31,7 +31,8 @@ export class AdminLayoutComponent {
   readonly currentUser = this.auth.currentUser;
 
   readonly links = [
-    { path: '/admin/rates', icon: 'currency_exchange', label: 'Taux' },
+    { path: '/admin/cost-rates', icon: 'calculate', label: 'Coût de revient' },
+    { path: '/admin/rates', icon: 'currency_exchange', label: 'Taux préférentiel' },
     { path: '/admin/orders', icon: 'receipt_long', label: 'Ordres' },
     { path: '/admin/payments', icon: 'payments', label: 'Paiements' },
     { path: '/admin/settlements', icon: 'send', label: 'Reglements' },

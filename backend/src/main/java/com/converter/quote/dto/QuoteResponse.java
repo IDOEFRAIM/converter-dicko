@@ -11,9 +11,10 @@ import java.util.UUID;
 /**
  * Devis tel qu'expose au client.
  *
- * <p><b>Ne porte deliberement pas {@code marketRate} ni
+ * <p><b>Ne porte deliberement pas {@code breakEvenRate} ni
  * {@code marginPercentage}</b> : ce sont des donnees commercialement
- * sensibles (voir docs/ARCHITECTURE.md, Partie I, section P). Le
+ * sensibles, le cout de revient interne et la marge qui en decoule
+ * (voir docs/ARCHITECTURE.md, Partie I, sections G.7 et P). Le
  * client voit le taux qui lui est reellement propose
  * ({@code customerRate}) et les frais qui lui sont factures
  * ({@code feeXof}), jamais leur decomposition interne.

@@ -2,6 +2,7 @@ package com.converter.payment.dto;
 
 import com.converter.payment.domain.PaymentMethod;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -17,6 +18,7 @@ public record SubmitPaymentRequest(
 
         @NotNull(message = "Le montant recu est obligatoire")
         @Positive(message = "Le montant doit etre strictement positif")
+        @Digits(integer = 17, fraction = 2, message = "Le montant depasse la precision autorisee")
         BigDecimal receivedAmountXof,
 
         @NotBlank(message = "La reference de transaction est obligatoire")

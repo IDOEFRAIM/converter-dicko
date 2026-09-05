@@ -2,7 +2,6 @@ package com.converter.rate.engine;
 
 import com.converter.common.exception.BusinessException;
 import com.converter.common.exception.ErrorCode;
-import com.converter.rate.domain.MarketRate;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -13,10 +12,10 @@ import static com.converter.rate.engine.MoneyRounding.roundCnyDown;
 import static com.converter.rate.engine.MoneyRounding.roundXofUp;
 
 /**
- * Transforme un taux de marche en tarification complete pour le client.
+ * Transforme un taux de base en tarification complete pour le client.
  *
  * <pre>
- * MarketRate
+ * baseRate
  *     |
  *     v
  *   Margin
@@ -27,13 +26,24 @@ import static com.converter.rate.engine.MoneyRounding.roundXofUp;
  *
  * <p>Ce composant ne gere ni HTTP, ni JWT, ni persistance : il ne
  * depend que de {@link BigDecimal} et de types de valeur immuables
- * ({@link MarketRate}, {@link PricingResult}), ce qui le rend
- * testable unitairement sans contexte Spring ni base de donnees.
+ * ({@link PricingResult}), ce qui le rend testable unitairement sans
+ * contexte Spring ni base de donnees.
+ *
+ * <p><b>Deliberement agnostique de la provenance de {@code baseRate}.</b>
+ * Jusqu'a la Phase 3, {@code baseRate} venait d'une {@code MarketRate}
+ * publiee manuellement ({@code RateSource}) ; depuis la Phase 3.1, il
+ * vient du {@code breakEvenRate} calcule par {@code CostRateCalculator}
+ * a partir de la derniere {@code DailyCostRateConfiguration} (voir
+ * docs/ARCHITECTURE.md, Partie I, section G.7). Ce moteur n'a jamais eu
+ * besoin de le savoir : il applique la meme formule quel que soit
+ * l'appelant, ce qui a permis ce changement de source sans toucher une
+ * seule ligne de ce fichier au-dela du renommage {@code marketRate} ->
+ * {@code baseRate}.
  *
  * <p>Convention de sens du taux, identique a la Phase 1 : <b>1 CNY =
- * X XOF</b>, donc {@code cfaPerCny}. Toute l'arithmetique de ce
- * composant utilise exclusivement {@link BigDecimal} — aucun
- * {@code double}/{@code float} n'intervient a aucune etape.
+ * X XOF</b>. Toute l'arithmetique de ce composant utilise
+ * exclusivement {@link BigDecimal} — aucun {@code double}/{@code float}
+ * n'intervient a aucune etape.
  */
 @Component
 public class RateEngine {
@@ -41,17 +51,18 @@ public class RateEngine {
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
 
     /**
-     * Applique la marge commerciale au taux de marche.
+     * Applique la marge commerciale au taux de base.
      *
-     * <p>{@code customerRate = marketRate * (1 + marginPercentage / 100)}.
+     * <p>{@code customerRate = baseRate * (1 + marginPercentage / 100)}.
      * Une marge positive augmente le nombre de XOF necessaires pour
-     * obtenir 1 CNY par rapport au marche : c'est ainsi que
+     * obtenir 1 CNY par rapport au taux de base : c'est ainsi que
      * l'entreprise capture sa marge de change, distincte des frais de
-     * service (voir {@link #price}).
+     * service (voir {@link #price}) et du cout de revient lui-meme
+     * ({@code baseRate}) — trois notions qui ne sont jamais fusionnees.
      */
-    public BigDecimal applyMargin(BigDecimal marketRate, BigDecimal marginPercentage) {
+    public BigDecimal applyMargin(BigDecimal baseRate, BigDecimal marginPercentage) {
         BigDecimal factor = BigDecimal.ONE.add(marginPercentage.divide(HUNDRED, INTERMEDIATE), INTERMEDIATE);
-        return normalizeRate(marketRate.multiply(factor, INTERMEDIATE));
+        return normalizeRate(baseRate.multiply(factor, INTERMEDIATE));
     }
 
     /**
@@ -61,24 +72,23 @@ public class RateEngine {
      * @param basis            devise dans laquelle {@code amount} est exprime
      * @param amount            montant fourni par le client (XOF s'il paie un montant connu,
      *                          CNY s'il vise un montant a recevoir pour le beneficiaire)
-     * @param marketRate        cotation de marche a utiliser
+     * @param baseRate          taux avant marge a utiliser ("1 CNY = X XOF") — cotation de marche ou
+     *                          cout de revient, au choix de l'appelant, ce moteur n'en depend pas
      * @param marginPercentage  marge commerciale, en pourcentage
      * @param feePercentage     part proportionnelle des frais de service
      * @param fixedFeeXof       part fixe des frais de service, en XOF
      */
     public PricingResult price(AmountBasis basis,
                                BigDecimal amount,
-                               MarketRate marketRate,
+                               BigDecimal baseRate,
                                BigDecimal marginPercentage,
                                BigDecimal feePercentage,
                                BigDecimal fixedFeeXof) {
-        BigDecimal customerRate = applyMargin(marketRate.cfaPerCny(), marginPercentage);
+        BigDecimal customerRate = applyMargin(baseRate, marginPercentage);
 
         return switch (basis) {
-            case XOF -> priceFromXof(amount, marketRate.cfaPerCny(), marginPercentage, customerRate,
-                    feePercentage, fixedFeeXof);
-            case CNY -> priceFromTargetCny(amount, marketRate.cfaPerCny(), marginPercentage, customerRate,
-                    feePercentage, fixedFeeXof);
+            case XOF -> priceFromXof(amount, baseRate, marginPercentage, customerRate, feePercentage, fixedFeeXof);
+            case CNY -> priceFromTargetCny(amount, baseRate, marginPercentage, customerRate, feePercentage, fixedFeeXof);
         };
     }
 
@@ -92,7 +102,7 @@ public class RateEngine {
      * </pre>
      */
     private PricingResult priceFromXof(BigDecimal amountXof,
-                                       BigDecimal marketRate,
+                                       BigDecimal baseRate,
                                        BigDecimal marginPercentage,
                                        BigDecimal customerRate,
                                        BigDecimal feePercentage,
@@ -102,7 +112,7 @@ public class RateEngine {
         requirePositiveNet(netAmountXof);
         BigDecimal amountCny = roundCnyDown(netAmountXof.divide(customerRate, INTERMEDIATE));
 
-        return new PricingResult(marketRate, marginPercentage, customerRate, feePercentage, fixedFeeXof,
+        return new PricingResult(baseRate, marginPercentage, customerRate, feePercentage, fixedFeeXof,
                 feeXof, amountXof, netAmountXof, amountCny);
     }
 
@@ -130,7 +140,7 @@ public class RateEngine {
      * significatif.
      */
     private PricingResult priceFromTargetCny(BigDecimal targetAmountCny,
-                                             BigDecimal marketRate,
+                                             BigDecimal baseRate,
                                              BigDecimal marginPercentage,
                                              BigDecimal customerRate,
                                              BigDecimal feePercentage,
@@ -148,7 +158,7 @@ public class RateEngine {
         requirePositiveNet(netAmountXof);
         BigDecimal amountCny = roundCnyDown(netAmountXof.divide(customerRate, INTERMEDIATE));
 
-        return new PricingResult(marketRate, marginPercentage, customerRate, feePercentage, fixedFeeXof,
+        return new PricingResult(baseRate, marginPercentage, customerRate, feePercentage, fixedFeeXof,
                 feeXof, grossAmountXof, netAmountXof, amountCny);
     }
 

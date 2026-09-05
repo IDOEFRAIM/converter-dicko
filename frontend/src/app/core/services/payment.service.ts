@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
 import { Payment, PaymentProof, SubmitPaymentRequest } from '../models/payment.model';
+import { idempotencyHeaders } from './idempotency.util';
 
 @Injectable({ providedIn: 'root' })
 export class PaymentService {
@@ -11,8 +12,15 @@ export class PaymentService {
 
   constructor(private readonly http: HttpClient) {}
 
-  submit(orderId: string, request: SubmitPaymentRequest): Observable<ApiResponse<Payment>> {
-    return this.http.post<ApiResponse<Payment>>(`${this.baseUrl}/v1/orders/${orderId}/payments`, request);
+  /** {@code idempotencyKey} : un rejeu avec la meme cle ne soumet jamais un second paiement. */
+  submit(
+    orderId: string,
+    request: SubmitPaymentRequest,
+    idempotencyKey?: string | null,
+  ): Observable<ApiResponse<Payment>> {
+    return this.http.post<ApiResponse<Payment>>(`${this.baseUrl}/v1/orders/${orderId}/payments`, request, {
+      headers: idempotencyHeaders(idempotencyKey),
+    });
   }
 
   get(paymentId: string): Observable<ApiResponse<Payment>> {

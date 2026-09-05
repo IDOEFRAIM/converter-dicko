@@ -4,7 +4,7 @@
   z-index: 10;
   background: var(--mat-sys-surface, #fff);
   border-bottom: 1px solid var(--mat-sys-outline-variant, #e6e9f0);
-  color: #0a2a70;
+  color: var(--brand-navy, #1b325e);
 }
 
 .toolbar__brand {
@@ -23,13 +23,15 @@
   width: 32px;
   height: 32px;
   border-radius: 9px;
-  background: var(--brand-gradient);
-  color: #fff;
+  overflow: hidden;
+  flex: 0 0 auto;
+  box-shadow: var(--shadow-xs);
 
-  mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
 }
 
@@ -99,11 +101,11 @@
 }
 
 .bottom-nav__link--active {
-  color: #0a2a70;
+  color: var(--brand-navy, #1b325e);
 
   .bottom-nav__icon {
-    background: rgba(26, 86, 219, 0.12);
-    color: #1a56db;
+    background: rgba(27, 50, 94, 0.12);
+    color: var(--brand-navy, #1b325e);
   }
 }
 

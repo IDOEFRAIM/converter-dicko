@@ -5,6 +5,7 @@ import com.converter.audit.service.AuditService;
 import com.converter.common.exception.BusinessException;
 import com.converter.common.exception.ErrorCode;
 import com.converter.common.exception.ResourceNotFoundException;
+import com.converter.common.util.JsonUtil;
 import com.converter.settings.domain.SettingKey;
 import com.converter.settings.domain.SettingType;
 import com.converter.settings.domain.SystemSetting;
@@ -170,7 +171,7 @@ public class SettingsService {
         // (marge, frais, bornes de montant, moyens de paiement actifs...) : leur modification
         // est une operation sensible, tracee au meme titre qu'une action sur order/payment/treasury.
         auditService.record(actorId, null, AuditAction.SETTING_UPDATED, "SystemSetting", key.name(),
-                "{\"previousValue\":" + jsonString(previousValue) + ",\"newValue\":" + jsonString(value) + "}");
+                "{\"previousValue\":" + JsonUtil.jsonString(previousValue) + ",\"newValue\":" + JsonUtil.jsonString(value) + "}");
 
         return toResponse(saved);
     }
@@ -225,10 +226,6 @@ public class SettingsService {
         } catch (NumberFormatException ex) {
             return false;
         }
-    }
-
-    private static String jsonString(String raw) {
-        return "\"" + raw.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
     }
 
     private BusinessException misconfigured(SettingKey key, String raw, SettingType expected) {

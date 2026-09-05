@@ -1,0 +1,48 @@
+name: Backend CI
+
+# Minimal : compile + test complet (unitaire + integration Testcontainers) + package.
+# Aucune verification de securite/deploiement automatique n'est ajoutee ici — voir le rapport
+# d'audit de fermeture pour les recommandations non implementees (DECISION REQUIRED).
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: "maven"
+
+      # `package` execute deja `test` (unitaire + integration Testcontainers, voir pom.xml —
+      # aucun plugin Failsafe separe dans ce projet) avant de construire le jar : une seule
+      # commande couvre compile + test + package, memes conventions que ./mvnw test en local.
+      # Les tests d'integration demarrent leur propre PostgreSQL via Docker, deja disponible sur
+      # les runners ubuntu-latest — aucun service Docker Compose necessaire ici.
+      - name: Build, test and package
+        run: ./mvnw -B clean package
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: backend/target/surefire-reports/
+          retention-days: 7

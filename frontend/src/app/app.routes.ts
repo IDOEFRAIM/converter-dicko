@@ -52,8 +52,40 @@ export const routes: Routes = [
           import('./features/payment/payment-submit/payment-submit.page').then((m) => m.PaymentSubmitPage),
       },
       {
+        path: 'orders/:id/tracking',
+        loadComponent: () =>
+          import('./features/order/order-tracking/order-tracking.page').then((m) => m.OrderTrackingPage),
+      },
+      {
         path: 'history',
         loadComponent: () => import('./features/history/history.page').then((m) => m.HistoryPage),
+      },
+      {
+        path: 'suppliers',
+        loadComponent: () =>
+          import('./features/supplier/supplier-list/supplier-list.page').then((m) => m.SupplierListPage),
+      },
+      {
+        path: 'suppliers/new',
+        loadComponent: () =>
+          import('./features/supplier/supplier-form/supplier-form.page').then((m) => m.SupplierFormPage),
+      },
+      {
+        path: 'suppliers/:id',
+        loadComponent: () =>
+          import('./features/supplier/supplier-detail/supplier-detail.page').then(
+            (m) => m.SupplierDetailPage,
+          ),
+      },
+      {
+        path: 'suppliers/:id/edit',
+        loadComponent: () =>
+          import('./features/supplier/supplier-form/supplier-form.page').then((m) => m.SupplierFormPage),
+      },
+      {
+        path: 'suppliers/:id/pay-again',
+        loadComponent: () =>
+          import('./features/supplier/pay-again/pay-again.page').then((m) => m.PayAgainPage),
       },
       {
         path: 'wallet',
@@ -69,6 +101,20 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/notifications/notifications.page').then((m) => m.NotificationsPage),
       },
+      {
+        path: 'rates',
+        loadComponent: () =>
+          import('./features/rate/rate-history/rate-history.page').then((m) => m.RateHistoryPage),
+      },
+      {
+        path: 'rate-alerts',
+        loadComponent: () =>
+          import('./features/rate/rate-alerts/rate-alerts.page').then((m) => m.RateAlertsPage),
+      },
+      {
+        path: 'business',
+        loadComponent: () => import('./features/business/business.page').then((m) => m.BusinessPage),
+      },
     ],
   },
   {
@@ -82,6 +128,13 @@ export const routes: Routes = [
         path: 'dashboard',
         loadComponent: () =>
           import('./features/admin/admin-dashboard/admin-dashboard.page').then((m) => m.AdminDashboardPage),
+      },
+      {
+        path: 'cost-rates',
+        loadComponent: () =>
+          import('./features/admin/admin-cost-rates/admin-cost-rates.page').then(
+            (m) => m.AdminCostRatesPage,
+          ),
       },
       {
         path: 'rates',

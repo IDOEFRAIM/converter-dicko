@@ -89,4 +89,27 @@ public class AdminUserController {
         AdminUserDetail result = userService.unblock(id, actor.getId());
         return ResponseEntity.ok(ApiResponse.of(result, "Compte debloque."));
     }
+
+    @PostMapping("/{id}/kyc/verify")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Verifier l'identite (KYC) d'un compte",
+            description = "Necessaire pour que ce client puisse creer un ordre au-dela du seuil "
+                    + "KYC_REQUIRED_THRESHOLD_XOF. Verification minimale (drapeau administrateur), "
+                    + "aucun document/upload/OCR.")
+    public ResponseEntity<ApiResponse<AdminUserDetail>> verifyKyc(
+            @PathVariable UUID id,
+            @AuthenticatedUser CurrentUser actor) {
+        AdminUserDetail result = userService.verifyKyc(id, actor.getId());
+        return ResponseEntity.ok(ApiResponse.of(result, "Identite verifiee."));
+    }
+
+    @PostMapping("/{id}/kyc/revoke")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Revoquer la verification d'identite (KYC) d'un compte")
+    public ResponseEntity<ApiResponse<AdminUserDetail>> revokeKyc(
+            @PathVariable UUID id,
+            @AuthenticatedUser CurrentUser actor) {
+        AdminUserDetail result = userService.revokeKyc(id, actor.getId());
+        return ResponseEntity.ok(ApiResponse.of(result, "Verification d'identite revoquee."));
+    }
 }

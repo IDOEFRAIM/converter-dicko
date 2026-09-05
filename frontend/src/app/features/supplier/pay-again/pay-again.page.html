@@ -1,0 +1,54 @@
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else if (errorMessage() && !supplier()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+  <a routerLink="/suppliers" mat-stroked-button>Retour aux fournisseurs</a>
+} @else if (supplier(); as s) {
+  <app-page-header title="Payer a nouveau" [subtitle]="s.displayName" />
+
+  <p class="form-notice">
+    Un <strong>nouveau devis</strong> sera calcule au taux actuel, puis un nouvel ordre cree.
+    Le taux, les frais et le montant de vos paiements precedents ne sont jamais reutilises.
+  </p>
+
+  @if (errorMessage()) {
+    <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+  }
+
+  <form class="form" [formGroup]="form" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline" class="form__field">
+      <mat-label>Montant a envoyer</mat-label>
+      <input matInput type="number" inputmode="numeric" formControlName="amountXof" min="1" />
+      <span matTextSuffix>XOF</span>
+      @if (form.controls.amountXof.invalid && form.controls.amountXof.touched) {
+        <mat-error>Saisissez un montant strictement positif.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="form__field">
+      <mat-label>Motif du transfert</mat-label>
+      <mat-select formControlName="purpose">
+        <mat-option [value]="''">Non precise</mat-option>
+        @for (option of purposeOptions; track option.value) {
+          <mat-option [value]="option.value">{{ option.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="form__field">
+      <mat-label>Details du motif (optionnel)</mat-label>
+      <input matInput formControlName="purposeDetails" maxlength="500" autocomplete="off" />
+    </mat-form-field>
+
+    <div class="form__actions">
+      <a [routerLink]="['/suppliers', s.id]" mat-stroked-button>Annuler</a>
+      <button mat-flat-button class="brand-button" type="submit" [disabled]="submitting()">
+        @if (submitting()) {
+          <mat-spinner diameter="20" />
+        } @else {
+          Obtenir le devis et continuer
+        }
+      </button>
+    </div>
+  </form>
+}

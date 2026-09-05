@@ -9,9 +9,25 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
+
+    /**
+     * Toutes les entrees d'audit d'une entite precise, de la plus recente a la plus ancienne.
+     *
+     * <p>Ajout additif de l'evolution Burkina &lt;-&gt; Chine (Phase 8) : requete derivee, sans
+     * aucun parametre optionnel. Elle n'est <b>pas</b> une variante de {@link #search} et ne la
+     * remplace pas — {@code search} reste la recherche paginee multi-critere de
+     * {@code /api/admin/audit-logs}. Ce finder cible le seul besoin des verifications d'audit de
+     * bout en bout : « une action a-t-elle bien ete tracee pour CETTE entite ? », avec un
+     * {@code entityId} toujours concret. Il evite ainsi le patron {@code (:p IS NULL OR ...)} de
+     * {@code search}, dont un parametre dont l'unique occurrence syntaxique est {@code :p IS NULL}
+     * n'a pas de type inferable par PostgreSQL au moment du Parse (limitation de {@code search}
+     * documentee dans le rapport de cloture Phase 8, hors perimetre de correction de cette phase).
+     */
+    List<AuditLog> findByEntityTypeAndEntityIdOrderByCreatedAtDesc(String entityType, String entityId);
 
     @Query("""
             SELECT a FROM AuditLog a

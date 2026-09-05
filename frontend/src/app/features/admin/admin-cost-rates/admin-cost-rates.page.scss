@@ -1,0 +1,48 @@
+.cost-notice {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  background: #fff8e1;
+  color: #8d6e00;
+  border-radius: 8px;
+  padding: 0.75rem 0.875rem;
+  font-size: 0.85rem;
+  margin-bottom: 1.25rem;
+
+  mat-icon {
+    flex-shrink: 0;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.current-card {
+  border-left: 4px solid var(--mat-sys-primary, #1b325e);
+  margin-bottom: 1.25rem;
+}
+
+.current-card__break-even {
+  margin: 0.25rem 0 0;
+  font-size: 1rem;
+}
+
+.current-card__meta {
+  color: var(--mat-sys-on-surface-variant, #616161);
+  font-size: 0.8rem;
+}
+
+.section-title {
+  font-weight: 700;
+  margin: 1.5rem 0 0.75rem;
+  color: var(--brand-navy, #1b325e);
+}
+
+.table-scroll {
+  overflow-x: auto;
+
+  table {
+    width: 100%;
+    min-width: 640px;
+  }
+}

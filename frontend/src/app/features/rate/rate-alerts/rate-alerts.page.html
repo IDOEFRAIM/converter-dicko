@@ -1,0 +1,115 @@
+<app-page-header title="Mes alertes" subtitle="Surveillez un taux cible et soyez averti(e) lorsqu'il est atteint">
+  <a routerLink="/rates" mat-stroked-button>
+    <mat-icon>show_chart</mat-icon>
+    Historique du taux
+  </a>
+</app-page-header>
+
+<form class="form panel" [formGroup]="form" (ngSubmit)="create()">
+  <p class="section-heading">Creer une alerte</p>
+  <p class="form-notice">
+    Vous serez notifie(e) lorsque le taux client (1 CNY = X XOF) descend a votre cible ou en dessous.
+    Creer une alerte ne declenche aucun paiement.
+  </p>
+
+  <p class="alert-form__prompt">Je veux etre averti(e) lorsque :</p>
+  <div class="form__row">
+    <mat-form-field appearance="outline" class="form__field">
+      <mat-label>Taux cible</mat-label>
+      <span matTextPrefix class="alert-form__rate-prefix">1 CNY &le;&nbsp;</span>
+      <input matInput type="number" inputmode="decimal" formControlName="targetRate" step="0.01" min="0" />
+      <span matTextSuffix>&nbsp;XOF</span>
+      @if (form.controls.targetRate.invalid && form.controls.targetRate.touched) {
+        <mat-error>Saisissez un taux cible strictement positif.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="form__field">
+      <mat-label>Expiration (optionnelle)</mat-label>
+      <input matInput type="date" formControlName="expiresAt" />
+    </mat-form-field>
+  </div>
+
+  <div class="form__actions">
+    <button mat-flat-button class="brand-button" type="submit" [disabled]="creating()">
+      @if (creating()) {
+        <mat-spinner diameter="20" />
+      } @else {
+        Creer l'alerte
+      }
+    </button>
+  </div>
+</form>
+
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else if (errorMessage()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+  <button mat-stroked-button (click)="load()">
+    <mat-icon>refresh</mat-icon>
+    Reessayer
+  </button>
+} @else if (alerts().length === 0) {
+  <app-empty-state title="Aucune alerte" description="Creez une alerte ci-dessus pour suivre le taux." />
+} @else {
+  @if (activeAlerts().length > 0) {
+    <p class="alert-section-title">Alertes actives</p>
+    <ul class="alert-list">
+      @for (alert of activeAlerts(); track alert.id) {
+        <li class="page-card alert-card">
+          <div class="alert-card__main">
+            <p class="alert-card__target">1 CNY ≤ {{ alert.targetRate }} XOF</p>
+            @if (currentRate(); as rate) {
+              <p class="alert-card__current">Taux actuel : 1 CNY = {{ rate }} XOF</p>
+            }
+            @if (gapFor(alert); as gap) {
+              <p class="alert-card__gap" [class.alert-card__gap--close]="gap.percent >= -2 && gap.percent <= 0">
+                Ecart : {{ gap.percent > 0 ? '+' : '' }}{{ gap.percent.toFixed(2) }} %
+              </p>
+            }
+            <p class="alert-card__meta">
+              Creee le {{ alert.createdAt | date: 'dd/MM/yyyy' }}
+              @if (alert.expiresAt) { · expire le {{ alert.expiresAt | date: 'dd/MM/yyyy' }} }
+            </p>
+          </div>
+          <div class="alert-card__side">
+            <app-status-badge [status]="alert.status" />
+            <button mat-stroked-button (click)="cancel(alert)">Annuler</button>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (closedAlerts().length > 0) {
+    <p class="alert-section-title">Alertes terminees</p>
+    <ul class="alert-list">
+      @for (alert of closedAlerts(); track alert.id) {
+        <li class="page-card alert-card alert-card--closed">
+          <div class="alert-card__main">
+            <p class="alert-card__target">1 CNY ≤ {{ alert.targetRate }} XOF</p>
+
+            @if (alert.status === 'TRIGGERED') {
+              <p class="alert-card__narrative alert-card__narrative--positive">
+                <mat-icon>check_circle</mat-icon>
+                Objectif atteint le {{ alert.triggeredAt | date: 'dd/MM/yyyy HH:mm' }}. Votre objectif de
+                {{ alert.targetRate }} XOF/CNY a ete atteint.
+              </p>
+              <a routerLink="/rates" mat-stroked-button>Voir le taux</a>
+            } @else if (alert.status === 'EXPIRED') {
+              <p class="alert-card__narrative">
+                Votre objectif n'a pas ete atteint avant la date prevue
+                ({{ alert.expiresAt | date: 'dd/MM/yyyy' }}).
+              </p>
+            } @else if (alert.status === 'CANCELLED') {
+              <p class="alert-card__narrative">Annulee le {{ alert.cancelledAt | date: 'dd/MM/yyyy' }}.</p>
+            }
+          </div>
+          <div class="alert-card__side">
+            <app-status-badge [status]="alert.status" />
+          </div>
+        </li>
+      }
+    </ul>
+  }
+}

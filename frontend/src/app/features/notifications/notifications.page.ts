@@ -5,21 +5,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { InboxNotificationService } from '../../core/services/inbox-notification.service';
 import { extractErrorMessage } from '../../core/services/api-error.util';
-import { InboxNotification } from '../../core/models/inbox-notification.model';
+import { InboxNotification, notificationIcon } from '../../core/models/inbox-notification.model';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
-
-const TYPE_ICONS: Record<string, string> = {
-  QUOTE_CREATED: 'request_quote',
-  PAYMENT_SUBMITTED: 'payments',
-  PAYMENT_CONFIRMED: 'check_circle',
-  EXCHANGE_STARTED: 'sync',
-  EXCHANGE_PROGRESS: 'hourglass_top',
-  EXCHANGE_COMPLETED: 'task_alt',
-  PREFERRED_RATE_REACHED: 'trending_up',
-  PREFERRED_RATE_EXPIRED: 'schedule',
-  EXCHANGE_CANCELLED: 'cancel',
-};
 
 /** Notifications internes du client, les plus recentes en premier. */
 @Component({
@@ -56,7 +44,7 @@ export class NotificationsPage implements OnInit {
   }
 
   icon(type: string): string {
-    return TYPE_ICONS[type] ?? 'notifications';
+    return notificationIcon(type);
   }
 
   markRead(notification: InboxNotification): void {

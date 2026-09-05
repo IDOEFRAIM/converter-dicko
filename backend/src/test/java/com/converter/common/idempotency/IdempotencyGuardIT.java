@@ -2,6 +2,8 @@ package com.converter.common.idempotency;
 
 import com.converter.common.api.ApiResponse;
 import com.converter.common.api.ErrorResponse;
+import com.converter.common.exception.BusinessException;
+import com.converter.common.exception.ErrorCode;
 import com.converter.order.domain.BeneficiaryType;
 import com.converter.order.dto.BeneficiaryRequest;
 import com.converter.order.dto.CreateOrderRequest;
@@ -12,7 +14,11 @@ import com.converter.treasury.domain.Currency;
 import com.converter.treasury.dto.TreasuryAccountResponse;
 import com.converter.treasury.dto.TreasuryAdjustmentRequest;
 import com.converter.user.domain.RoleCode;
+import com.converter.user.domain.User;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -21,9 +27,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.HexFormat;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Verifie l'idempotence HTTP reelle (voir {@code docs/AUDIT_BUSINESS_LOGIC.md} §17) sur les
@@ -34,6 +44,63 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class IdempotencyGuardIT extends AbstractOrderPipelineIT {
 
+    @Autowired
+    private IdempotencyService idempotencyService;
+
+    @Autowired
+    private IdempotencyGuard idempotencyGuard;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    /**
+     * Ecart de reprise reel (audit transversal, §19/§27 incident A) : un crash serveur
+     * <em>entre</em> la capture d'une cle ({@code tryInsert}, {@code REQUIRES_NEW}, commit
+     * immediat et independant) et l'appel a {@code complete()}/{@code releasePending()} (rejoue
+     * ou echec de l'action metier) laisse une ligne {@code idempotency_keys} a l'etat "pending"
+     * pour toujours : aucun job planifie ne lit jamais {@code expires_at} pour la liberer
+     * (voir la Javadoc de {@link IdempotencyService#RETENTION}). Ce test simule exactement cette
+     * fenetre — capture reussie, jamais completee — puis prouve qu'un rejeu legitime avec la
+     * meme cle reste bloque en {@code 409 IDEMPOTENT_REQUEST_IN_PROGRESS} indefiniment, alors
+     * qu'aucune transaction financiere n'a jamais reellement eu lieu pour cette cle (donc rien
+     * n'empecherait, en toute securite, de la liberer automatiquement apres un delai).
+     *
+     * <p>Ce n'est PAS un bug au sens "etat financier incorrect" : aucun double effet n'est
+     * possible ici, seulement une indisponibilite du rejeu pour CETTE cle precise (le client
+     * peut toujours reussir l'operation avec une cle differente). Classe donc comme GAP DE
+     * CONTROLE (disponibilite/reprise), pas comme BUG financier — voir le rapport d'audit.
+     */
+    @Test
+    void keyStuckPendingAfterSimulatedCrash_blocksLegitimateRetryForever() throws Exception {
+        User user = createUser(RoleCode.USER);
+        String endpoint = "POST /api/v1/orders";
+        String idemKey = "crash-sim-" + UUID.randomUUID();
+        CreateOrderRequest request = new CreateOrderRequest(UUID.randomUUID(), alipayBeneficiary(), "crash-sim", null, null, null);
+        String requestHash = sha256(objectMapper.writeValueAsString(request));
+
+        // Simule EXACTEMENT ce qu'un crash laisserait derriere lui : la capture a commit (sa
+        // propre transaction REQUIRES_NEW), mais ni complete() ni releasePending() n'a jamais
+        // ete appele — le process est mort avant.
+        idempotencyService.tryInsert(user.getId(), endpoint, idemKey, requestHash);
+
+        // Un rejeu legitime, meme cle, meme corps exact (donc meme hash) : la garde le detecte
+        // comme "encore en cours" et refuse, pour toujours, sans aucun mecanisme de nettoyage.
+        assertThatThrownBy(() -> idempotencyGuard.guard(user.getId(), endpoint, idemKey, request,
+                new TypeReference<ApiResponse<OrderDetailResponse>>() {
+                },
+                () -> {
+                    throw new AssertionError("L'action ne doit jamais s'executer : la cle est encore pending.");
+                }))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> assertThat(((BusinessException) ex).errorCode())
+                        .isEqualTo(ErrorCode.IDEMPOTENT_REQUEST_IN_PROGRESS));
+    }
+
+    private static String sha256(String value) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
+    }
+
     @Test
     void createOrder_replayedWithSameIdempotencyKey_neverCreatesASecondOrder() {
         String admin = adminToken();
@@ -41,7 +108,7 @@ class IdempotencyGuardIT extends AbstractOrderPipelineIT {
         depositCny(admin, "1000000");
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
-        CreateOrderRequest request = new CreateOrderRequest(quote.id(), alipayBeneficiary(), "idem-test");
+        CreateOrderRequest request = new CreateOrderRequest(quote.id(), alipayBeneficiary(), "idem-test", null, null, null);
         String idemKey = "order-create-" + UUID.randomUUID();
 
         ResponseEntity<ApiResponse<OrderDetailResponse>> first = postOrder(user, request, idemKey);
@@ -77,13 +144,13 @@ class IdempotencyGuardIT extends AbstractOrderPipelineIT {
         String idemKey = "order-create-conflict-" + UUID.randomUUID();
 
         ResponseEntity<ApiResponse<OrderDetailResponse>> first =
-                postOrder(user, new CreateOrderRequest(quoteA.id(), alipayBeneficiary(), "first"), idemKey);
+                postOrder(user, new CreateOrderRequest(quoteA.id(), alipayBeneficiary(), "first", null, null, null), idemKey);
         assertThat(first.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         HttpHeaders headers = auth(user);
         headers.set("Idempotency-Key", idemKey);
         ResponseEntity<ErrorResponse> conflict = restTemplate.exchange("/api/v1/orders", HttpMethod.POST,
-                new HttpEntity<>(new CreateOrderRequest(quoteB.id(), alipayBeneficiary(), "second-different-body"), headers),
+                new HttpEntity<>(new CreateOrderRequest(quoteB.id(), alipayBeneficiary(), "second-different-body", null, null, null), headers),
                 ErrorResponse.class);
 
         assertThat(conflict.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
@@ -107,7 +174,7 @@ class IdempotencyGuardIT extends AbstractOrderPipelineIT {
         QuoteResponse quote = createAcceptedQuote(user, "100000");
 
         ResponseEntity<ApiResponse<OrderDetailResponse>> response = postOrder(user,
-                new CreateOrderRequest(quote.id(), alipayBeneficiary(), "no-key"), null);
+                new CreateOrderRequest(quote.id(), alipayBeneficiary(), "no-key", null, null, null), null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     }
@@ -166,7 +233,7 @@ class IdempotencyGuardIT extends AbstractOrderPipelineIT {
         QuoteResponse quote = createQuote(user,
                 new com.converter.quote.dto.CreateQuoteRequest(
                         com.converter.quote.domain.QuoteDirection.SEND_XOF, new BigDecimal("100000"), null));
-        CreateOrderRequest request = new CreateOrderRequest(quote.id(), alipayBeneficiary(), "retry-test");
+        CreateOrderRequest request = new CreateOrderRequest(quote.id(), alipayBeneficiary(), "retry-test", null, null, null);
         String idemKey = "order-fail-retry-" + UUID.randomUUID();
 
         HttpHeaders headers = auth(user);

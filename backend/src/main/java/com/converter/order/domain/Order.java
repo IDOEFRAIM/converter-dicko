@@ -1,6 +1,7 @@
 package com.converter.order.domain;
 
 import com.converter.common.domain.BaseEntity;
+import com.converter.supplier.domain.Purpose;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -62,6 +63,25 @@ public class Order extends BaseEntity {
     @Column(name = "note", length = 500)
     private String note;
 
+    /**
+     * Fournisseur enregistre eventuellement utilise pour construire le snapshot {@link
+     * Beneficiary} de cet ordre — <b>purement tracable</b> ("quel fournisseur enregistre a ete
+     * utilise pour cette transaction ?"), jamais relu pour reconstruire ou recalculer le
+     * beneficiaire historique : ce dernier reste entierement porte par {@link Beneficiary},
+     * copie figee au moment de la creation. Une modification ulterieure du fournisseur
+     * (ou sa desactivation) n'a donc structurellement aucun effet sur cet ordre.
+     */
+    @Column(name = "supplier_id")
+    private UUID supplierId;
+
+    /** Motif du transfert, optionnel — voir {@link Purpose}. Nullable pour les ordres crees avant son introduction. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "purpose", length = 24)
+    private Purpose purpose;
+
+    @Column(name = "purpose_details", length = 500)
+    private String purposeDetails;
+
     @Column(name = "cancellation_reason", length = 500)
     private String cancellationReason;
 
@@ -111,6 +131,15 @@ public class Order extends BaseEntity {
     public Order(String reference, UUID userId, UUID quoteId, BigDecimal amountXof, BigDecimal amountCny,
                 BigDecimal customerRate, BigDecimal feeXof, BigDecimal netAmountXof, String note,
                 Instant createdAt, Instant paymentDeadlineAt) {
+        this(reference, userId, quoteId, amountXof, amountCny, customerRate, feeXof, netAmountXof, note,
+                createdAt, paymentDeadlineAt, null, null, null);
+    }
+
+    /** Variante Phase 2 : {@code supplierId}/{@code purpose}/{@code purposeDetails}, tous optionnels. */
+    public Order(String reference, UUID userId, UUID quoteId, BigDecimal amountXof, BigDecimal amountCny,
+                BigDecimal customerRate, BigDecimal feeXof, BigDecimal netAmountXof, String note,
+                Instant createdAt, Instant paymentDeadlineAt, UUID supplierId, Purpose purpose,
+                String purposeDetails) {
         this.reference = reference;
         this.userId = userId;
         this.quoteId = quoteId;
@@ -125,6 +154,9 @@ public class Order extends BaseEntity {
         this.createdAt = createdAt;
         this.updatedAt = createdAt;
         this.paymentDeadlineAt = paymentDeadlineAt;
+        this.supplierId = supplierId;
+        this.purpose = purpose;
+        this.purposeDetails = purposeDetails;
     }
 
     /** Vrai si l'echeance de paiement est atteinte a l'instant donne (ordre encore non paye). */
@@ -200,6 +232,18 @@ public class Order extends BaseEntity {
 
     public String getNote() {
         return note;
+    }
+
+    public UUID getSupplierId() {
+        return supplierId;
+    }
+
+    public Purpose getPurpose() {
+        return purpose;
+    }
+
+    public String getPurposeDetails() {
+        return purposeDetails;
     }
 
     public String getCancellationReason() {

@@ -1,10 +1,12 @@
 package com.converter.common.exception;
 
 import com.converter.common.api.ErrorResponse;
+import com.converter.security.RequestIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
@@ -22,7 +24,6 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Point unique de traduction des exceptions en reponses HTTP.
@@ -54,7 +55,7 @@ public class GlobalExceptionHandler {
         // Une erreur metier est un fonctionnement nominal : journalisee en
         // DEBUG pour ne pas noyer les journaux d'exploitation.
         log.debug("Erreur metier {} sur {} : {}", code, request.getRequestURI(), ex.getMessage());
-        return build(code, ex.getMessage(), request, null, null);
+        return build(code, ex.getMessage(), request, null);
     }
 
     // -----------------------------------------------------------------
@@ -70,7 +71,7 @@ public class GlobalExceptionHandler {
                         error.getDefaultMessage() == null ? "Valeur invalide" : error.getDefaultMessage()))
                 .toList();
         return build(ErrorCode.VALIDATION_ERROR,
-                "Certains champs sont invalides.", request, violations, null);
+                "Certains champs sont invalides.", request, violations);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -82,7 +83,7 @@ public class GlobalExceptionHandler {
                         violation.getMessage()))
                 .toList();
         return build(ErrorCode.VALIDATION_ERROR,
-                "Certains parametres sont invalides.", request, violations, null);
+                "Certains parametres sont invalides.", request, violations);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -91,7 +92,7 @@ public class GlobalExceptionHandler {
         // Le message d'origine peut divulguer la structure interne des DTO.
         log.debug("Corps de requete illisible sur {}", request.getRequestURI(), ex);
         return build(ErrorCode.MALFORMED_REQUEST,
-                "Le corps de la requete est absent ou mal forme.", request, null, null);
+                "Le corps de la requete est absent ou mal forme.", request, null);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -100,7 +101,7 @@ public class GlobalExceptionHandler {
         List<ErrorResponse.FieldViolation> violations = List.of(
                 new ErrorResponse.FieldViolation(ex.getName(), "Format attendu non respecte"));
         return build(ErrorCode.VALIDATION_ERROR,
-                "Un parametre est au mauvais format.", request, violations, null);
+                "Un parametre est au mauvais format.", request, violations);
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
@@ -109,14 +110,14 @@ public class GlobalExceptionHandler {
         List<ErrorResponse.FieldViolation> violations = List.of(
                 new ErrorResponse.FieldViolation(ex.getParameterName(), "Parametre obligatoire"));
         return build(ErrorCode.VALIDATION_ERROR,
-                "Un parametre obligatoire est absent.", request, violations, null);
+                "Un parametre obligatoire est absent.", request, violations);
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ErrorResponse> handleUploadTooLarge(MaxUploadSizeExceededException ex,
                                                               HttpServletRequest request) {
         return build(ErrorCode.INVALID_PAYMENT_PROOF,
-                "Le fichier depasse la taille maximale autorisee.", request, null, null);
+                "Le fichier depasse la taille maximale autorisee.", request, null);
     }
 
     // -----------------------------------------------------------------
@@ -128,14 +129,14 @@ public class GlobalExceptionHandler {
                                                             HttpServletRequest request) {
         log.warn("Acces refuse sur {}", request.getRequestURI());
         return build(ErrorCode.ACCESS_DENIED,
-                "Vous n'avez pas les droits requis pour cette operation.", request, null, null);
+                "Vous n'avez pas les droits requis pour cette operation.", request, null);
     }
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponse> handleAuthentication(AuthenticationException ex,
                                                               HttpServletRequest request) {
         return build(ErrorCode.AUTHENTICATION_REQUIRED,
-                "Authentification requise.", request, null, null);
+                "Authentification requise.", request, null);
     }
 
     // -----------------------------------------------------------------
@@ -145,13 +146,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleIntegrity(DataIntegrityViolationException ex,
                                                          HttpServletRequest request) {
-        String traceId = newTraceId();
         // Le message PostgreSQL nomme la contrainte violee : utile au
-        // diagnostic, mais il revele le schema. Il reste dans les journaux.
-        log.warn("Violation d'integrite [traceId={}] sur {}", traceId, request.getRequestURI(), ex);
+        // diagnostic, mais il revele le schema. Il reste dans les journaux,
+        // correle a la reponse client via requestId (MDC, voir RequestIdFilter).
+        log.warn("Violation d'integrite sur {}", request.getRequestURI(), ex);
         return build(ErrorCode.DUPLICATE_RESOURCE,
                 "Cette operation entre en conflit avec une donnee existante.",
-                request, null, traceId);
+                request, null);
     }
 
     @ExceptionHandler(OptimisticLockingFailureException.class)
@@ -160,7 +161,7 @@ public class GlobalExceptionHandler {
         log.info("Conflit de concurrence sur {}", request.getRequestURI());
         return build(ErrorCode.CONCURRENT_MODIFICATION,
                 "Cette ressource a ete modifiee entre-temps. Rechargez puis reessayez.",
-                request, null, null);
+                request, null);
     }
 
     // -----------------------------------------------------------------
@@ -171,25 +172,32 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNoResource(NoResourceFoundException ex,
                                                           HttpServletRequest request) {
         return build(ErrorCode.RESOURCE_NOT_FOUND,
-                "Ressource introuvable.", request, null, null);
+                "Ressource introuvable.", request, null);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex, HttpServletRequest request) {
-        String traceId = newTraceId();
-        log.error("Erreur inattendue [traceId={}] sur {}", traceId, request.getRequestURI(), ex);
+        log.error("Erreur inattendue sur {}", request.getRequestURI(), ex);
         return build(ErrorCode.INTERNAL_ERROR,
                 "Une erreur interne est survenue. Communiquez la reference au support.",
-                request, null, traceId);
+                request, null);
     }
 
     // -----------------------------------------------------------------
 
+    /**
+     * {@code traceId} n'est plus genere au coup par coup : il reprend toujours
+     * {@link RequestIdFilter#MDC_KEY}, l'identifiant deja assigne a cette requete des son
+     * entree dans la chaine de filtres — le meme qui figure dans chaque ligne de log emise
+     * pendant son traitement (voir {@code logging.pattern.level}). Un support peut donc
+     * retrouver l'integralite des journaux d'un incident a partir du seul {@code traceId} rendu
+     * au client, quelle que soit l'erreur (plus seulement les deux cas historiques 500/409
+     * d'integrite).
+     */
     private ResponseEntity<ErrorResponse> build(ErrorCode code,
                                                 String message,
                                                 HttpServletRequest request,
-                                                List<ErrorResponse.FieldViolation> violations,
-                                                String traceId) {
+                                                List<ErrorResponse.FieldViolation> violations) {
         HttpStatus status = code.status();
         ErrorResponse body = new ErrorResponse(
                 Instant.now(),
@@ -198,12 +206,8 @@ public class GlobalExceptionHandler {
                 code.name(),
                 message,
                 request.getRequestURI(),
-                traceId,
+                MDC.get(RequestIdFilter.MDC_KEY),
                 violations == null || violations.isEmpty() ? null : violations);
         return ResponseEntity.status(status).body(body);
-    }
-
-    private static String newTraceId() {
-        return UUID.randomUUID().toString().substring(0, 8);
     }
 }

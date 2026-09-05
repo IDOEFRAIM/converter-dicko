@@ -30,6 +30,9 @@ public enum AuditAction {
     QUOTE_CANCELLED,
     QUOTE_EXPIRED,
 
+    // ---- Cout de revient XOF -> USD -> CNY ----
+    COST_RATE_CONFIGURATION_PUBLISHED,
+
     // ---- Ordres ----
     ORDER_CREATED,
     ORDER_CANCELLED,
@@ -51,6 +54,11 @@ public enum AuditAction {
     SETTLEMENT_CREATED,
     SETTLEMENT_EXECUTED,
 
+    // ---- Remboursement (Refund) ----
+    REFUND_CREATED,
+    REFUND_PROCESSED,
+    REFUND_REJECTED,
+
     // ---- Tresorerie ----
     TREASURY_DEPOSIT,
     TREASURY_WITHDRAWAL,
@@ -58,7 +66,28 @@ public enum AuditAction {
     TREASURY_RESERVED,
     TREASURY_RELEASED,
     TREASURY_CONSUMED,
+    TREASURY_REFUNDED,
 
     // ---- Configuration ----
-    SETTING_UPDATED
+    SETTING_UPDATED,
+
+    // ---- Fournisseurs (carnet reutilisable, Burkina <-> Chine) ----
+    SUPPLIER_CREATED,
+    SUPPLIER_UPDATED,
+    SUPPLIER_FAVORITED,
+    SUPPLIER_UNFAVORITED,
+    SUPPLIER_DEACTIVATED,
+
+    // ---- Alertes de taux (Phase 6) ----
+    RATE_ALERT_CREATED,
+    RATE_ALERT_CANCELLED,
+    RATE_ALERT_TRIGGERED,
+
+    // ---- Profil professionnel (Phase 8) ----
+    BUSINESS_PROFILE_CREATED,
+    BUSINESS_PROFILE_UPDATED,
+
+    // ---- Verification d'identite (KYC) ----
+    USER_KYC_VERIFIED,
+    USER_KYC_REVOKED
 }

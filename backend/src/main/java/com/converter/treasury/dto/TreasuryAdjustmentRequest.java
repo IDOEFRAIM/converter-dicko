@@ -2,6 +2,7 @@ package com.converter.treasury.dto;
 
 import com.converter.treasury.domain.Currency;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -15,6 +16,7 @@ public record TreasuryAdjustmentRequest(
         Currency currency,
 
         @NotNull(message = "Le montant est obligatoire")
+        @Digits(integer = 19, fraction = 2, message = "Le montant depasse la precision autorisee")
         @Schema(description = "Positif pour un depot/ajout, negatif pour un ajustement a la baisse")
         BigDecimal amount,
 

@@ -1,0 +1,87 @@
+<app-page-header title="Taux XOF / CNY" subtitle="Historique du taux client">
+  <a routerLink="/rate-alerts" mat-stroked-button>
+    <mat-icon>notifications_active</mat-icon>
+    Mes alertes
+  </a>
+</app-page-header>
+
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else if (errorMessage()) {
+  <p class="form-notice form-notice--error">Impossible de charger l'historique du taux.</p>
+  <button mat-stroked-button (click)="load()">
+    <mat-icon>refresh</mat-icon>
+    Reessayer
+  </button>
+} @else if (entries().length === 0) {
+  <app-empty-state
+    title="Aucun historique disponible"
+    description="Les taux publies apparaitront ici."
+  >
+    <button mat-stroked-button (click)="load()">
+      <mat-icon>refresh</mat-icon>
+      Actualiser
+    </button>
+  </app-empty-state>
+} @else {
+  <app-corridor [compact]="true" class="rate-corridor" />
+
+  @if (latest(); as latest) {
+    <div class="rate-hero">
+      <span class="rate-hero__label">Taux actuel</span>
+      <span class="rate-hero__value metric">1 CNY = {{ latest.customerRate }} XOF</span>
+      <span class="rate-hero__date">Mis a jour le {{ latest.recordedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+      @if (variation(); as v) {
+        <span
+          class="rate-hero__variation"
+          [class.rate-hero__variation--up]="v.percent > 0"
+          [class.rate-hero__variation--down]="v.percent < 0"
+        >
+          {{ v.percent > 0 ? '+' : '' }}{{ v.percent.toFixed(2) }}% depuis le releve precedent
+        </span>
+      }
+    </div>
+  }
+
+  @if (chartPoints()) {
+    <div class="rate-chart">
+      <svg
+        [attr.viewBox]="'0 0 ' + chartWidth + ' ' + chartHeight"
+        preserveAspectRatio="none"
+        role="img"
+        [attr.aria-label]="'Evolution du taux client, valeur actuelle 1 CNY = ' + latest()?.customerRate + ' XOF'"
+      >
+        <polyline [attr.points]="chartPoints()" fill="none" stroke="var(--mat-sys-primary, #1b325e)" stroke-width="2" />
+      </svg>
+    </div>
+
+    @if (rangeLabel(); as range) {
+      <dl class="detail-list rate-stats">
+        <div>
+          <dt>Minimum (periode)</dt>
+          <dd>{{ range.min }} XOF</dd>
+        </div>
+        <div>
+          <dt>Maximum (periode)</dt>
+          <dd>{{ range.max }} XOF</dd>
+        </div>
+      </dl>
+    }
+  }
+
+  <div class="form__actions">
+    <a routerLink="/rate-alerts" mat-flat-button class="brand-button rate-cta">
+      <mat-icon>add_alert</mat-icon>
+      Creer une alerte
+    </a>
+  </div>
+
+  <ul class="rate-list">
+    @for (entry of entries(); track entry.recordedAt) {
+      <li class="rate-list__row">
+        <span class="rate-list__value">1 CNY = {{ entry.customerRate }} XOF</span>
+        <span class="rate-list__date">{{ entry.recordedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+      </li>
+    }
+  </ul>
+}

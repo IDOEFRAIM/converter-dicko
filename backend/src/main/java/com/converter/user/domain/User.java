@@ -60,6 +60,21 @@ public class User extends AuditableEntity {
     @Column(name = "blocked_by")
     private UUID blockedBy;
 
+    /**
+     * Verification d'identite (KYC). Volontairement minimal — un simple drapeau pose par un
+     * administrateur, pas un moteur de conformite complet (aucun document/upload/OCR). Devient
+     * obligatoire pour creer un ordre au-dela de {@code SettingKey.KYC_REQUIRED_THRESHOLD_XOF}
+     * (voir {@code OrderService}).
+     */
+    @Column(name = "kyc_verified", nullable = false)
+    private boolean kycVerified = false;
+
+    @Column(name = "kyc_verified_at")
+    private Instant kycVerifiedAt;
+
+    @Column(name = "kyc_verified_by")
+    private UUID kycVerifiedBy;
+
     @Column(name = "last_login_at")
     private Instant lastLoginAt;
 
@@ -110,6 +125,18 @@ public class User extends AuditableEntity {
         this.blockedReason = null;
         this.blockedBy = null;
         this.blockedAt = null;
+    }
+
+    public void verifyKyc(UUID actorId, Instant at) {
+        this.kycVerified = true;
+        this.kycVerifiedAt = at;
+        this.kycVerifiedBy = actorId;
+    }
+
+    public void revokeKyc() {
+        this.kycVerified = false;
+        this.kycVerifiedAt = null;
+        this.kycVerifiedBy = null;
     }
 
     public void addRole(Role role) {
@@ -182,6 +209,18 @@ public class User extends AuditableEntity {
 
     public UUID getBlockedBy() {
         return blockedBy;
+    }
+
+    public boolean isKycVerified() {
+        return kycVerified;
+    }
+
+    public Instant getKycVerifiedAt() {
+        return kycVerifiedAt;
+    }
+
+    public UUID getKycVerifiedBy() {
+        return kycVerifiedBy;
     }
 
     public Instant getLastLoginAt() {

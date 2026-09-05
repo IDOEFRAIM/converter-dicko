@@ -209,6 +209,57 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         assertThat(cnyAvailableAfter.subtract(cnyAvailableBefore)).isEqualByComparingTo(order.amountCny());
     }
 
+    /**
+     * Regression : un motif de rejet multi-lignes (saisi via un {@code <textarea>} cote
+     * frontend) faisait echouer l'insertion de {@code audit_logs.metadata} avec une
+     * {@code DataIntegrityViolationException} ("invalid input syntax for type json", le
+     * caractere de controle 0x0A n'etait pas echappe) — le rejet retournait 409 alors que le
+     * motif etait parfaitement valide. Voir {@code JsonUtil#jsonString}.
+     */
+    @Test
+    void reject_withMultilineReason_succeeds() {
+        String admin = adminToken();
+        publishRate(admin, "85.000000");
+        depositCny(admin, "1000000");
+        String user = tokenFor(createUser(RoleCode.USER));
+        QuoteResponse quote = createAcceptedQuote(user, "50000");
+        OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
+        PaymentResponse payment = submitPayment(user, order.id(), "50000", "MM-REF-MULTILINE");
+        uploadProof(user, payment.id());
+
+        ResponseEntity<ApiResponse<PaymentResponse>> rejected = rejectPaymentRaw(admin, payment.id(),
+                "Preuve illisible\nMerci de renvoyer une photo plus nette.");
+
+        assertThat(rejected.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(rejected.getBody().data().status()).isEqualTo(PaymentStatus.REJECTED);
+    }
+
+    /**
+     * Regression : la preuve etait toujours servie en {@code application/octet-stream}
+     * (jamais le type reel, verifie par signature binaire a l'upload), forcant un
+     * telechargement generique la ou l'admin doit pouvoir visualiser l'image en ligne pour
+     * verifier le paiement avant de confirmer/rejeter.
+     */
+    @Test
+    void adminDownloadProof_returnsTheRealVerifiedContentType() {
+        String admin = adminToken();
+        publishRate(admin, "85.000000");
+        depositCny(admin, "1000000");
+        String user = tokenFor(createUser(RoleCode.USER));
+        QuoteResponse quote = createAcceptedQuote(user, "50000");
+        OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
+        PaymentResponse payment = submitPayment(user, order.id(), "50000", "MM-REF-PROOFVIEW");
+        PaymentProofResponse proof = uploadProof(user, payment.id());
+
+        ResponseEntity<byte[]> response = restTemplate.exchange(
+                "/api/admin/payments/" + payment.id() + "/proofs/" + proof.id(), HttpMethod.GET,
+                new HttpEntity<>(auth(admin)), byte[].class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.IMAGE_JPEG);
+        assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION)).isEqualTo("inline");
+    }
+
     @Test
     void confirm_anAlreadyConfirmedPayment_returnsConflict() {
         String admin = adminToken();

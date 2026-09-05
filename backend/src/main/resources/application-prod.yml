@@ -20,6 +20,19 @@ spring:
       hibernate:
         format_sql: false
 
+# Documentation Swagger/OpenAPI desactivee en production : le profil de base
+# (application.yml) l'expose sur des chemins publics (voir SecurityConfig,
+# necessaire pour que l'UI Swagger charge sans jeton) — exposer le schema
+# complet de l'API (tous les endpoints, tous les DTO, toutes les regles de
+# validation) sans authentification a des utilisateurs anonymes n'apporte
+# rien en production et elargit inutilement la surface de reconnaissance
+# d'un attaquant. Reste actif en dev/test pour l'exploration de l'API.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
 app:
   jwt:
     secret: ${JWT_SECRET}

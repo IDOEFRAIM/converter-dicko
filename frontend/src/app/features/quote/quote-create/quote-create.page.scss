@@ -1,7 +1,13 @@
 .page-title {
   font-size: 1.375rem;
   font-weight: 700;
-  margin: 0.5rem 0 1.25rem;
+  margin: 0.5rem 0 0.75rem;
+  color: var(--brand-navy, #1b325e);
+}
+
+.page-corridor {
+  display: block;
+  margin-bottom: 1.5rem;
 }
 
 .direction-toggle {

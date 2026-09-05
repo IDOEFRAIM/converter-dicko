@@ -292,18 +292,4 @@ class SettlementFlowIT extends AbstractOrderPipelineIT {
         return headers;
     }
 
-    private void uploadSettlementProof(String adminToken, java.util.UUID settlementId) {
-        org.springframework.util.MultiValueMap<String, Object> body = new org.springframework.util.LinkedMultiValueMap<>();
-        byte[] jpeg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0x00, 0x10};
-        body.add("file", new org.springframework.core.io.ByteArrayResource(jpeg) {
-            @Override
-            public String getFilename() {
-                return "settlement-proof.jpg";
-            }
-        });
-        org.springframework.http.HttpHeaders headers = auth(adminToken);
-        headers.setContentType(org.springframework.http.MediaType.MULTIPART_FORM_DATA);
-        restTemplate.exchange("/api/admin/settlements/" + settlementId + "/proofs", HttpMethod.POST,
-                new HttpEntity<>(body, headers), String.class);
-    }
 }

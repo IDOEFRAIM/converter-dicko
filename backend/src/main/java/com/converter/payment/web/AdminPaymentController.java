@@ -7,6 +7,7 @@ import com.converter.payment.dto.RejectPaymentRequest;
 import com.converter.payment.service.PaymentService;
 import com.converter.security.AuthenticatedUser;
 import com.converter.security.CurrentUser;
+import com.converter.storage.ProofDownload;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -56,14 +57,16 @@ public class AdminPaymentController {
     }
 
     @GetMapping("/{id}/proofs/{proofId}")
-    @Operation(summary = "Telecharger une preuve de paiement (administration)")
+    @Operation(summary = "Visualiser une preuve de paiement (administration)",
+            description = "Servi avec son type MIME reel (verifie par signature binaire a l'upload) pour permettre "
+                    + "un apercu en ligne pendant la verification, jamais l'en-tete brut fourni par le client.")
     public ResponseEntity<Resource> downloadProof(@PathVariable UUID id, @PathVariable UUID proofId) {
-        Resource resource = paymentService.adminDownloadProof(id, proofId);
+        ProofDownload proof = paymentService.adminDownloadProof(id, proofId);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
                 .header("X-Content-Type-Options", "nosniff")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(resource);
+                .contentType(MediaType.parseMediaType(proof.contentType()))
+                .body(proof.resource());
     }
 
     @PostMapping("/{id}/confirm")

@@ -1,5 +1,6 @@
 package com.converter;
 
+import com.converter.config.props.AbuseProtectionProperties;
 import com.converter.config.props.AdminSeedProperties;
 import com.converter.config.props.CorsProperties;
 import com.converter.config.props.JwtProperties;
@@ -19,6 +20,7 @@ import java.util.TimeZone;
         CorsProperties.class,
         AdminSeedProperties.class,
         LoginProtectionProperties.class,
+        AbuseProtectionProperties.class,
         StorageProperties.class
 })
 public class ConverterApplication {

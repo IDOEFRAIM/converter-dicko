@@ -8,6 +8,7 @@ import com.converter.payment.dto.SubmitPaymentRequest;
 import com.converter.payment.service.PaymentService;
 import com.converter.security.AuthenticatedUser;
 import com.converter.security.CurrentUser;
+import com.converter.storage.ProofDownload;
 import com.converter.storage.exception.StorageException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.swagger.v3.oas.annotations.Operation;
@@ -102,16 +103,16 @@ public class PaymentController {
 
     @GetMapping("/payments/{paymentId}/proofs/{proofId}")
     @Operation(summary = "Telecharger une preuve de paiement",
-            description = "Reserve au proprietaire de l'ordre. Servi en piece jointe, jamais en ligne.")
+            description = "Reserve au proprietaire de l'ordre.")
     public ResponseEntity<Resource> downloadProof(
             @PathVariable UUID paymentId,
             @PathVariable UUID proofId,
             @AuthenticatedUser CurrentUser currentUser) {
-        Resource resource = paymentService.downloadProof(paymentId, proofId, currentUser.getId());
+        ProofDownload proof = paymentService.downloadProof(paymentId, proofId, currentUser.getId());
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
                 .header("X-Content-Type-Options", "nosniff")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(resource);
+                .contentType(MediaType.parseMediaType(proof.contentType()))
+                .body(proof.resource());
     }
 }

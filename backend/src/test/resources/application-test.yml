@@ -18,6 +18,20 @@ app:
     enabled: false
   cors:
     allowed-origins: http://localhost:4200
+  # Le contexte Spring et donc RateLimitFilter (et son cache Caffeine) sont
+  # partages par TOUTE la suite d'integration (voir AbstractIntegrationTest) :
+  # un seuil de production realiste serait probablement depasse par le seul
+  # volume cumule des tests existants (tous les appels HTTP de test partagent
+  # la meme IP 127.0.0.1), ce qui ferait echouer des tests sans rapport avec
+  # cette fonctionnalite. La logique du filtre est verifiee isolement par
+  # RateLimitFilterTest (test unitaire, sans contexte Spring) ; ces seuils
+  # tres eleves servent uniquement a neutraliser la fonctionnalite pour le
+  # reste de la suite d'integration.
+  abuse-protection:
+    register-max-attempts: 100000
+    register-window-minutes: 1
+    write-max-attempts: 100000
+    write-window-minutes: 1
 
 logging:
   level:

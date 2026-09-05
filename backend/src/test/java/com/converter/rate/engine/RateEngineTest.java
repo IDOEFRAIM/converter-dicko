@@ -1,13 +1,9 @@
 package com.converter.rate.engine;
 
 import com.converter.common.exception.BusinessException;
-import com.converter.rate.domain.MarketRate;
-import com.converter.rate.domain.RateProviderType;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -15,6 +11,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Tests unitaires purs : {@link RateEngine} n'a aucune dependance
  * Spring/HTTP/persistence, il est donc instancie directement.
+ *
+ * <p>{@code baseRate} est un simple {@link BigDecimal} : ce moteur est
+ * deliberement agnostique de sa provenance (cotation de marche
+ * historique, ou {@code breakEvenRate} depuis la Phase 3.1) — voir
+ * {@link RateEngine}.
  */
 class RateEngineTest {
 
@@ -22,7 +23,7 @@ class RateEngineTest {
 
     @Test
     void applyMargin_increasesRateByPercentage() {
-        // 1 CNY = 85 XOF sur le marche, marge 1.5 % -> le client doit
+        // 1 CNY = 85 XOF de base, marge 1.5 % -> le client doit
         // donner davantage de XOF pour 1 CNY : c'est ainsi que la marge
         // de change est capturee, independamment des frais de service.
         BigDecimal customerRate = engine.applyMargin(new BigDecimal("85"), new BigDecimal("1.5"));
@@ -31,19 +32,27 @@ class RateEngineTest {
     }
 
     @Test
-    void applyMargin_withZeroMargin_equalsMarketRate() {
+    void applyMargin_withZeroMargin_equalsBaseRate() {
         BigDecimal customerRate = engine.applyMargin(new BigDecimal("85"), BigDecimal.ZERO);
 
         assertThat(customerRate).isEqualByComparingTo("85.000000");
     }
 
     @Test
+    void applyMargin_higherMargin_yieldsHigherCustomerRate() {
+        // Validation economique explicite (independante de RateEngine) : la marge est monotone
+        // croissante sur le customerRate, quel que soit le taux de base.
+        BigDecimal lowMargin = engine.applyMargin(new BigDecimal("85"), new BigDecimal("1"));
+        BigDecimal highMargin = engine.applyMargin(new BigDecimal("85"), new BigDecimal("5"));
+
+        assertThat(highMargin).isGreaterThan(lowMargin);
+    }
+
+    @Test
     void priceSendXof_withNoMarginOrFee_matchesReferenceExample() {
         // Exemple canonique de la specification : 100 000 XOF a 85 XOF/CNY
         // sans marge ni frais -> 1 176,47 CNY (arrondi CNY a l'inferieur).
-        MarketRate marketRate = marketRateOf("85");
-
-        PricingResult result = engine.price(AmountBasis.XOF, new BigDecimal("100000"), marketRate,
+        PricingResult result = engine.price(AmountBasis.XOF, new BigDecimal("100000"), new BigDecimal("85"),
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
 
         assertThat(result.customerRate()).isEqualByComparingTo("85.000000");
@@ -57,9 +66,7 @@ class RateEngineTest {
         // Taux 100 pour simplifier (customerRate = 100 exactement).
         // Frais 2.5 % sur 100 001 XOF = 2500,025 -> arrondi AU SUPERIEUR
         // (jamais a l'inferieur) = 2501, jamais 2500.
-        MarketRate marketRate = marketRateOf("100");
-
-        PricingResult result = engine.price(AmountBasis.XOF, new BigDecimal("100001"), marketRate,
+        PricingResult result = engine.price(AmountBasis.XOF, new BigDecimal("100001"), new BigDecimal("100"),
                 BigDecimal.ZERO, new BigDecimal("2.5"), BigDecimal.ZERO);
 
         assertThat(result.feeXof()).isEqualByComparingTo("2501");
@@ -69,11 +76,9 @@ class RateEngineTest {
 
     @Test
     void priceSendXof_cnyIsRoundedDown_neverUp() {
-        MarketRate marketRate = marketRateOf("85");
-
         // 100 100 / 85 = 1177,647058... -> arrondi CNY a l'inferieur = 1177.64,
         // jamais 1177.65.
-        PricingResult result = engine.price(AmountBasis.XOF, new BigDecimal("100100"), marketRate,
+        PricingResult result = engine.price(AmountBasis.XOF, new BigDecimal("100100"), new BigDecimal("85"),
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
 
         assertThat(result.amountCny()).isEqualByComparingTo("1177.64");
@@ -86,9 +91,7 @@ class RateEngineTest {
         // formule inverse reconcilie exactement avec la formule directe :
         // reappliquer SEND_XOF au montant XOF brut obtenu doit retomber
         // sur les memes frais et le meme montant CNY.
-        MarketRate marketRate = marketRateOf("100");
-
-        PricingResult result = engine.price(AmountBasis.CNY, new BigDecimal("1000"), marketRate,
+        PricingResult result = engine.price(AmountBasis.CNY, new BigDecimal("1000"), new BigDecimal("100"),
                 BigDecimal.ZERO, new BigDecimal("2.5"), BigDecimal.ZERO);
 
         assertThat(result.amountXof()).isEqualByComparingTo("102565");
@@ -100,7 +103,7 @@ class RateEngineTest {
         // doit produire exactement le meme resultat (memes frais, meme
         // montant CNY) — un Quote RECEIVE_CNY n'est jamais qu'un SEND_XOF
         // "presente a l'envers".
-        PricingResult replay = engine.price(AmountBasis.XOF, result.amountXof(), marketRate,
+        PricingResult replay = engine.price(AmountBasis.XOF, result.amountXof(), new BigDecimal("100"),
                 BigDecimal.ZERO, new BigDecimal("2.5"), BigDecimal.ZERO);
         assertThat(replay.feeXof()).isEqualByComparingTo(result.feeXof());
         assertThat(replay.amountCny()).isEqualByComparingTo(result.amountCny());
@@ -112,7 +115,7 @@ class RateEngineTest {
         // final ne doit jamais etre INFERIEUR a ce que le client a
         // demande — l'arrondi protege toujours la tresorerie, jamais le
         // client n'est floue.
-        MarketRate marketRate = marketRateOf("85");
+        BigDecimal baseRate = new BigDecimal("85");
         BigDecimal[] targets = {
                 new BigDecimal("1000.01"), new BigDecimal("50.33"), new BigDecimal("9999.99"), new BigDecimal("1")
         };
@@ -120,7 +123,7 @@ class RateEngineTest {
 
         for (BigDecimal target : targets) {
             for (BigDecimal fee : fees) {
-                PricingResult result = engine.price(AmountBasis.CNY, target, marketRate,
+                PricingResult result = engine.price(AmountBasis.CNY, target, baseRate,
                         new BigDecimal("1.5"), fee, new BigDecimal("100"));
 
                 assertThat(result.amountCny())
@@ -135,9 +138,7 @@ class RateEngineTest {
 
     @Test
     void price_withAmountTooSmallToCoverFees_throwsBusinessException() {
-        MarketRate marketRate = marketRateOf("85");
-
-        assertThatThrownBy(() -> engine.price(AmountBasis.XOF, new BigDecimal("50"), marketRate,
+        assertThatThrownBy(() -> engine.price(AmountBasis.XOF, new BigDecimal("50"), new BigDecimal("85"),
                 BigDecimal.ZERO, BigDecimal.ZERO, new BigDecimal("1000")))
                 .isInstanceOf(BusinessException.class);
     }
@@ -148,9 +149,7 @@ class RateEngineTest {
         // que le calcul aboutit (pas d'ArithmeticException) et que
         // l'identite comptable est preservee, sans dependre d'une valeur
         // magique difficile a verifier a la main.
-        MarketRate marketRate = marketRateOf("85");
-
-        PricingResult result = engine.price(AmountBasis.XOF, new BigDecimal("333333"), marketRate,
+        PricingResult result = engine.price(AmountBasis.XOF, new BigDecimal("333333"), new BigDecimal("85"),
                 new BigDecimal("1.5"), new BigDecimal("0.73"), new BigDecimal("57"));
 
         assertThat(result.netAmountXof()).isEqualByComparingTo(
@@ -161,9 +160,7 @@ class RateEngineTest {
     @Test
     void priceSendXof_withCombinedFixedAndPercentFee_appliesBothExactlyOnce() {
         // Taux 100 (customerRate = 100), frais = 2 % + 500 XOF fixes.
-        MarketRate marketRate = marketRateOf("100");
-
-        PricingResult result = engine.price(AmountBasis.XOF, new BigDecimal("100000"), marketRate,
+        PricingResult result = engine.price(AmountBasis.XOF, new BigDecimal("100000"), new BigDecimal("100"),
                 BigDecimal.ZERO, new BigDecimal("2"), new BigDecimal("500"));
 
         // feeXof = roundUp(100000 * 2/100 + 500) = roundUp(2500) = 2500 — les deux composantes
@@ -177,9 +174,7 @@ class RateEngineTest {
     @Test
     void priceReceiveCny_withPercentFee_feeIsAppliedOnGrossOnce_andNetCoversTheTarget() {
         // Sens inverse : on vise 1 000 CNY, taux 100, frais 10 %.
-        MarketRate marketRate = marketRateOf("100");
-
-        PricingResult result = engine.price(AmountBasis.CNY, new BigDecimal("1000"), marketRate,
+        PricingResult result = engine.price(AmountBasis.CNY, new BigDecimal("1000"), new BigDecimal("100"),
                 BigDecimal.ZERO, new BigDecimal("10"), BigDecimal.ZERO);
 
         // Les frais sont calcules sur le montant XOF BRUT (grossAmountXof), une seule fois :
@@ -190,10 +185,5 @@ class RateEngineTest {
         assertThat(result.amountCny()).isGreaterThanOrEqualTo(new BigDecimal("1000.00"));
         // Pas de sur-facturation grossiere : le brut reste dans l'ordre de grandeur de cible/(1-fee).
         assertThat(result.amountXof()).isLessThan(new BigDecimal("112000"));
-    }
-
-    private static MarketRate marketRateOf(String cfaPerCny) {
-        return new MarketRate("XOF/CNY", new BigDecimal(cfaPerCny), RateProviderType.MANUAL,
-                Instant.parse("2026-08-20T09:00:00Z"), UUID.randomUUID());
     }
 }

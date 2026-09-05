@@ -5,6 +5,7 @@ import com.converter.common.exception.ErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -42,7 +43,7 @@ public class SecurityResponseWriter {
                 code.name(),
                 message,
                 request.getRequestURI(),
-                null,
+                MDC.get(RequestIdFilter.MDC_KEY),
                 null);
 
         objectMapper.writeValue(response.getWriter(), body);

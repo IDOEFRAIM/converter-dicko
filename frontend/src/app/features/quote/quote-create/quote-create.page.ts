@@ -9,6 +9,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { QuoteService } from '../../../core/services/quote.service';
 import { QuoteDirection } from '../../../core/models/quote.model';
 import { extractErrorMessage } from '../../../core/services/api-error.util';
+import { CorridorComponent } from '../../../shared/components/corridor/corridor.component';
 
 /**
  * Point d'entree du parcours principal : "J'envoie X XOF" ou "Je veux
@@ -26,6 +27,7 @@ import { extractErrorMessage } from '../../../core/services/api-error.util';
     MatFormFieldModule,
     MatInputModule,
     MatProgressSpinnerModule,
+    CorridorComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './quote-create.page.html',

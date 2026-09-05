@@ -10,6 +10,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       @if (description()) {
         <p class="empty-state__description">{{ description() }}</p>
       }
+      <div class="empty-state__action">
+        <ng-content />
+      </div>
     </div>
   `,
   styles: [
@@ -27,6 +30,12 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       .empty-state__description {
         font-size: 0.875rem;
         margin: 0;
+      }
+      .empty-state__action:empty {
+        display: none;
+      }
+      .empty-state__action {
+        margin-top: 1rem;
       }
     `,
   ],

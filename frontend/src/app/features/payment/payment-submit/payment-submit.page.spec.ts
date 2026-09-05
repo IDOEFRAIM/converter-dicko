@@ -98,6 +98,73 @@ describe('PaymentSubmitPage', () => {
     expect(fixture.componentInstance.payment()?.id).toBe('p1');
   });
 
+  it('shows a safe-retry message on network failure, never a definitive failure message', () => {
+    fixture.componentInstance.form.patchValue({ transactionReference: 'MM-REF-1' });
+    fixture.componentInstance.submitPayment();
+
+    const req = httpMock.expectOne('/api/v1/orders/o1/payments');
+    req.error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
+
+    expect(fixture.componentInstance.errorMessage()).toContain('reessayer en toute securite');
+    expect(fixture.componentInstance.submitting()).toBe(false);
+  });
+
+  it('reuses the same Idempotency-Key when retrying an unchanged submission after a failure', () => {
+    fixture.componentInstance.form.patchValue({ transactionReference: 'MM-REF-1' });
+
+    fixture.componentInstance.submitPayment();
+    const first = httpMock.expectOne('/api/v1/orders/o1/payments');
+    const firstKey = first.request.headers.get('Idempotency-Key');
+    first.error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
+
+    fixture.componentInstance.submitPayment();
+    const second = httpMock.expectOne('/api/v1/orders/o1/payments');
+    expect(second.request.headers.get('Idempotency-Key')).toBe(firstKey);
+    second.flush({
+      data: {
+        id: 'p1',
+        orderId: 'o1',
+        method: 'MOBILE_MONEY',
+        status: 'SUBMITTED',
+        expectedAmountXof: '100000.00',
+        receivedAmountXof: '100000.00',
+        transactionReference: 'MM-REF-1',
+        payerPhone: null,
+        rejectionReason: null,
+        proofs: [],
+        submittedAt: '2026-01-01T10:05:00Z',
+        confirmedAt: null,
+        rejectedAt: null,
+      },
+      message: 'ok',
+    });
+  });
+
+  it('uses a new Idempotency-Key when the submitted reference changes (a different intent)', () => {
+    fixture.componentInstance.form.patchValue({ transactionReference: 'MM-REF-1' });
+    fixture.componentInstance.submitPayment();
+    const first = httpMock.expectOne('/api/v1/orders/o1/payments');
+    const firstKey = first.request.headers.get('Idempotency-Key');
+    first.flush(null, { status: 409, statusText: 'Conflict' });
+
+    fixture.componentInstance.form.patchValue({ transactionReference: 'MM-REF-2' });
+    fixture.componentInstance.submitPayment();
+    const second = httpMock.expectOne('/api/v1/orders/o1/payments');
+    expect(second.request.headers.get('Idempotency-Key')).not.toBe(firstKey);
+    second.flush(null, { status: 409, statusText: 'Conflict' });
+  });
+
+  it('disables submission while a request is already in flight', () => {
+    fixture.componentInstance.form.patchValue({ transactionReference: 'MM-REF-1' });
+    fixture.componentInstance.submitPayment();
+    expect(fixture.componentInstance.submitting()).toBe(true);
+
+    // Un second appel pendant que la premiere tentative est en cours ne doit declencher
+    // aucune requete HTTP supplementaire (httpMock.verify() dans afterEach l'aurait signale).
+    fixture.componentInstance.submitPayment();
+    httpMock.expectOne('/api/v1/orders/o1/payments').flush(null, { status: 500, statusText: 'Error' });
+  });
+
   it('uploads the proof for the payment just created', () => {
     fixture.componentInstance.payment.set({
       id: 'p1',

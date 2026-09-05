@@ -1,35 +1,177 @@
 .order-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin: 0.5rem 0 1.25rem;
+  margin: 0.5rem 0 0.5rem;
+}
+
+.order-header__label {
+  margin: 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--mat-sys-on-surface-variant, #757575);
 }
 
 .order-header__reference {
-  margin: 0;
+  margin: 0.125rem 0 0;
   font-weight: 700;
   font-size: 1.0625rem;
+  color: var(--brand-navy, #1b325e);
 }
 
-.order-header__amounts {
-  margin: 0.25rem 0 0;
-  color: var(--mat-sys-on-surface-variant, #616161);
+.order-corridor {
+  display: block;
+  margin-bottom: 1rem;
 }
 
-.action-card {
-  padding: 1.25rem;
+// ---- Statut ----
+
+.order-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
   margin-bottom: 1.25rem;
 }
 
-.action-card__buttons {
+.order-status__description {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--mat-sys-on-surface-variant, #616161);
+}
+
+.order-status__reason {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--brand-red, #ce1922);
+}
+
+// ---- Vous envoyez / le beneficiaire recoit ----
+
+.order-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.order-flow__block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.order-flow__label {
+  margin: 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--mat-sys-on-surface-variant, #757575);
+}
+
+.order-flow__amount {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.order-flow__amount--accent {
+  color: var(--brand-navy, #1b325e);
+}
+
+.order-flow__meta {
+  display: flex;
+  gap: 1.5rem;
+  margin: 0;
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  dt {
+    font-size: 0.75rem;
+    color: var(--mat-sys-on-surface-variant, #757575);
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+}
+
+// ---- CTA selon statut ----
+
+.order-cta-row {
   display: flex;
   gap: 0.75rem;
-  margin-top: 1rem;
+  margin-bottom: 1.5rem;
 
   button {
     flex: 1;
+    height: 46px;
   }
 }
+
+.order-cta-row__full {
+  width: 100%;
+  height: 46px;
+  margin-bottom: 1.5rem;
+
+  mat-icon {
+    margin-right: 0.375rem;
+  }
+}
+
+// ---- Justificatif (ordre COMPLETED) ----
+
+.receipt-panel {
+  margin-bottom: 1.5rem;
+}
+
+.receipt-panel__description {
+  margin: 0 0 0.875rem;
+  font-size: 0.9rem;
+  color: var(--mat-sys-on-surface-variant, #616161);
+}
+
+.receipt-panel__cta {
+  width: 100%;
+  height: 46px;
+}
+
+// ---- Lien vers le suivi ----
+
+.order-track-link {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 1rem;
+  text-decoration: none;
+  color: var(--mat-sys-on-surface, #1a1c1e);
+  font-weight: 600;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  mat-icon:first-child {
+    color: var(--brand-navy, #1b325e);
+  }
+
+  span {
+    flex: 1;
+  }
+
+  &:hover {
+    border-color: var(--brand-navy, #1b325e);
+    box-shadow: var(--shadow-xs);
+  }
+}
+
+.order-track-link__chevron {
+  color: var(--mat-sys-on-surface-variant, #9aa0ab);
+}
+
+// ---- Reglement / Fournisseur ----
 
 .section-heading {
   display: flex;
@@ -37,6 +179,7 @@
   gap: 0.375rem;
   font-weight: 700;
   margin: 0 0 0.75rem;
+  color: var(--brand-navy, #1b325e);
 }
 
 .settlement-card__label {
@@ -50,43 +193,27 @@
   font-size: 0.875rem;
 }
 
-.detail-list {
-  display: grid;
-  gap: 0.625rem;
+.supplier-name {
   margin: 0;
-
-  div {
-    display: flex;
-    justify-content: space-between;
-  }
-
-  dt {
-    color: var(--mat-sys-on-surface-variant, #616161);
-    font-size: 0.875rem;
-  }
-
-  dd {
-    margin: 0;
-    font-weight: 600;
-    text-align: right;
-  }
+  font-weight: 700;
+  font-size: 1rem;
 }
 
-.timeline {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.625rem;
-
-  li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-}
-
-.timeline__date {
-  font-size: 0.8125rem;
+.supplier-meta {
+  margin: 0.2rem 0 0;
+  font-size: 0.875rem;
   color: var(--mat-sys-on-surface-variant, #616161);
+}
+
+.supplier-purpose {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+}
+
+.supplier-pay-again {
+  margin-top: 1rem;
+}
+
+.panel + .panel {
+  margin-top: 0.875rem;
 }

@@ -1,61 +1,56 @@
+// Le hero n'est plus un bandeau bleu marketing : c'est le corridor + le taux du moment,
+// sur le meme fond "panel" chaud que le reste de la page (pas un degrade plein-largeur).
 .hero {
-  position: relative;
-  overflow: hidden;
-  text-align: center;
-  padding: 2.25rem 1.5rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   margin: 0.25rem 0 1.75rem;
-  border-radius: var(--radius-lg);
-  background: var(--brand-gradient);
-  color: #fff;
-  box-shadow: var(--shadow-lg);
-}
-
-.hero__glow {
-  position: absolute;
-  inset: -40% -10% auto auto;
-  width: 260px;
-  height: 260px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 176, 32, 0.35), transparent 70%);
-  pointer-events: none;
 }
 
 .hero__greeting {
-  position: relative;
   margin: 0;
-  color: rgba(255, 255, 255, 0.75);
   font-size: 0.9375rem;
   font-weight: 600;
+  color: var(--mat-sys-on-surface-variant, #616161);
 }
 
-.hero__title {
-  position: relative;
-  margin: 0.375rem 0 0.5rem;
-  font-size: 1.625rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
+.hero__rate-row {
+  display: flex;
+  align-items: center;
+  min-height: 2.5rem;
 }
 
-.hero__subtitle {
-  position: relative;
-  margin: 0 0 1.5rem;
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.8);
-  max-width: 30rem;
-  margin-left: auto;
-  margin-right: auto;
+.hero__rate-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.hero__rate-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--mat-sys-on-surface-variant, #757575);
+}
+
+// Le taux est la valeur dominante de l'ecran (section 19) : seule grande valeur ici.
+.hero__rate {
+  font-size: 1.5rem;
+  color: var(--brand-navy, #1b325e);
+}
+
+.hero__rate-date {
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant, #757575);
 }
 
 .hero__cta {
-  position: relative;
-  height: 48px;
-  padding: 0 1.75rem;
-  font-size: 1rem;
+  align-self: flex-start;
+  height: 46px;
+  padding: 0 1.5rem;
+  font-size: 0.9375rem;
   font-weight: 700;
   border-radius: var(--radius-sm);
-  background: #fff;
-  color: #0a2a70;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
 
   mat-icon {
     margin-right: 0.375rem;
@@ -66,97 +61,106 @@
   font-size: 1.0625rem;
   font-weight: 700;
   margin: 0 0 0.75rem;
+  color: var(--brand-navy, #1b325e);
 }
 
-.quick-links {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+// Voir styles.scss : `.section-header .section-title` ne peut pas etre surchargee
+// de facon fiable depuis le style global a cause de l'encapsulation de vue Angular.
+.section-header .section-title {
+  margin-bottom: 0;
+}
+
+// ---- Derniere operation ----
+
+.last-order {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1.75rem;
 }
 
-.quick-link {
+.last-order__main {
   display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  padding: 1rem;
-  border-radius: var(--radius-md);
-  background: var(--mat-sys-surface-container-low, #fff);
-  border: 1px solid var(--mat-sys-outline-variant, #e6e9f0);
-  box-shadow: var(--shadow-xs);
-  text-decoration: none;
-  color: var(--mat-sys-on-surface, #1a1c1e);
-  font-weight: 700;
-  font-size: 0.9375rem;
-  transition: box-shadow 0.15s ease, transform 0.15s ease;
-
-  &:hover {
-    box-shadow: var(--shadow-sm);
-    transform: translateY(-1px);
-  }
+  flex-direction: column;
+  gap: 0.3rem;
 }
 
-.quick-link__icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  flex: 0 0 auto;
-  border-radius: 10px;
-  background: rgba(26, 86, 219, 0.1);
-  color: #1a56db;
-
-  mat-icon {
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
-  }
-}
-
-.order-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  text-decoration: none;
-  color: inherit;
-}
-
-.order-row__reference {
-  font-weight: 600;
+.last-order__name {
   margin: 0;
+  font-weight: 700;
+  font-size: 1rem;
 }
 
-.order-row__amount {
-  margin: 0.125rem 0 0;
-  font-size: 0.875rem;
+.last-order__amount {
+  margin: 0;
+  font-size: 0.9375rem;
   color: var(--mat-sys-on-surface-variant, #616161);
 }
 
-.section-link {
+.last-order__actions {
   display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+// ---- Fournisseurs ----
+
+.supplier-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  margin-bottom: 1.75rem;
+}
+
+.supplier-chip {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.375rem;
-  margin-top: 0.25rem;
-  padding: 0.875rem;
-  border-radius: var(--radius-sm);
-  border: 1px dashed var(--mat-sys-outline-variant, #cdd6ea);
-  font-weight: 700;
-  font-size: 0.9375rem;
-  color: #1a56db;
+  padding: 0.625rem 1.125rem;
+  border-radius: 999px;
+  background: var(--mat-sys-surface-container-low, #fffdf8);
+  border: 1px solid var(--mat-sys-outline-variant, #e6e9f0);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--mat-sys-on-surface, #1a1c1e);
   text-decoration: none;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    box-shadow: var(--shadow-xs);
+    border-color: var(--brand-navy, #1b325e);
+  }
+}
+
+.supplier-chip--add {
+  padding: 0.625rem 0.875rem;
+  color: var(--brand-navy, #1b325e);
 
   mat-icon {
     font-size: 20px;
     width: 20px;
     height: 20px;
   }
+}
 
-  &:hover {
-    background: rgba(26, 86, 219, 0.06);
-    border-color: #1a56db;
-  }
+// ---- Taux ----
+
+.rate-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.rate-panel__chart {
+  width: 200px;
+  height: 40px;
+  flex: 1 1 200px;
+  max-width: 260px;
+}
+
+.rate-panel__cta {
+  flex: 0 0 auto;
 }

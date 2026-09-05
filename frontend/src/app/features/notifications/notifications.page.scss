@@ -11,8 +11,8 @@
 }
 
 .notification-row--unread {
-  background: rgba(26, 86, 219, 0.05);
-  border-color: rgba(26, 86, 219, 0.25);
+  background: rgba(27, 50, 94, 0.05);
+  border-color: rgba(27, 50, 94, 0.25);
 }
 
 .notification-row__icon {
@@ -23,8 +23,8 @@
   height: 40px;
   flex: 0 0 auto;
   border-radius: 12px;
-  background: rgba(26, 86, 219, 0.1);
-  color: #1a56db;
+  background: rgba(27, 50, 94, 0.1);
+  color: var(--brand-navy, #1b325e);
 
   mat-icon {
     font-size: 20px;
@@ -63,5 +63,5 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #1a56db;
+  background: var(--brand-navy, #1b325e);
 }

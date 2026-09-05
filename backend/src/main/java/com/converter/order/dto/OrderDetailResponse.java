@@ -1,6 +1,7 @@
 package com.converter.order.dto;
 
 import com.converter.order.domain.OrderStatus;
+import com.converter.supplier.domain.Purpose;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
@@ -31,6 +32,12 @@ public record OrderDetailResponse(
         Instant paymentDeadlineAt,
 
         Instant completedAt,
-        Instant cancelledAt
+        Instant cancelledAt,
+
+        @Schema(description = "Fournisseur enregistre utilise pour cet ordre, purement tracable — null si beneficiaire saisi directement")
+        UUID supplierId,
+
+        Purpose purpose,
+        String purposeDetails
 ) {
 }

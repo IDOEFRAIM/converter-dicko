@@ -31,6 +31,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         font-size: 1.375rem;
         font-weight: 700;
         margin: 0;
+        color: var(--brand-navy, #1b325e);
       }
       .page-header__subtitle {
         margin: 0.25rem 0 0;

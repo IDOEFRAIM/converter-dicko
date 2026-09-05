@@ -283,7 +283,8 @@ public class PreferredRateService {
         BigDecimal marginPercentage = settingsService.getDecimal(SettingKey.DEFAULT_MARGIN_PERCENTAGE);
         BigDecimal feePercentage = settingsService.getDecimal(SettingKey.DEFAULT_FEE_PERCENTAGE);
         BigDecimal fixedFeeXof = settingsService.getDecimal(SettingKey.DEFAULT_FIXED_FEE_XOF);
-        return rateEngine.price(AmountBasis.XOF, amountXof, marketRate, marginPercentage, feePercentage, fixedFeeXof);
+        return rateEngine.price(AmountBasis.XOF, amountXof, marketRate.cfaPerCny(), marginPercentage, feePercentage,
+                fixedFeeXof);
     }
 
     private Exchange findExchange(PreferredRateRequest preferredRate) {

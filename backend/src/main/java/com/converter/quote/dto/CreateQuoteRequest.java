@@ -2,6 +2,7 @@ package com.converter.quote.dto;
 
 import com.converter.quote.domain.QuoteDirection;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
@@ -22,10 +23,12 @@ public record CreateQuoteRequest(
         QuoteDirection direction,
 
         @Positive(message = "Le montant XOF doit etre strictement positif")
+        @Digits(integer = 17, fraction = 2, message = "Le montant XOF depasse la precision autorisee")
         @Schema(description = "Montant XOF que le client paie — requis uniquement pour SEND_XOF", example = "100000")
         BigDecimal amountXof,
 
         @Positive(message = "Le montant CNY doit etre strictement positif")
+        @Digits(integer = 17, fraction = 2, message = "Le montant CNY depasse la precision autorisee")
         @Schema(description = "Montant CNY que le beneficiaire doit recevoir — requis uniquement pour RECEIVE_CNY")
         BigDecimal amountCny
 ) {

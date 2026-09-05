@@ -6,7 +6,10 @@ import com.converter.quote.domain.QuoteDirection;
 import com.converter.quote.domain.QuoteStatus;
 import com.converter.quote.dto.CreateQuoteRequest;
 import com.converter.quote.dto.QuoteResponse;
+import com.converter.rate.cost.dto.CostRateConfigurationResponse;
+import com.converter.settings.domain.SettingKey;
 import com.converter.support.AbstractRateQuoteIT;
+import com.converter.user.domain.RoleCode;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -16,6 +19,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -135,6 +140,58 @@ class RateAndQuoteFlowIT extends AbstractRateQuoteIT {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody().code()).isEqualTo("VALIDATION_ERROR");
+    }
+
+    @Test
+    void createQuote_customerRateEqualsBreakEvenRateWithMarginApplied() {
+        // Chaine complete (Phase 3.1) : parametres XOF -> USD -> CNY reels -> breakEvenRate ->
+        // + marge commerciale -> customerRate effectivement utilise par le Quote.
+        //
+        // breakEvenRate="87.971572" est une valeur calculee independamment (Decimal, precision
+        // arbitraire) lors de la mission precedente pour ces memes parametres (1 000 000 XOF, 583,
+        // 6.70, 1 %, 1.50 USD) : jamais une constante inventee pour ce test. On l'utilise ici
+        // directement (plutot que de la relire via /cost-rates/current) pour que cette assertion ne
+        // dependre d'aucun autre appel HTTP entre la publication et la creation du devis.
+        String admin = adminToken();
+        publishCostRate(admin, "583", "6.70", "0.01", "1.50", "1000000");
+        settingsService.update(SettingKey.DEFAULT_MARGIN_PERCENTAGE, "2", createUser(RoleCode.ADMIN).getId());
+
+        String user = tokenFor(createUser(com.converter.user.domain.RoleCode.USER));
+        QuoteResponse quote = createQuote(user, new CreateQuoteRequest(QuoteDirection.SEND_XOF,
+                new BigDecimal("100000"), null));
+
+        // customerRate = breakEvenRate * (1 + margin/100), avec les memes regles d'arrondi que
+        // RateEngine (verifiees independamment par RateEngineTest) : ce test verifie le CABLAGE
+        // bout en bout (config -> breakEvenRate -> RateEngine -> Quote), pas l'arithmetique elle-meme.
+        BigDecimal expectedCustomerRate = new BigDecimal("87.971572")
+                .multiply(new BigDecimal("1.02"), new MathContext(20, RoundingMode.HALF_UP))
+                .setScale(6, RoundingMode.HALF_UP);
+        assertThat(quote.customerRate()).isEqualByComparingTo(expectedCustomerRate);
+    }
+
+    @Test
+    void changingMargin_changesCustomerRate_butNeverTheUnderlyingBreakEvenRate() {
+        String admin = adminToken();
+        publishCostRate(admin, "583", "6.70", "0.01", "1.50", "1000000");
+        String user = tokenFor(createUser(RoleCode.USER));
+
+        settingsService.update(SettingKey.DEFAULT_MARGIN_PERCENTAGE, "1", createUser(RoleCode.ADMIN).getId());
+        QuoteResponse lowMarginQuote = createQuote(user, new CreateQuoteRequest(QuoteDirection.SEND_XOF,
+                new BigDecimal("100000"), null));
+        CostRateConfigurationResponse afterFirstQuote = currentCostRateConfiguration(admin);
+
+        settingsService.update(SettingKey.DEFAULT_MARGIN_PERCENTAGE, "5", createUser(RoleCode.ADMIN).getId());
+        QuoteResponse highMarginQuote = createQuote(user, new CreateQuoteRequest(QuoteDirection.SEND_XOF,
+                new BigDecimal("100000"), null));
+        CostRateConfigurationResponse afterSecondQuote = currentCostRateConfiguration(admin);
+
+        // La marge change bien le customerRate expose au client...
+        assertThat(highMarginQuote.customerRate()).isGreaterThan(lowMarginQuote.customerRate());
+        // ...mais ne touche jamais la configuration de cout (aucune republication entre les deux
+        // devis) : c'est bien la meme ligne, le meme breakEvenRate, avant et apres le changement de
+        // marge — la marge est une decision purement commerciale, distincte du cout de revient.
+        assertThat(afterSecondQuote.id()).isEqualTo(afterFirstQuote.id());
+        assertThat(afterSecondQuote.breakEvenRate()).isEqualByComparingTo(afterFirstQuote.breakEvenRate());
     }
 
     private HttpHeaders authHeaders(String token) {

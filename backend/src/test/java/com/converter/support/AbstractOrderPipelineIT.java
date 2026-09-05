@@ -12,6 +12,10 @@ import com.converter.payment.dto.SubmitPaymentRequest;
 import com.converter.quote.domain.QuoteDirection;
 import com.converter.quote.dto.CreateQuoteRequest;
 import com.converter.quote.dto.QuoteResponse;
+import com.converter.refund.dto.CreateRefundRequest;
+import com.converter.refund.dto.ProcessRefundRequest;
+import com.converter.refund.dto.RefundResponse;
+import com.converter.refund.dto.RejectRefundRequest;
 import com.converter.settlement.dto.SettlementResponse;
 import com.converter.treasury.domain.Currency;
 import com.converter.treasury.dto.TreasuryAccountResponse;
@@ -67,13 +71,30 @@ public abstract class AbstractOrderPipelineIT extends AbstractRateQuoteIT {
     protected ResponseEntity<ApiResponse<OrderDetailResponse>> createOrderRaw(
             String userToken, UUID quoteId, BeneficiaryRequest beneficiary) {
         return restTemplate.exchange("/api/v1/orders", HttpMethod.POST,
-                new HttpEntity<>(new CreateOrderRequest(quoteId, beneficiary, "test"), auth(userToken)),
+                new HttpEntity<>(new CreateOrderRequest(quoteId, beneficiary, "test", null, null, null), auth(userToken)),
                 new ParameterizedTypeReference<ApiResponse<OrderDetailResponse>>() {
                 });
     }
 
     protected OrderDetailResponse createOrder(String userToken, UUID quoteId, BeneficiaryRequest beneficiary) {
         return createOrderRaw(userToken, quoteId, beneficiary).getBody().data();
+    }
+
+    protected ResponseEntity<ApiResponse<OrderDetailResponse>> createOrderWithSupplierRaw(
+            String userToken, UUID quoteId, UUID supplierId) {
+        return restTemplate.exchange("/api/v1/orders", HttpMethod.POST,
+                new HttpEntity<>(new CreateOrderRequest(quoteId, null, "test", supplierId, null, null),
+                        auth(userToken)),
+                new ParameterizedTypeReference<ApiResponse<OrderDetailResponse>>() {
+                });
+    }
+
+    protected ResponseEntity<ApiResponse<com.converter.order.dto.OrderTrackingResponse>> trackingRaw(
+            String userToken, UUID orderId) {
+        return restTemplate.exchange("/api/v1/orders/" + orderId + "/tracking", HttpMethod.GET,
+                new HttpEntity<>(auth(userToken)),
+                new ParameterizedTypeReference<ApiResponse<com.converter.order.dto.OrderTrackingResponse>>() {
+                });
     }
 
     protected ResponseEntity<ApiResponse<PaymentResponse>> submitPaymentRaw(
@@ -120,6 +141,18 @@ public abstract class AbstractOrderPipelineIT extends AbstractRateQuoteIT {
         return confirmPaymentRaw(adminToken, paymentId).getBody().data();
     }
 
+    protected ResponseEntity<ApiResponse<PaymentResponse>> rejectPaymentRaw(
+            String adminToken, UUID paymentId, String reason) {
+        return restTemplate.exchange("/api/admin/payments/" + paymentId + "/reject", HttpMethod.POST,
+                new HttpEntity<>(new com.converter.payment.dto.RejectPaymentRequest(reason), auth(adminToken)),
+                new ParameterizedTypeReference<ApiResponse<PaymentResponse>>() {
+                });
+    }
+
+    protected PaymentResponse rejectPayment(String adminToken, UUID paymentId, String reason) {
+        return rejectPaymentRaw(adminToken, paymentId, reason).getBody().data();
+    }
+
     protected ResponseEntity<ApiResponse<SettlementResponse>> createSettlementRaw(String adminToken, UUID orderId) {
         return restTemplate.exchange("/api/admin/orders/" + orderId + "/settlement", HttpMethod.POST,
                 new HttpEntity<>(auth(adminToken)),
@@ -129,6 +162,20 @@ public abstract class AbstractOrderPipelineIT extends AbstractRateQuoteIT {
 
     protected SettlementResponse createSettlement(String adminToken, UUID orderId) {
         return createSettlementRaw(adminToken, orderId).getBody().data();
+    }
+
+    protected void uploadSettlementProof(String adminToken, UUID settlementId) {
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", new org.springframework.core.io.ByteArrayResource(FAKE_JPEG) {
+            @Override
+            public String getFilename() {
+                return "settlement-proof.jpg";
+            }
+        });
+        HttpHeaders headers = auth(adminToken);
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        restTemplate.exchange("/api/admin/settlements/" + settlementId + "/proofs", HttpMethod.POST,
+                new HttpEntity<>(body, headers), String.class);
     }
 
     protected ResponseEntity<ApiResponse<SettlementResponse>> executeSettlementRaw(
@@ -144,6 +191,54 @@ public abstract class AbstractOrderPipelineIT extends AbstractRateQuoteIT {
 
     protected SettlementResponse executeSettlement(String adminToken, UUID settlementId, String reference) {
         return executeSettlementRaw(adminToken, settlementId, reference).getBody().data();
+    }
+
+    protected ResponseEntity<ApiResponse<RefundResponse>> createRefundRaw(
+            String adminToken, UUID paymentId, String reason, String idempotencyKey) {
+        HttpHeaders headers = auth(adminToken);
+        if (idempotencyKey != null) {
+            headers.set("Idempotency-Key", idempotencyKey);
+        }
+        return restTemplate.exchange("/api/admin/payments/" + paymentId + "/refunds", HttpMethod.POST,
+                new HttpEntity<>(new CreateRefundRequest(reason), headers),
+                new ParameterizedTypeReference<ApiResponse<RefundResponse>>() {
+                });
+    }
+
+    protected RefundResponse createRefund(String adminToken, UUID paymentId, String reason) {
+        return createRefundRaw(adminToken, paymentId, reason, null).getBody().data();
+    }
+
+    protected ResponseEntity<ApiResponse<RefundResponse>> processRefundRaw(
+            String adminToken, UUID refundId, String transactionReference, String idempotencyKey) {
+        HttpHeaders headers = auth(adminToken);
+        if (idempotencyKey != null) {
+            headers.set("Idempotency-Key", idempotencyKey);
+        }
+        return restTemplate.exchange("/api/admin/refunds/" + refundId + "/process", HttpMethod.POST,
+                new HttpEntity<>(new ProcessRefundRequest(transactionReference), headers),
+                new ParameterizedTypeReference<ApiResponse<RefundResponse>>() {
+                });
+    }
+
+    protected RefundResponse processRefund(String adminToken, UUID refundId, String transactionReference) {
+        return processRefundRaw(adminToken, refundId, transactionReference, null).getBody().data();
+    }
+
+    protected ResponseEntity<ApiResponse<RefundResponse>> rejectRefundRaw(
+            String adminToken, UUID refundId, String reason) {
+        return restTemplate.exchange("/api/admin/refunds/" + refundId + "/reject", HttpMethod.POST,
+                new HttpEntity<>(new RejectRefundRequest(reason), auth(adminToken)),
+                new ParameterizedTypeReference<ApiResponse<RefundResponse>>() {
+                });
+    }
+
+    protected RefundResponse getRefund(String adminToken, UUID refundId) {
+        ResponseEntity<ApiResponse<RefundResponse>> response = restTemplate.exchange(
+                "/api/admin/refunds/" + refundId, HttpMethod.GET, new HttpEntity<>(auth(adminToken)),
+                new ParameterizedTypeReference<ApiResponse<RefundResponse>>() {
+                });
+        return response.getBody().data();
     }
 
     protected TreasuryAccountResponse depositCny(String adminToken, String amount) {
@@ -164,6 +259,16 @@ public abstract class AbstractOrderPipelineIT extends AbstractRateQuoteIT {
         return response.getBody().data();
     }
 
+    protected TreasuryAccountResponse adjustTreasury(String adminToken, Currency currency, String delta, String reason) {
+        ResponseEntity<ApiResponse<TreasuryAccountResponse>> response = restTemplate.exchange(
+                "/api/admin/treasury/adjust", HttpMethod.POST,
+                new HttpEntity<>(new TreasuryAdjustmentRequest(currency, new BigDecimal(delta), reason),
+                        auth(adminToken)),
+                new ParameterizedTypeReference<ApiResponse<TreasuryAccountResponse>>() {
+                });
+        return response.getBody().data();
+    }
+
     protected TreasuryAccountResponse treasurySnapshot(String adminToken, Currency currency) {
         ResponseEntity<ApiResponse<TreasuryAccountResponse>> response = restTemplate.exchange(
                 "/api/admin/treasury/accounts/" + currency, HttpMethod.GET,
@@ -171,6 +276,23 @@ public abstract class AbstractOrderPipelineIT extends AbstractRateQuoteIT {
                 new ParameterizedTypeReference<ApiResponse<TreasuryAccountResponse>>() {
                 });
         return response.getBody().data();
+    }
+
+    /**
+     * Fait progresser un ordre deja cree jusqu'a {@code COMPLETED} : paiement declare, preuve
+     * televersee, paiement confirme, reglement cree, preuve de reglement televersee, reglement
+     * execute. Compose avec {@link #createOrder}/{@code createOrderWithSupplierRaw} (l'appelant
+     * fournit l'{@code orderId} deja obtenu) — reutilise par les tests du justificatif (Phase 7).
+     */
+    protected UUID completeOrder(String adminToken, String userToken, UUID orderId, String amountXof,
+                                 String paymentReference, String settlementReference) {
+        PaymentResponse payment = submitPayment(userToken, orderId, amountXof, paymentReference);
+        uploadProof(userToken, payment.id());
+        confirmPayment(adminToken, payment.id());
+        SettlementResponse settlement = createSettlement(adminToken, orderId);
+        uploadSettlementProof(adminToken, settlement.id());
+        executeSettlement(adminToken, settlement.id(), settlementReference);
+        return orderId;
     }
 
     protected HttpHeaders auth(String token) {

@@ -43,6 +43,10 @@ public enum ErrorCode {
     SETTLEMENT_NOT_FOUND(HttpStatus.NOT_FOUND, Category.NOT_FOUND),
     PREFERRED_RATE_NOT_FOUND(HttpStatus.NOT_FOUND, Category.NOT_FOUND),
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, Category.NOT_FOUND),
+    REFUND_NOT_FOUND(HttpStatus.NOT_FOUND, Category.NOT_FOUND),
+    SUPPLIER_NOT_FOUND(HttpStatus.NOT_FOUND, Category.NOT_FOUND),
+    RATE_ALERT_NOT_FOUND(HttpStatus.NOT_FOUND, Category.NOT_FOUND),
+    BUSINESS_PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND, Category.NOT_FOUND),
 
     // ---------------------------------------------------------- 409
     DUPLICATE_RESOURCE(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
@@ -65,6 +69,12 @@ public enum ErrorCode {
     INVALID_PREFERRED_RATE_STATE(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
     IDEMPOTENCY_KEY_REUSED(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
     IDEMPOTENT_REQUEST_IN_PROGRESS(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
+    REFUND_ALREADY_EXISTS(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
+    INVALID_REFUND_STATE(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
+    SETTLEMENT_BLOCKED_BY_REFUND(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
+    SUPPLIER_INACTIVE(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
+    RATE_ALERT_INACTIVE(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
+    KYC_VERIFICATION_REQUIRED(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
 
     // ---------------------------------------------------------- 429
     TOO_MANY_ATTEMPTS(HttpStatus.TOO_MANY_REQUESTS, Category.RATE_LIMIT),
@@ -74,7 +84,8 @@ public enum ErrorCode {
 
     // ---------------------------------------------------------- 503
     EXCHANGE_RATE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, Category.BUSINESS_ERROR),
-    RATE_SOURCE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, Category.BUSINESS_ERROR);
+    RATE_SOURCE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, Category.BUSINESS_ERROR),
+    COST_RATE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, Category.BUSINESS_ERROR);
 
     private final HttpStatus status;
     private final String category;

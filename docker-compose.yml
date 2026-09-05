@@ -71,6 +71,13 @@ services:
       # au demarrage et affiche une seule fois dans les journaux).
       JWT_SECRET:
       ADMIN_PASSWORD:
+    volumes:
+      # Preuves de paiement / de reglement (app.storage.root-dir = ./storage,
+      # resolu sous WORKDIR /app dans l'image). SANS ce volume nomme, toute
+      # recreation du conteneur (mise a jour d'image, changement de config)
+      # detruit les fichiers alors que leurs lignes de metadonnees survivent
+      # en base -> 404 "preuve indisponible" au telechargement.
+      - converter-storage:/app/storage
     ports:
       - "${SERVER_PORT:-8080}:8080"
     healthcheck:
@@ -83,3 +90,5 @@ services:
 volumes:
   converter-postgres-data:
     name: converter-postgres-data
+  converter-storage:
+    name: converter-storage

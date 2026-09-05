@@ -43,6 +43,11 @@ RUN groupadd --system converter && useradd --system --gid converter converter
 
 WORKDIR /app
 COPY --from=build /workspace/target/converter-backend-*.jar app.jar
+# Repertoire de stockage des preuves (app.storage.root-dir = ./storage) cree
+# ici et possede par 'converter' : quand docker-compose monte le volume nomme
+# converter-storage sur /app/storage, il herite de cet utilisateur/permissions
+# (sinon le point de montage serait root et l'ecriture des preuves echouerait).
+RUN mkdir -p /app/storage
 RUN chown -R converter:converter /app
 USER converter
 

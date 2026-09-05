@@ -7,10 +7,11 @@ import com.converter.order.repository.OrderRepository;
 import com.converter.quote.domain.Quote;
 import com.converter.quote.domain.QuoteDirection;
 import com.converter.quote.repository.QuoteRepository;
-import com.converter.rate.domain.RateProviderType;
-import com.converter.rate.domain.RateSource;
+import com.converter.rate.cost.BreakEvenResult;
+import com.converter.rate.cost.CostRateCalculator;
+import com.converter.rate.cost.domain.DailyCostRateConfiguration;
+import com.converter.rate.cost.repository.DailyCostRateConfigurationRepository;
 import com.converter.rate.engine.PricingResult;
-import com.converter.rate.repository.RateSourceRepository;
 import com.converter.support.AbstractRateQuoteIT;
 import com.converter.treasury.domain.Currency;
 import com.converter.treasury.dto.TreasuryAccountResponse;
@@ -62,7 +63,7 @@ class TreasuryServiceIT extends AbstractRateQuoteIT {
     private PlatformTransactionManager transactionManager;
 
     @Autowired
-    private RateSourceRepository rateSourceRepository;
+    private DailyCostRateConfigurationRepository dailyCostRateConfigurationRepository;
 
     @Autowired
     private QuoteRepository quoteRepository;
@@ -361,29 +362,28 @@ class TreasuryServiceIT extends AbstractRateQuoteIT {
     }
 
     /**
-     * Insere une chaine RateSource -> Quote -> Order minimale
-     * directement via les repositories, uniquement pour disposer d'un
-     * {@code orderId} qui satisfait la contrainte de cle etrangere de
-     * {@code treasury_transactions} — sans passer par le pipeline HTTP
-     * complet, hors de propos pour ce test cible sur la tresorerie.
+     * Insere une chaine DailyCostRateConfiguration -> Quote -> Order
+     * minimale directement via les repositories, uniquement pour
+     * disposer d'un {@code orderId} qui satisfait la contrainte de cle
+     * etrangere de {@code treasury_transactions} — sans passer par le
+     * pipeline HTTP complet, hors de propos pour ce test cible sur la
+     * tresorerie.
      */
     private UUID createDummyOrder(UUID userId) {
         Instant now = Instant.now();
-        // currency_pair est VARCHAR(10) : un suffixe court garantit une
-        // paire "courante" distincte a chaque appel (uq_rate_source_current
-        // est scope par paire), sans jamais entrer en collision avec la
-        // vraie paire XOF/CNY utilisee par les autres tests.
-        String fakePair = "T" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
-        RateSource rateSource = rateSourceRepository.save(new RateSource(
-                RateProviderType.MANUAL, fakePair, new BigDecimal("85.000000"),
-                now, "treasury test fixture", userId, now));
+        // rateUsdCny = 1 et frais nuls : breakEvenRate = rateXofUsd = 85.000000 exactement.
+        BreakEvenResult breakEven = new CostRateCalculator().calculateBreakEven(
+                new BigDecimal("1000000"), new BigDecimal("85.000000"), BigDecimal.ONE, BigDecimal.ZERO, BigDecimal.ZERO);
+        DailyCostRateConfiguration configuration = dailyCostRateConfigurationRepository.save(
+                new DailyCostRateConfiguration(java.time.LocalDate.now(), breakEven, new BigDecimal("85.000000"),
+                        BigDecimal.ONE, BigDecimal.ZERO, BigDecimal.ZERO, "treasury test fixture", userId, now));
 
         PricingResult pricing = new PricingResult(
                 new BigDecimal("85.000000"), BigDecimal.ZERO, new BigDecimal("85.000000"),
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 new BigDecimal("1000.00"), new BigDecimal("1000.00"), new BigDecimal("11.76"));
         Quote quote = quoteRepository.save(new Quote(userId, QuoteDirection.SEND_XOF, pricing,
-                rateSource.getId(), now, now.plusSeconds(1800)));
+                configuration.getId(), now, now.plusSeconds(1800)));
 
         // reference est VARCHAR(24) : un suffixe court suffit, l'unicite
         // n'a besoin de tenir que sur la duree de ce test.

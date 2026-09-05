@@ -9,6 +9,7 @@ import com.converter.order.domain.Beneficiary;
 import com.converter.order.domain.Order;
 import com.converter.order.domain.OrderStatus;
 import com.converter.order.service.OrderService;
+import com.converter.refund.service.RefundService;
 import com.converter.settlement.domain.Settlement;
 import com.converter.settlement.domain.SettlementProof;
 import com.converter.settlement.domain.SettlementStatus;
@@ -20,6 +21,7 @@ import com.converter.settings.domain.SettingKey;
 import com.converter.settings.service.SettingsService;
 import com.converter.storage.FileStorageService;
 import com.converter.storage.FileValidator;
+import com.converter.storage.ProofDownload;
 import com.converter.storage.StoredFile;
 import com.converter.storage.exception.InvalidFileException;
 import com.converter.treasury.domain.Currency;
@@ -57,6 +59,7 @@ public class SettlementService {
     private final SettlementProofRepository proofRepository;
     private final OrderService orderService;
     private final TreasuryService treasuryService;
+    private final RefundService refundService;
     private final SettingsService settingsService;
     private final AuditService auditService;
     private final FileStorageService fileStorageService;
@@ -67,6 +70,7 @@ public class SettlementService {
                              SettlementProofRepository proofRepository,
                              OrderService orderService,
                              TreasuryService treasuryService,
+                             RefundService refundService,
                              SettingsService settingsService,
                              AuditService auditService,
                              FileStorageService fileStorageService,
@@ -76,6 +80,7 @@ public class SettlementService {
         this.proofRepository = proofRepository;
         this.orderService = orderService;
         this.treasuryService = treasuryService;
+        this.refundService = refundService;
         this.settingsService = settingsService;
         this.auditService = auditService;
         this.fileStorageService = fileStorageService;
@@ -131,6 +136,15 @@ public class SettlementService {
         Settlement settlement = settlementRepository.findByIdForUpdate(settlementId)
                 .orElseThrow(() -> notFound(settlementId));
 
+        // Le client a deja ete rembourse en XOF (Refund PROCESSED) : executer quand meme ce
+        // reglement decaisserait du CNY en Chine en plus du remboursement deja effectue — un
+        // double decaissement economique reel, jamais silencieux. Verifie ici, avant toute
+        // mutation, pas apres coup.
+        if (refundService.hasProcessedRefundForOrder(settlement.getOrderId())) {
+            throw new BusinessException(ErrorCode.SETTLEMENT_BLOCKED_BY_REFUND,
+                    "Ce client a deja ete rembourse pour cet ordre : le reglement CNY ne peut pas etre execute.");
+        }
+
         if (settingsService.getBoolean(SettingKey.REQUIRE_PAYMENT_PROOF)
                 && proofRepository.countBySettlementId(settlementId) == 0) {
             throw new BusinessException(ErrorCode.INVALID_PAYMENT_PROOF,
@@ -185,14 +199,20 @@ public class SettlementService {
         return toProofResponse(saved);
     }
 
+    /**
+     * {@code proof.getContentType()} est deja verifie par signature binaire a l'upload
+     * ({@link FileValidator}, allowlist stricte image/PDF) — jamais un en-tete client de
+     * confiance aveugle, donc sans risque a reservir tel quel pour permettre un apercu en ligne.
+     */
     @Transactional(readOnly = true)
-    public Resource downloadProof(UUID settlementId, UUID proofId) {
+    public ProofDownload downloadProof(UUID settlementId, UUID proofId) {
         List<SettlementProof> proofs = proofRepository.findBySettlementIdOrderByUploadedAtAsc(settlementId);
         SettlementProof proof = proofs.stream()
                 .filter(p -> p.getId().equals(proofId))
                 .findFirst()
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "Preuve introuvable : " + proofId));
-        return fileStorageService.load(proof.getStorageKey());
+        return new ProofDownload(fileStorageService.load(proof.getStorageKey()), proof.getContentType(),
+                proof.getFileName());
     }
 
     @Transactional(readOnly = true)

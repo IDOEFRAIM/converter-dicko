@@ -11,9 +11,21 @@
   box-sizing: border-box;
 }
 
+// ---------------------------------------------------------------------
+// Identite de marque — derivee du logo (cercle rouge "元" / cercle or "F"
+// cerclee d'or sur fond bleu marine) : marine = identite/texte/etats actifs,
+// or = accent/mise en valeur, rouge = alerte/erreur. Memes trois couleurs que
+// le logo, jamais un bleu vif ou un orange invente en plus.
+// ---------------------------------------------------------------------
 :root {
-  --brand-gradient: linear-gradient(135deg, #1a56db 0%, #1140a8 55%, #0a2a70 100%);
-  --brand-accent: #ffb020;
+  --brand-navy: #1b325e;
+  --brand-navy-dark: #0f1e3b;
+  --brand-navy-light: #2e4c82;
+  --brand-gold: #d3af37;
+  --brand-red: #ce1922;
+
+  --brand-gradient: linear-gradient(135deg, #2e4c82 0%, #1b325e 55%, #0f1e3b 100%);
+  --brand-accent: var(--brand-gold);
   --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
   --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.07), 0 4px 10px rgba(15, 23, 42, 0.05);
   --shadow-md: 0 8px 20px rgba(15, 23, 42, 0.09), 0 2px 6px rgba(15, 23, 42, 0.06);
@@ -29,13 +41,42 @@ html {
   @include mat.theme(
     (
       color: (
-        primary: mat.$azure-palette,
-        tertiary: mat.$blue-palette,
+        primary: mat.$blue-palette,
+        tertiary: mat.$yellow-palette,
       ),
       typography: Roboto,
       density: 0,
     )
   );
+}
+
+// Ecrase une partie des jetons systeme Material generes ci-dessus avec les
+// couleurs exactes du logo — les palettes M3 nommees (bleu/jaune) n'existent
+// qu'en tons vifs "expressifs" et ne peuvent pas reproduire un marine/or
+// precis ; cette surcouche cible uniquement les roles visibles (primary,
+// tertiary, error) sans toucher au reste du systeme de tons M3.
+:root {
+  --mat-sys-primary: var(--brand-navy);
+  --mat-sys-on-primary: #ffffff;
+  --mat-sys-primary-container: #dde1e9;
+  --mat-sys-on-primary-container: var(--brand-navy);
+
+  --mat-sys-tertiary: var(--brand-gold);
+  --mat-sys-on-tertiary: var(--brand-navy);
+  --mat-sys-tertiary-container: #f6efd7;
+  --mat-sys-on-tertiary-container: #5c4813;
+
+  --mat-sys-error: var(--brand-red);
+  --mat-sys-on-error: #ffffff;
+  --mat-sys-error-container: #f8dddf;
+  --mat-sys-on-error-container: #7a0f16;
+
+  // Fond chaud (ivoire) plutot que le gris-bleu froid genere par la palette M3 --
+  // seuls les DEUX tokens de surface les plus visibles (fond de page, cartes) sont
+  // touches : le reste du systeme de tons M3 (composants Material internes) est
+  // volontairement laisse intact pour ne pas degrader des contrastes deja valides.
+  --mat-sys-surface: #faf8f2;
+  --mat-sys-surface-container-low: #fffdf8;
 }
 
 body {
@@ -74,6 +115,7 @@ app-root {
   font-weight: 800;
   letter-spacing: -0.01em;
   margin: 0 0 1.25rem;
+  color: var(--brand-navy, #1b325e);
 }
 
 .form {
@@ -84,6 +126,36 @@ app-root {
 
 .form__field {
   width: 100%;
+}
+
+// Deux champs cote a cote sur ecran large, empiles sur mobile.
+.form__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.75rem;
+
+  .form__field {
+    flex: 1 1 12rem;
+  }
+}
+
+// Barre d'actions de formulaire (annuler / valider), alignee a droite.
+.form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+// Bascule segmentee pleine largeur (choix de source, filtres de liste...).
+.source-toggle {
+  width: 100%;
+  margin-bottom: 1rem;
+
+  .mat-button-toggle {
+    flex: 1;
+  }
 }
 
 .form__submit {
@@ -106,6 +178,11 @@ app-root {
   text-align: center;
   font-size: 0.875rem;
   color: var(--mat-sys-on-surface-variant, #616161);
+
+  a {
+    color: var(--brand-navy, #1b325e);
+    font-weight: 700;
+  }
 }
 
 .form-notice {
@@ -143,7 +220,7 @@ app-root {
 
 a.page-card:hover {
   box-shadow: var(--shadow-sm);
-  border-color: var(--mat-sys-primary, #1a56db);
+  border-color: var(--mat-sys-primary, #1b325e);
   transform: translateY(-1px);
 }
 
@@ -160,10 +237,84 @@ a.page-card:hover {
   padding: 2.5rem 0;
 }
 
+// Liste cle/valeur reutilisable (detail d'un ordre, d'un fournisseur, d'un recu...).
+.detail-list {
+  margin: 0;
+  display: grid;
+  gap: 0.75rem 1.5rem;
+  grid-template-columns: 1fr;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  dt {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--mat-sys-on-surface-variant, #757575);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    word-break: break-word;
+  }
+
+  @media (min-width: 520px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .notification-success {
   --mdc-snackbar-container-color: #1b5e20;
 }
 
 .notification-error {
   --mdc-snackbar-container-color: #b71c1c;
+}
+
+// ---------------------------------------------------------------------
+// Hierarchie de surfaces (section 20) : le taux/montant central utilise
+// `.metric`, un panneau groupe non cliquable utilise `.panel`, une ligne de
+// liste cliquable reste `.page-card` (deja defini ci-dessus) -- eviter que
+// tout devienne le meme rectangle arrondi repete.
+// ---------------------------------------------------------------------
+
+// Grande valeur numerique dominante (taux, montant) : seule information de ce
+// poids visuel sur son ecran -- jamais plusieurs `.metric` de meme taille cote a cote.
+.metric {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+// Panneau groupe (non cliquable, pas de hover), plus sobre qu'un `.page-card`.
+.panel {
+  background: var(--mat-sys-surface-container-low, #fffdf8);
+  border: 1px solid var(--mat-sys-outline-variant, #e6e9f0);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+}
+
+// En-tete de section avec lien "tout voir" aligne a droite (dashboard, listes...).
+// Note : le zero-out de la marge de .section-title se fait dans le SCSS de chaque
+// page utilisatrice (encapsulation de vue Angular oblige), pas ici.
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.section-header__link {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--brand-navy, #1b325e);
+  text-decoration: none;
+  white-space: nowrap;
 }
