@@ -112,21 +112,22 @@ class ApiClient {
 
   ApiException _toApiException(DioException error) {
     switch (error.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-      case DioExceptionType.connectionError:
-        return ApiException.network();
-      case DioExceptionType.badCertificate:
-        return ApiException.network();
       case DioExceptionType.cancel:
         return ApiException.unexpected();
       case DioExceptionType.badResponse:
         final statusCode = error.response?.statusCode ?? -1;
         return ApiException.fromResponseBody(statusCode, error.response?.data);
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+      case DioExceptionType.connectionError:
+      case DioExceptionType.badCertificate:
       case DioExceptionType.unknown:
-        // Pas de reponse HTTP du tout (DNS, socket ferme, tunnel ngrok coupe...) :
-        // traite comme un statut reseau "0", jamais un echec definitif (section 27).
+      default:
+        // Toute autre variante (timeout de transformation, panne DNS, socket
+        // ferme, tunnel ngrok coupe, ou une valeur future ajoutee au paquet
+        // dio) : jamais un echec definitif d'une operation idempotente, voir
+        // mission section 27 — traite comme un statut reseau "0".
         return ApiException.network();
     }
   }
