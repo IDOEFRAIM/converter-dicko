@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../storage/secure_token_storage.dart';
+import 'package:mobile/core/storage/secure_token_storage.dart';
 import '../../shared/models/current_user.dart';
 
 /// Etat de session courant : jeton JWT + utilisateur connecte.
