@@ -6,6 +6,7 @@ import '../../../core/errors/api_exception.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/primary_action.dart';
 import '../data/auth_repository.dart';
 import '../models/auth_models.dart';
@@ -53,7 +54,7 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       await authRepository.register(
         RegisterRequest(
-          phone: _phoneController.text.trim(),
+          phone: Validators.normalizePhone(_phoneController.text.trim()),
           password: _passwordController.text,
           firstName: _firstNameController.text.trim(),
           lastName: _lastNameController.text.trim(),
@@ -104,8 +105,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       child: TextFormField(
                         controller: _firstNameController,
                         textInputAction: TextInputAction.next,
+                        maxLength: 80,
                         decoration: const InputDecoration(labelText: 'Prenom'),
-                        validator: _requiredValidator('Le prenom est obligatoire.'),
+                        validator: (v) => Validators.requiredMaxLength(v, 80, label: 'Le prenom'),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),
@@ -113,8 +115,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       child: TextFormField(
                         controller: _lastNameController,
                         textInputAction: TextInputAction.next,
+                        maxLength: 80,
                         decoration: const InputDecoration(labelText: 'Nom'),
-                        validator: _requiredValidator('Le nom est obligatoire.'),
+                        validator: (v) => Validators.requiredMaxLength(v, 80, label: 'Le nom'),
                       ),
                     ),
                   ],
@@ -128,7 +131,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     labelText: 'Numero de telephone',
                     hintText: '+2250700000000',
                   ),
-                  validator: _requiredValidator('Le numero de telephone est obligatoire.'),
+                  validator: Validators.phoneE164,
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 TextFormField(
@@ -138,18 +141,13 @@ class _RegisterPageState extends State<RegisterPage> {
                   onFieldSubmitted: (_) => _submit(),
                   decoration: InputDecoration(
                     labelText: 'Mot de passe',
-                    helperText: 'Au moins 8 caracteres.',
+                    helperText: 'Entre 8 et 72 caracteres.',
                     suffixIcon: IconButton(
                       onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                       icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.length < 8) {
-                      return 'Le mot de passe doit contenir au moins 8 caracteres.';
-                    }
-                    return null;
-                  },
+                  validator: Validators.password,
                 ),
                 const SizedBox(height: AppSpacing.xxl),
                 PrimaryAction(label: 'Creer mon compte', onPressed: _submit, loading: _submitting),
@@ -159,9 +157,5 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       ),
     );
-  }
-
-  String? Function(String?) _requiredValidator(String message) {
-    return (value) => (value == null || value.trim().isEmpty) ? message : null;
   }
 }

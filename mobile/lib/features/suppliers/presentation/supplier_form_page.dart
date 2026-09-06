@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/purpose.dart';
+import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/primary_action.dart';
 import '../data/supplier_api.dart';
 import '../models/supplier_models.dart';
@@ -111,6 +112,7 @@ class _SupplierFormPageState extends State<SupplierFormPage> {
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Form(
             key: _formKey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -125,41 +127,50 @@ class _SupplierFormPageState extends State<SupplierFormPage> {
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _displayNameController,
+                  maxLength: 120,
                   decoration: const InputDecoration(labelText: 'Nom affiche'),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Le nom est obligatoire.' : null,
+                  validator: (v) => Validators.requiredMaxLength(v, 120, label: 'Le nom affiche'),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _accountNumberController,
+                  maxLength: 120,
                   decoration: InputDecoration(
                     labelText: _type == BeneficiaryType.chineseBankAccount ? 'Numero de compte' : 'Identifiant du compte',
                   ),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Ce champ est obligatoire.' : null,
+                  validator: (v) => Validators.requiredMaxLength(v, 120, label: 'Ce champ'),
                 ),
                 if (_type == BeneficiaryType.chineseBankAccount) ...[
                   const SizedBox(height: AppSpacing.md),
                   TextFormField(
                     controller: _bankNameController,
+                    maxLength: 120,
                     decoration: const InputDecoration(labelText: 'Nom de la banque'),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'La banque est obligatoire.' : null,
+                    validator: (v) => Validators.requiredMaxLength(v, 120, label: 'La banque'),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   TextFormField(
                     controller: _bankBranchController,
+                    maxLength: 120,
                     decoration: const InputDecoration(labelText: 'Agence (optionnel)'),
+                    validator: (v) => Validators.optionalMaxLength(v, 120, label: "L'agence"),
                   ),
                 ],
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _phoneController,
+                  maxLength: 30,
                   decoration: const InputDecoration(labelText: 'Telephone (optionnel)'),
                   keyboardType: TextInputType.phone,
+                  validator: (v) => Validators.optionalMaxLength(v, 30, label: 'Le telephone'),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _emailController,
+                  maxLength: 160,
                   decoration: const InputDecoration(labelText: 'Email (optionnel)'),
                   keyboardType: TextInputType.emailAddress,
+                  validator: Validators.email,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Row(
@@ -167,14 +178,18 @@ class _SupplierFormPageState extends State<SupplierFormPage> {
                     Expanded(
                       child: TextFormField(
                         controller: _cityController,
+                        maxLength: 100,
                         decoration: const InputDecoration(labelText: 'Ville (optionnel)'),
+                        validator: (v) => Validators.optionalMaxLength(v, 100, label: 'La ville'),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: TextFormField(
                         controller: _countryController,
+                        maxLength: 100,
                         decoration: const InputDecoration(labelText: 'Pays (optionnel)'),
+                        validator: (v) => Validators.optionalMaxLength(v, 100, label: 'Le pays'),
                       ),
                     ),
                   ],
@@ -204,6 +219,8 @@ class _SupplierFormPageState extends State<SupplierFormPage> {
                   controller: _notesController,
                   decoration: const InputDecoration(labelText: 'Notes (optionnel)'),
                   maxLines: 3,
+                  maxLength: 1000,
+                  validator: (v) => Validators.optionalMaxLength(v, 1000, label: 'Les notes'),
                 ),
                 if (_errorMessage != null) ...[
                   const SizedBox(height: AppSpacing.md),

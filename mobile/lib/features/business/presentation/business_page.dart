@@ -7,6 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/money.dart';
 import '../../../shared/utils/date_formatting.dart';
+import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/primary_action.dart';
 import '../../../shared/widgets/status_badge.dart';
@@ -142,7 +143,7 @@ class _BusinessDashboard extends StatelessWidget {
             ...controller.recentOrders.map(
               (order) => InkWell(
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                onTap: () => context.push('/orders/${order.id}'),
+                onTap: () => context.push('/activity/orders/${order.id}'),
                 child: Container(
                   margin: const EdgeInsets.only(bottom: AppSpacing.sm),
                   padding: const EdgeInsets.all(AppSpacing.md),
@@ -254,6 +255,7 @@ class _BusinessProfileFormState extends State<_BusinessProfileForm> {
       child: SingleChildScrollView(
         child: Form(
           key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,8 +274,9 @@ class _BusinessProfileFormState extends State<_BusinessProfileForm> {
               const SizedBox(height: AppSpacing.lg),
               TextFormField(
                 controller: _nameController,
+                maxLength: 160,
                 decoration: const InputDecoration(labelText: 'Nom de l\'entreprise'),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Ce champ est obligatoire.' : null,
+                validator: (v) => Validators.requiredMaxLength(v, 160, label: "Le nom de l'entreprise"),
               ),
               const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<BusinessType>(
@@ -285,23 +288,30 @@ class _BusinessProfileFormState extends State<_BusinessProfileForm> {
               const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _registrationController,
+                maxLength: 60,
                 decoration: const InputDecoration(labelText: 'Numero d\'enregistrement (optionnel)'),
+                validator: (v) => Validators.optionalMaxLength(v, 60, label: "Le numero d'enregistrement"),
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _countryController,
+                maxLength: 100,
                 decoration: const InputDecoration(labelText: 'Pays'),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Le pays est obligatoire.' : null,
+                validator: (v) => Validators.requiredMaxLength(v, 100, label: 'Le pays'),
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _cityController,
+                maxLength: 100,
                 decoration: const InputDecoration(labelText: 'Ville (optionnel)'),
+                validator: (v) => Validators.optionalMaxLength(v, 100, label: 'La ville'),
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _addressController,
+                maxLength: 255,
                 decoration: const InputDecoration(labelText: 'Adresse (optionnel)'),
+                validator: (v) => Validators.optionalMaxLength(v, 255, label: "L'adresse"),
               ),
               if (controller.saveErrorMessage != null) ...[
                 const SizedBox(height: AppSpacing.md),

@@ -7,6 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/money.dart';
 import '../../../shared/utils/file_share.dart';
+import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/corridor.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_view.dart';
@@ -183,7 +184,7 @@ class _OrderDetailView extends StatelessWidget {
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: ElevatedButton(
-            onPressed: () => context.push('/orders/${controller.orderId}/payment'),
+            onPressed: () => context.push('/activity/orders/${controller.orderId}/payment'),
             child: const Text('Payer maintenant'),
           ),
         ),
@@ -228,7 +229,7 @@ class _OrderDetailView extends StatelessWidget {
   Widget _buildTrackingLink(BuildContext context, OrderDetail order) {
     return InkWell(
       borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-      onTap: () => context.push('/orders/${order.id}/tracking'),
+      onTap: () => context.push('/activity/orders/${order.id}/tracking'),
       child: _panel(
         child: Row(
           children: [
@@ -323,6 +324,7 @@ class _CancelOrderDialog extends StatefulWidget {
 }
 
 class _CancelOrderDialogState extends State<_CancelOrderDialog> {
+  final _formKey = GlobalKey<FormState>();
   final _controller = TextEditingController();
 
   @override
@@ -331,29 +333,41 @@ class _CancelOrderDialogState extends State<_CancelOrderDialog> {
     super.dispose();
   }
 
+  void _confirm() {
+    // Bug reel trouve en test : sans validation explicite, confirmer avec un
+    // motif vide fermait le dialogue sans rien faire — aucune annulation,
+    // aucun message (mission section 38 : jamais un ecran/action muette).
+    if (_formKey.currentState!.validate()) {
+      Navigator.of(context).pop(_controller.text.trim());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text("Annuler l'ordre"),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Cette action est definitive et libere la reservation de tresorerie associee.'),
-          const SizedBox(height: AppSpacing.md),
-          TextField(
-            controller: _controller,
-            decoration: const InputDecoration(labelText: "Motif de l'annulation"),
-            maxLines: 2,
-          ),
-        ],
+      content: Form(
+        key: _formKey,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Cette action est definitive et libere la reservation de tresorerie associee.'),
+            const SizedBox(height: AppSpacing.md),
+            TextFormField(
+              controller: _controller,
+              decoration: const InputDecoration(labelText: "Motif de l'annulation *"),
+              maxLines: 2,
+              maxLength: 500,
+              validator: (value) => Validators.requiredMaxLength(value, 500, label: 'Le motif'),
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Retour')),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(_controller.text),
-          child: const Text("Annuler l'ordre"),
-        ),
+        TextButton(onPressed: _confirm, child: const Text("Annuler l'ordre")),
       ],
     );
   }

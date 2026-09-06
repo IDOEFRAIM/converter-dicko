@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/purpose.dart';
+import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/primary_action.dart';
 import '../data/supplier_api.dart';
 import '../models/supplier_models.dart';
@@ -56,7 +57,7 @@ class _PayAgainPageState extends State<PayAgainPage> {
       // Transaction consideree terminee : on avance vers le detail du
       // nouvel ordre plutot que de revenir en arriere (meme convention que
       // le parcours de devis principal).
-      context.go('/orders/${order.id}');
+      context.go('/activity/orders/${order.id}');
     } on ApiException catch (error) {
       // Pas de complete() ici : un retry avec le meme montant doit rejouer
       // la meme cle d'idempotence (mission section 27).
@@ -77,6 +78,7 @@ class _PayAgainPageState extends State<PayAgainPage> {
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Form(
             key: _formKey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -84,19 +86,10 @@ class _PayAgainPageState extends State<PayAgainPage> {
                 const SizedBox(height: AppSpacing.sm),
                 TextFormField(
                   controller: _amountController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   style: AppTypography.metricMedium,
                   decoration: const InputDecoration(suffixText: 'XOF', hintText: '0'),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Le montant est obligatoire.';
-                    }
-                    final parsed = num.tryParse(value.trim());
-                    if (parsed == null || parsed <= 0) {
-                      return 'Saisissez un montant valide.';
-                    }
-                    return null;
-                  },
+                  validator: Validators.positiveAmount,
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text('MOTIF (OPTIONNEL)', style: AppTypography.eyebrow),

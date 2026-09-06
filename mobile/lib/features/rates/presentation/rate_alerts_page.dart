@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/utils/date_formatting.dart';
+import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_view.dart';
@@ -38,6 +39,7 @@ class _RateAlertsView extends StatefulWidget {
 }
 
 class _RateAlertsViewState extends State<_RateAlertsView> {
+  final _formKey = GlobalKey<FormState>();
   final _targetController = TextEditingController();
   DateTime? _expiresAt;
 
@@ -48,9 +50,12 @@ class _RateAlertsViewState extends State<_RateAlertsView> {
   }
 
   Future<void> _create(RateAlertsController controller) async {
-    final target = _targetController.text.trim();
-    if (target.isEmpty) return;
-    final success = await controller.create(targetRate: target, expiresAt: _expiresAt);
+    // Bug reel trouve en test : une cible vide faisait echouer silencieusement
+    // le tap sur "Creer l'alerte" — aucune requete, aucun message.
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    final success = await controller.create(targetRate: _targetController.text.trim(), expiresAt: _expiresAt);
     if (success) {
       _targetController.clear();
       setState(() => _expiresAt = null);
@@ -119,10 +124,15 @@ class _RateAlertsViewState extends State<_RateAlertsView> {
                     style: AppTypography.caption,
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  TextField(
-                    controller: _targetController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: '1 CNY ≤', suffixText: 'XOF'),
+                  Form(
+                    key: _formKey,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    child: TextFormField(
+                      controller: _targetController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(labelText: '1 CNY ≤ *', suffixText: 'XOF'),
+                      validator: Validators.positiveRate,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   InkWell(

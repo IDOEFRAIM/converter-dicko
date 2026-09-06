@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/money.dart';
+import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/primary_action.dart';
@@ -45,6 +46,7 @@ class _PaymentSubmitView extends StatefulWidget {
 }
 
 class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
+  final _formKey = GlobalKey<FormState>();
   final _referenceController = TextEditingController();
   final _phoneController = TextEditingController();
   PaymentMethod? _method;
@@ -57,8 +59,21 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
   }
 
   Future<void> _submit(PaymentSubmitController controller) async {
+    // Bug reel trouve en test reel : sans ce controle explicite, un
+    // formulaire incomplet faisait echouer silencieusement le tap sur
+    // "Envoyer" — aucune requete, aucun message, l'utilisateur croyait
+    // l'application cassee. `Form.validate()` force maintenant l'affichage
+    // du message d'erreur sous le champ concerne.
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
     final method = _method ?? controller.enabledMethods.firstOrNull;
-    if (method == null || _referenceController.text.trim().isEmpty) return;
+    if (method == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Aucun moyen de paiement disponible pour le moment.')),
+      );
+      return;
+    }
     await controller.submit(
       method: method,
       transactionReference: _referenceController.text.trim(),
@@ -114,26 +129,39 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
 
   List<Widget> _buildDeclarationStep(PaymentSubmitController controller, List<PaymentMethod> methods) {
     return [
-      const _StepLabel(number: 1, label: 'Effectuez le paiement'),
-      const SizedBox(height: AppSpacing.md),
-      if (methods.length > 1) ...[
-        DropdownButtonFormField<PaymentMethod>(
-          initialValue: _method,
-          decoration: const InputDecoration(labelText: 'Moyen de paiement'),
-          items: methods.map((m) => DropdownMenuItem(value: m, child: Text(m.label))).toList(growable: false),
-          onChanged: (value) => setState(() => _method = value),
+      Form(
+        key: _formKey,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _StepLabel(number: 1, label: 'Effectuez le paiement'),
+            const SizedBox(height: AppSpacing.md),
+            if (methods.length > 1) ...[
+              DropdownButtonFormField<PaymentMethod>(
+                initialValue: _method,
+                decoration: const InputDecoration(labelText: 'Moyen de paiement'),
+                items: methods.map((m) => DropdownMenuItem(value: m, child: Text(m.label))).toList(growable: false),
+                onChanged: (value) => setState(() => _method = value),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+            TextFormField(
+              controller: _referenceController,
+              maxLength: 100,
+              decoration: const InputDecoration(labelText: 'Reference de transaction *'),
+              validator: (value) => Validators.requiredMaxLength(value, 100, label: 'La reference de transaction'),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextFormField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              maxLength: 20,
+              decoration: const InputDecoration(labelText: 'Numero du payeur (optionnel)'),
+              validator: (value) => Validators.optionalMaxLength(value, 20, label: 'Le numero du payeur'),
+            ),
+          ],
         ),
-        const SizedBox(height: AppSpacing.md),
-      ],
-      TextField(
-        controller: _referenceController,
-        decoration: const InputDecoration(labelText: 'Reference de transaction'),
-      ),
-      const SizedBox(height: AppSpacing.md),
-      TextField(
-        controller: _phoneController,
-        keyboardType: TextInputType.phone,
-        decoration: const InputDecoration(labelText: 'Numero du payeur (optionnel)'),
       ),
       if (controller.errorMessage != null) ...[
         const SizedBox(height: AppSpacing.md),
@@ -205,7 +233,7 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
       SizedBox(
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: () => context.go('/orders/${controller.orderId}'),
+          onPressed: () => context.go('/activity/orders/${controller.orderId}'),
           child: const Text('Voir le transfert'),
         ),
       ),

@@ -7,6 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/money.dart';
 import '../../../shared/models/purpose.dart';
+import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/primary_action.dart';
 import '../../orders/data/order_api.dart';
@@ -85,7 +86,7 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
       purposeDetails: _purposeDetailsController.text.trim().isEmpty ? null : _purposeDetailsController.text.trim(),
     );
     if (order != null && mounted) {
-      context.go('/orders/${order.id}');
+      context.go('/activity/orders/${order.id}');
     }
   }
 
@@ -224,6 +225,7 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
   Widget _buildManualForm() {
     return Form(
       key: _formKey,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         children: [
           DropdownButtonFormField<BeneficiaryType>(
@@ -237,30 +239,35 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
           const SizedBox(height: AppSpacing.md),
           TextFormField(
             controller: _fullNameController,
+            maxLength: 120,
             decoration: const InputDecoration(labelText: 'Nom complet du beneficiaire'),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Le nom est obligatoire.' : null,
+            validator: (v) => Validators.requiredMaxLength(v, 120, label: 'Le nom'),
           ),
           const SizedBox(height: AppSpacing.md),
           TextFormField(
             controller: _identifierController,
+            maxLength: 120,
             decoration: InputDecoration(
               labelText: _manualType == BeneficiaryType.chineseBankAccount
                   ? 'Numero de compte bancaire'
                   : 'Identifiant du compte',
             ),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Ce champ est obligatoire.' : null,
+            validator: (v) => Validators.requiredMaxLength(v, 120, label: 'Ce champ'),
           ),
           if (_manualType == BeneficiaryType.chineseBankAccount) ...[
             const SizedBox(height: AppSpacing.md),
             TextFormField(
               controller: _bankNameController,
+              maxLength: 120,
               decoration: const InputDecoration(labelText: 'Nom de la banque'),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'La banque est obligatoire.' : null,
+              validator: (v) => Validators.requiredMaxLength(v, 120, label: 'La banque'),
             ),
             const SizedBox(height: AppSpacing.md),
             TextFormField(
               controller: _bankBranchController,
+              maxLength: 120,
               decoration: const InputDecoration(labelText: 'Agence (optionnel)'),
+              validator: (v) => Validators.optionalMaxLength(v, 120, label: "L'agence"),
             ),
           ],
         ],

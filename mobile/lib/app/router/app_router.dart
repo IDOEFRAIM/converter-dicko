@@ -31,11 +31,15 @@ import 'app_shell.dart';
 /// automatique vers /login sur un 401, sans que la couche reseau ne
 /// connaisse la navigation — voir [ApiClient]).
 ///
-/// Les ecrans "destination" (detail/creation d'ordre, detail/edition/pay-again
-/// d'un fournisseur) sont des routes de NIVEAU RACINE (`push`ees par-dessus la
-/// coquille a onglets) — masquer la barre du bas pendant ces parcours est un
-/// choix delibere (mission section 39, priorite au flux plutot qu'a la
-/// persistance visuelle des onglets pendant une transaction).
+/// IMPORTANT (retour d'utilisation reelle) : les ecrans "destination"
+/// (detail/creation d'ordre, detail/edition/pay-again d'un fournisseur,
+/// paiement) sont des routes IMBRIQUEES DANS LA COQUILLE A ONGLETS, jamais
+/// des routes racine par-dessus elle. Une premiere version les poussait par-
+/// dessus la coquille (barre du bas masquee pendant le parcours) ; des tests
+/// reels ont montre que les utilisateurs s'y perdaient (aucune barre de
+/// navigation visible, aucun moyen fiable de revenir a un onglet). La barre
+/// du bas reste maintenant TOUJOURS visible, et le bouton retour standard de
+/// chaque ecran remonte vers la racine de son onglet.
 GoRouter buildAppRouter(AuthSession authSession) {
   return GoRouter(
     initialLocation: SplashPage.routePath,
@@ -70,44 +74,8 @@ GoRouter buildAppRouter(AuthSession authSession) {
         builder: (context, state) => const RegisterPage(),
       ),
 
-      // ---- Ordres (racine, par-dessus la coquille) ----
-      GoRoute(
-        path: '/orders/new',
-        builder: (context, state) => OrderCreatePage(quote: state.extra as Quote),
-      ),
-      GoRoute(
-        path: '/orders/:id',
-        builder: (context, state) => OrderDetailPage(orderId: state.pathParameters['id']!),
-        routes: [
-          GoRoute(
-            path: 'tracking',
-            builder: (context, state) => OrderTrackingPage(orderId: state.pathParameters['id']!),
-          ),
-          GoRoute(
-            path: 'payment',
-            builder: (context, state) => PaymentSubmitPage(orderId: state.pathParameters['id']!),
-          ),
-        ],
-      ),
-
-      // ---- Fournisseurs (racine, par-dessus la coquille) ----
-      GoRoute(path: '/suppliers/new', builder: (context, state) => const SupplierFormPage()),
-      GoRoute(
-        path: '/suppliers/:id',
-        builder: (context, state) => SupplierDetailPage(supplierId: state.pathParameters['id']!),
-        routes: [
-          GoRoute(
-            path: 'edit',
-            builder: (context, state) => SupplierFormPage(existing: state.extra as SupplierDetail?),
-          ),
-          GoRoute(
-            path: 'pay-again',
-            builder: (context, state) => PayAgainPage(supplierId: state.pathParameters['id']!),
-          ),
-        ],
-      ),
-
-      // ---- Coquille a onglets ----
+      // ---- Coquille a onglets : TOUT le reste vit ici, la barre du bas ----
+      // ---- ne disparait plus jamais pendant un parcours.               ----
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
         branches: [
@@ -115,13 +83,67 @@ GoRouter buildAppRouter(AuthSession authSession) {
             routes: [GoRoute(path: '/home', builder: (context, state) => const HomePage())],
           ),
           StatefulShellBranch(
-            routes: [GoRoute(path: '/pay', builder: (context, state) => const QuoteCreatePage())],
+            routes: [
+              GoRoute(
+                path: '/pay',
+                builder: (context, state) => const QuoteCreatePage(),
+                routes: [
+                  GoRoute(
+                    path: 'orders/new',
+                    builder: (context, state) => OrderCreatePage(quote: state.extra as Quote),
+                  ),
+                ],
+              ),
+            ],
           ),
           StatefulShellBranch(
-            routes: [GoRoute(path: '/suppliers', builder: (context, state) => const SupplierListPage())],
+            routes: [
+              GoRoute(
+                path: '/suppliers',
+                builder: (context, state) => const SupplierListPage(),
+                routes: [
+                  GoRoute(path: 'new', builder: (context, state) => const SupplierFormPage()),
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) => SupplierDetailPage(supplierId: state.pathParameters['id']!),
+                    routes: [
+                      GoRoute(
+                        path: 'edit',
+                        builder: (context, state) => SupplierFormPage(existing: state.extra as SupplierDetail?),
+                      ),
+                      GoRoute(
+                        path: 'pay-again',
+                        builder: (context, state) => PayAgainPage(supplierId: state.pathParameters['id']!),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
           ),
           StatefulShellBranch(
-            routes: [GoRoute(path: '/activity', builder: (context, state) => const OrderListPage())],
+            routes: [
+              GoRoute(
+                path: '/activity',
+                builder: (context, state) => const OrderListPage(),
+                routes: [
+                  GoRoute(
+                    path: 'orders/:id',
+                    builder: (context, state) => OrderDetailPage(orderId: state.pathParameters['id']!),
+                    routes: [
+                      GoRoute(
+                        path: 'tracking',
+                        builder: (context, state) => OrderTrackingPage(orderId: state.pathParameters['id']!),
+                      ),
+                      GoRoute(
+                        path: 'payment',
+                        builder: (context, state) => PaymentSubmitPage(orderId: state.pathParameters['id']!),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
           ),
           StatefulShellBranch(
             routes: [

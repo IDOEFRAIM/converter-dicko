@@ -63,7 +63,7 @@ class _OrderListView extends StatelessWidget {
                   final order = controller.orders[index];
                   return InkWell(
                     borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                    onTap: () => context.push('/orders/${order.id}'),
+                    onTap: () => context.push('/activity/orders/${order.id}'),
                     child: Container(
                       padding: const EdgeInsets.all(AppSpacing.lg),
                       decoration: BoxDecoration(

@@ -7,6 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/money.dart';
 import '../../../shared/utils/date_formatting.dart';
+import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/corridor.dart';
 import '../../../shared/widgets/money_display.dart';
 import '../../../shared/widgets/primary_action.dart';
@@ -37,6 +38,7 @@ class _QuoteCreateView extends StatefulWidget {
 }
 
 class _QuoteCreateViewState extends State<_QuoteCreateView> {
+  final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
 
   @override
@@ -46,19 +48,22 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
   }
 
   Future<void> _requestQuote(QuoteCreateController controller) async {
-    final amount = _amountController.text.trim();
-    if (amount.isEmpty) return;
-    await controller.createForAmountXof(amount);
+    // Bug reel trouve en test : un montant vide faisait echouer silencieusement
+    // le tap sur "Obtenir un devis" — aucune requete, aucun message.
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    await controller.createForAmountXof(_amountController.text.trim());
   }
 
   Future<void> _continueToOrder(QuoteCreateController controller) async {
     final accepted = await controller.accept();
     if (accepted == null || !mounted) return;
-    // Une fois l'ordre cree, l'ecran suivant navigue en `go()` (remplace la
-    // pile) vers le detail de l'ordre : la transaction est consideree
-    // terminee, on ne revient jamais en arriere sur ce formulaire de devis.
+    // Route imbriquee dans l'onglet "Payer" (barre du bas toujours visible) —
+    // une fois l'ordre cree, cet ecran navigue lui-meme en `go()` vers le
+    // detail de l'ordre (onglet "Activite"), la transaction etant terminee.
     if (context.mounted) {
-      context.push('/orders/new', extra: accepted);
+      context.push('/pay/orders/new', extra: accepted);
     }
   }
 
@@ -89,12 +94,17 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
     return [
       Text('VOUS ENVOYEZ', style: AppTypography.eyebrow),
       const SizedBox(height: AppSpacing.sm),
-      TextField(
-        controller: _amountController,
-        keyboardType: const TextInputType.numberWithOptions(decimal: false),
-        style: AppTypography.metricLarge,
-        decoration: const InputDecoration(suffixText: 'XOF', hintText: '0'),
-        onSubmitted: (_) => _requestQuote(controller),
+      Form(
+        key: _formKey,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        child: TextFormField(
+          controller: _amountController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          style: AppTypography.metricLarge,
+          decoration: const InputDecoration(suffixText: 'XOF', hintText: '0'),
+          onFieldSubmitted: (_) => _requestQuote(controller),
+          validator: Validators.positiveAmount,
+        ),
       ),
       if (controller.errorMessage != null) ...[
         const SizedBox(height: AppSpacing.md),

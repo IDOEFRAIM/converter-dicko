@@ -6,6 +6,7 @@ import '../../../core/errors/api_exception.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/primary_action.dart';
 import '../data/auth_repository.dart';
 import '../models/auth_models.dart';
@@ -48,7 +49,10 @@ class _LoginPageState extends State<LoginPage> {
     final authRepository = context.read<AuthRepository>();
     try {
       await authRepository.login(
-        LoginRequest(phone: _phoneController.text.trim(), password: _passwordController.text),
+        LoginRequest(
+          phone: Validators.normalizePhone(_phoneController.text.trim()),
+          password: _passwordController.text,
+        ),
       );
       // La navigation vers l'accueil est geree par le routeur (redirection
       // reactive a AuthSession) — aucun push manuel necessaire ici.
@@ -96,12 +100,7 @@ class _LoginPageState extends State<LoginPage> {
                     labelText: 'Numero de telephone',
                     hintText: '+2250700000000',
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Le numero de telephone est obligatoire.';
-                    }
-                    return null;
-                  },
+                  validator: Validators.phoneE164,
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 TextFormField(
