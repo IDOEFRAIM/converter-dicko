@@ -7,8 +7,11 @@ import '../core/network/api_client.dart';
 import '../core/theme/app_theme.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/home/application/home_controller.dart';
-import '../features/orders/data/order_history_api.dart';
+import '../features/orders/data/order_api.dart';
+import '../features/payment/data/payment_api.dart';
+import '../features/quote/data/quote_api.dart';
 import '../features/rates/data/rate_history_api.dart';
+import '../features/settings/data/settings_api.dart';
 import '../features/suppliers/data/supplier_api.dart';
 import 'router/app_router.dart';
 
@@ -16,6 +19,11 @@ import 'router/app_router.dart';
 /// -> reseau -> repositories -> controllers) et du routeur. Un seul endroit
 /// construit ces objets — aucune feature n'instancie son propre client HTTP
 /// ou sa propre session (mission section 13).
+///
+/// Seuls les objets veritablement globaux (config, session, client HTTP, les
+/// "Api" sans etat) vivent ici. Les controllers propres a un ecran (creation
+/// de devis, detail fournisseur...) sont fournis localement par cet ecran,
+/// pour ne pas garder leur etat en memoire une fois l'ecran quitte.
 class ConverterApp extends StatelessWidget {
   const ConverterApp({super.key});
 
@@ -35,12 +43,15 @@ class ConverterApp extends StatelessWidget {
           create: (context) => AuthRepository(client: context.read<ApiClient>(), session: context.read<AuthSession>()),
         ),
         Provider<RateHistoryApi>(create: (context) => RateHistoryApi(context.read<ApiClient>())),
-        Provider<OrderHistoryApi>(create: (context) => OrderHistoryApi(context.read<ApiClient>())),
+        Provider<OrderApi>(create: (context) => OrderApi(context.read<ApiClient>())),
         Provider<SupplierApi>(create: (context) => SupplierApi(context.read<ApiClient>())),
+        Provider<QuoteApi>(create: (context) => QuoteApi(context.read<ApiClient>())),
+        Provider<PaymentApi>(create: (context) => PaymentApi(context.read<ApiClient>())),
+        Provider<SettingsApi>(create: (context) => SettingsApi(context.read<ApiClient>())),
         ChangeNotifierProvider<HomeController>(
           create: (context) => HomeController(
             rateHistoryApi: context.read<RateHistoryApi>(),
-            orderHistoryApi: context.read<OrderHistoryApi>(),
+            orderApi: context.read<OrderApi>(),
             supplierApi: context.read<SupplierApi>(),
           ),
         ),

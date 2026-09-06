@@ -55,6 +55,19 @@ dependencies:
   # reimplementer un parseur ISO-8601 (section 35).
   intl: ^0.19.0
 
+  # Ouvrir/partager un fichier deja telecharge (justificatif PDF, preuve de
+  # paiement) avec les apps du systeme — le SDK Flutter seul ne le permet pas
+  # (section 28 : preparer une UX de partage/ouverture reelle).
+  share_plus: ^13.3.0
+
+  # Repertoire temporaire ecrivable pour materialiser les octets telecharges
+  # avant de les partager (share_plus a besoin d'un chemin de fichier reel).
+  path_provider: ^2.1.5
+
+  # Choisir une photo (preuve de paiement) depuis la galerie/l'appareil photo —
+  # aucune API Flutter SDK ne le permet sans plugin (mission section 26).
+  image_picker: ^1.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../core/errors/api_exception.dart';
 import '../../../shared/utils/async_value.dart';
-import '../../orders/data/order_history_api.dart';
+import '../../orders/data/order_api.dart';
 import '../../orders/models/order_models.dart';
 import '../../rates/data/rate_history_api.dart';
 import '../../rates/models/rate_models.dart';
@@ -15,15 +15,15 @@ import '../../suppliers/models/supplier_models.dart';
 /// d'un seul appel en echec).
 class HomeController extends ChangeNotifier {
   final RateHistoryApi _rateHistoryApi;
-  final OrderHistoryApi _orderHistoryApi;
+  final OrderApi _orderApi;
   final SupplierApi _supplierApi;
 
   HomeController({
     required RateHistoryApi rateHistoryApi,
-    required OrderHistoryApi orderHistoryApi,
+    required OrderApi orderApi,
     required SupplierApi supplierApi,
   })  : _rateHistoryApi = rateHistoryApi,
-        _orderHistoryApi = orderHistoryApi,
+        _orderApi = orderApi,
         _supplierApi = supplierApi;
 
   AsyncValue<PublicRateHistoryEntry?> latestRate = const AsyncValue.loading();
@@ -50,7 +50,7 @@ class HomeController extends ChangeNotifier {
     lastOperation = const AsyncValue.loading();
     notifyListeners();
     try {
-      final page = await _orderHistoryApi.history(size: 1);
+      final page = await _orderApi.history(size: 1);
       lastOperation = AsyncValue.data(page.content.isEmpty ? null : page.content.first);
     } on ApiException catch (error) {
       lastOperation = AsyncValue.error(error.message);
