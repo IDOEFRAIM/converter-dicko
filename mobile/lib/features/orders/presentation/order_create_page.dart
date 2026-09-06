@@ -177,7 +177,10 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
             ),
             if (controller.errorMessage != null) ...[
               const SizedBox(height: AppSpacing.md),
-              Text(controller.errorMessage!, style: AppTypography.body.copyWith(color: AppColors.negative)),
+              if (controller.isKycBlocked)
+                _KycBlockedNotice(message: controller.errorMessage!)
+              else
+                Text(controller.errorMessage!, style: AppTypography.body.copyWith(color: AppColors.negative)),
             ],
             const SizedBox(height: AppSpacing.lg),
             PrimaryAction(
@@ -270,6 +273,48 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
               validator: (v) => Validators.optionalMaxLength(v, 120, label: "L'agence"),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Traitement visuel distinct pour `KYC_VERIFICATION_REQUIRED` : aucune
+/// verification d'identite en libre-service n'existe cote backend (voir
+/// `OrderCreateController.isKycBlocked`) -- un simple "reessayez" en rouge
+/// serait trompeur, le client a besoin d'une action concrete (reduire le
+/// montant ou contacter le support), jamais un ecran qui suggere qu'un
+/// nouveau tap suffirait (mission section 38).
+class _KycBlockedNotice extends StatelessWidget {
+  final String message;
+
+  const _KycBlockedNotice({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.warningSurface,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.verified_user_outlined, size: 18, color: AppColors.warning),
+              const SizedBox(width: AppSpacing.xs),
+              Text('Verification d\'identite requise', style: AppTypography.bodyStrong.copyWith(color: AppColors.warning)),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(message, style: AppTypography.body.copyWith(color: AppColors.warning)),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Reduisez le montant en dessous du seuil, ou contactez le support pour faire verifier votre identite.',
+            style: AppTypography.caption.copyWith(color: AppColors.warning),
+          ),
         ],
       ),
     );
