@@ -5,8 +5,10 @@ import '../../core/auth/auth_session.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
 import '../../features/auth/presentation/splash_page.dart';
+import '../../features/business/presentation/business_page.dart';
 import '../../features/home/presentation/home_page.dart';
 import '../../features/more/presentation/more_page.dart';
+import '../../features/notifications/presentation/notifications_page.dart';
 import '../../features/orders/presentation/order_create_page.dart';
 import '../../features/orders/presentation/order_detail_page.dart';
 import '../../features/orders/presentation/order_list_page.dart';
@@ -14,6 +16,8 @@ import '../../features/orders/presentation/order_tracking_page.dart';
 import '../../features/payment/presentation/payment_submit_page.dart';
 import '../../features/quote/models/quote_models.dart';
 import '../../features/quote/presentation/quote_create_page.dart';
+import '../../features/rates/presentation/rate_alerts_page.dart';
+import '../../features/rates/presentation/rate_history_page.dart';
 import '../../features/suppliers/models/supplier_models.dart';
 import '../../features/suppliers/presentation/pay_again_page.dart';
 import '../../features/suppliers/presentation/supplier_detail_page.dart';
@@ -125,32 +129,15 @@ GoRouter buildAppRouter(AuthSession authSession) {
                 path: '/more',
                 builder: (context, state) => const MorePage(),
                 routes: [
-                  GoRoute(
-                    path: 'rates',
-                    builder: (context, state) => const ComingSoonPage(title: 'Taux', icon: Icons.show_chart),
-                  ),
-                  GoRoute(
-                    path: 'rate-alerts',
-                    builder: (context, state) =>
-                        const ComingSoonPage(title: 'Alertes de taux', icon: Icons.notifications_active_outlined),
-                  ),
+                  GoRoute(path: 'rates', builder: (context, state) => const RateHistoryPage()),
+                  GoRoute(path: 'rate-alerts', builder: (context, state) => const RateAlertsPage()),
                   GoRoute(
                     path: 'wallet',
                     builder: (context, state) =>
                         const ComingSoonPage(title: 'Portefeuille', icon: Icons.account_balance_wallet_outlined),
                   ),
-                  GoRoute(
-                    path: 'notifications',
-                    builder: (context, state) =>
-                        const ComingSoonPage(title: 'Notifications', icon: Icons.notifications_outlined),
-                  ),
-                  GoRoute(
-                    path: 'business',
-                    builder: (context, state) => const ComingSoonPage(
-                      title: 'Espace professionnel',
-                      icon: Icons.business_center_outlined,
-                    ),
-                  ),
+                  GoRoute(path: 'notifications', builder: (context, state) => const NotificationsPage()),
+                  GoRoute(path: 'business', builder: (context, state) => const BusinessPage()),
                 ],
               ),
             ],
