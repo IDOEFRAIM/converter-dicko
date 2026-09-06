@@ -107,6 +107,19 @@ public abstract class AbstractRateQuoteIT extends AbstractIntegrationTest {
      * cout.
      */
     protected RateSourceResponse publishRate(String adminToken, String cfaPerCny) {
+        RateSourceResponse response = publishManualRateOnly(adminToken, cfaPerCny);
+        publishCostRate(adminToken, cfaPerCny);
+        return response;
+    }
+
+    /**
+     * Publie UNIQUEMENT le taux manuel (`POST /api/admin/rates`), sans jamais toucher au chemin
+     * de cout distinct (`CostRateAdminService`) — contrairement a {@link #publishRate}. Sert a
+     * prouver que ce seul appel fait deja progresser {@code public_rate_snapshots} (voir le
+     * correctif de {@code RateAdminService#publishManualRate}) : avant ce correctif, seule la
+     * combinaison des deux appels de {@link #publishRate} le permettait.
+     */
+    protected RateSourceResponse publishManualRateOnly(String adminToken, String cfaPerCny) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(adminToken);
         ResponseEntity<ApiResponse<RateSourceResponse>> response = restTemplate.exchange(
@@ -114,7 +127,6 @@ public abstract class AbstractRateQuoteIT extends AbstractIntegrationTest {
                 new HttpEntity<>(new PublishRateRequest(new BigDecimal(cfaPerCny), "test"), headers),
                 new ParameterizedTypeReference<ApiResponse<RateSourceResponse>>() {
                 });
-        publishCostRate(adminToken, cfaPerCny);
         return response.getBody().data();
     }
 

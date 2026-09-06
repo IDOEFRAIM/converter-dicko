@@ -326,6 +326,32 @@ class RateAlertServiceIT extends AbstractRateQuoteIT {
         assertThat(triggeredCount).isEqualTo(1);
     }
 
+    // ---- Correctif : publication d'un taux manuel seul (sans chemin de cout) doit deja notifier ----
+
+    @Test
+    void processOne_afterManualRatePublishOnly_triggersAndNotifies() {
+        // Regression : avant le correctif de RateAdminService#publishManualRate, seul
+        // CostRateAdminService#publish faisait progresser public_rate_snapshots -- un
+        // administrateur publiant un nouveau taux manuel (POST /api/admin/rates, le mecanisme de
+        // "changement de taux" le plus direct) ne declenchait donc jamais les alertes des clients
+        // qui l'attendaient. publishManualRateOnly() n'appelle JAMAIS le chemin de cout distinct,
+        // contrairement a publishRate() utilise par le reste de cette suite.
+        resetMarginToZero();
+        String admin = adminToken();
+        User user = createUser(RoleCode.USER);
+        RateAlertResponse alert = rateAlertService.create(
+                new CreateRateAlertRequest(null, null, new BigDecimal("83.50"), null, null), user.getId());
+
+        publishManualRateOnly(admin, "83.000000");
+        rateAlertService.processOne(alert.id());
+
+        RateAlert reloaded = rateAlertRepository.findById(alert.id()).orElseThrow();
+        assertThat(reloaded.getStatus()).isEqualTo(RateAlertStatus.TRIGGERED);
+        List<Notification> notifications = notificationRepository
+                .findByUserIdOrderByCreatedAtDesc(user.getId(), PageRequest.of(0, 20)).getContent();
+        assertThat(notifications).extracting(Notification::getType).contains(NotificationType.RATE_ALERT_TRIGGERED);
+    }
+
     // ---- 37 : persistance des transitions ("redemarrage") ----
 
     @Test

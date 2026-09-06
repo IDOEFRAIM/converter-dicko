@@ -5,6 +5,7 @@ import com.converter.audit.service.AuditService;
 import com.converter.rate.domain.RateProviderType;
 import com.converter.rate.domain.RateSource;
 import com.converter.rate.dto.RateSourceResponse;
+import com.converter.rate.publicrate.service.PublicRateSnapshotService;
 import com.converter.rate.repository.RateSourceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,16 @@ import java.util.UUID;
  * d'unicite plutot que de produire deux taux courants a la fois.
  * Aucun historique n'est jamais ecrase — {@code rate_sources} est
  * append-only.
+ *
+ * <p><b>Correctif</b> : cette publication doit aussi faire progresser
+ * {@code public_rate_snapshots} (voir {@link PublicRateSnapshotService}), sans quoi ce taux
+ * manuel — bien que deja utilise pour tarifer tout nouveau devis via {@link
+ * com.converter.rate.provider.ManualRateProvider}, seule implementation active de {@code
+ * RateProvider} — reste invisible de l'historique public ET du scheduler d'alertes de taux
+ * ({@code RateAlertService}), qui ne lit jamais que ce snapshot. Avant ce correctif, seul {@code
+ * CostRateAdminService#publish} (un chemin de publication entierement distinct) faisait avancer ce
+ * snapshot, si bien qu'un administrateur publiant un nouveau taux manuel ici ne declenchait jamais
+ * les alertes des clients qui l'attendaient.
  */
 @Service
 public class RateAdminService {
@@ -40,13 +51,16 @@ public class RateAdminService {
     private static final Logger log = LoggerFactory.getLogger(RateAdminService.class);
 
     private final RateSourceRepository rateSourceRepository;
+    private final PublicRateSnapshotService publicRateSnapshotService;
     private final AuditService auditService;
     private final Clock clock;
 
     public RateAdminService(RateSourceRepository rateSourceRepository,
+                            PublicRateSnapshotService publicRateSnapshotService,
                             AuditService auditService,
                             Clock clock) {
         this.rateSourceRepository = rateSourceRepository;
+        this.publicRateSnapshotService = publicRateSnapshotService;
         this.auditService = auditService;
         this.clock = clock;
     }
@@ -63,6 +77,12 @@ public class RateAdminService {
         RateSource source = new RateSource(
                 RateProviderType.MANUAL, currencyPair, cfaPerCny, now, note, actorId, now);
         RateSource saved = rateSourceRepository.save(source);
+
+        // Additif uniquement, meme transaction (propagation REQUIRED) : voir la Javadoc de classe.
+        // Le taux client applicable a CE taux manuel est le meme calcul qu'un devis en ferait a cet
+        // instant (RateEngine.applyMargin sur ce cfaPerCny), jamais une valeur derivee du chemin de
+        // cout distinct de CostRateAdminService.
+        publicRateSnapshotService.record(cfaPerCny, currencyPair, now);
 
         auditService.record(actorId, null, AuditAction.RATE_SOURCE_PUBLISHED,
                 "RateSource", saved.getId().toString(),

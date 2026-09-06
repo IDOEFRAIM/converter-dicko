@@ -60,7 +60,21 @@ class _OrderDetailView extends StatelessWidget {
       return;
     }
     final reference = controller.order?.reference ?? 'transfert';
-    await saveAndShareBytes(bytes: download.bytes, fileName: 'justificatif-$reference.pdf');
+    try {
+      await saveAndShareBytes(bytes: download.bytes, fileName: 'justificatif-$reference.pdf');
+    } catch (error) {
+      // Ecriture disque ou feuille de partage native (permission refusee,
+      // plugin non enregistre...) peuvent echouer sans jamais lever
+      // d'ApiException -- le telechargement reseau avait pourtant reussi, ne
+      // jamais laisser ce cas paraitre comme un simple "rien ne s'est passe"
+      // (mission section 38, meme defaut que celui deja corrige sur l'upload
+      // de preuve de paiement).
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Impossible d'ouvrir ou de partager le justificatif. Reessayez.")),
+        );
+      }
+    }
   }
 
   @override
