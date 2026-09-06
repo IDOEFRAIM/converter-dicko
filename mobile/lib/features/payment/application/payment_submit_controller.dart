@@ -105,17 +105,31 @@ class PaymentSubmitController extends ChangeNotifier {
     final currentPayment = payment;
     if (currentPayment == null || uploadingProof) return;
 
-    final XFile? picked = await _imagePicker.pickImage(source: ImageSource.gallery, imageQuality: 90);
-    if (picked == null) return;
-
+    // uploadingProof est active AVANT l'appel au picker natif (et non apres) :
+    // un double-tap pendant que la galerie s'ouvre declenchait sinon un
+    // second appel concurrent a pickImage, qui echoue avec
+    // PlatformException('already_active') -- non rattrape plus bas avant ce
+    // correctif, donc un tap totalement muet (bug reel signale par
+    // l'utilisateur : "on arrive pas a upload").
     uploadingProof = true;
     errorMessage = null;
     notifyListeners();
     try {
+      final XFile? picked = await _imagePicker.pickImage(source: ImageSource.gallery, imageQuality: 90);
+      if (picked == null) {
+        uploadingProof = false;
+        notifyListeners();
+        return;
+      }
       await _paymentApi.uploadProof(currentPayment.id, picked.path, picked.name);
       proofUploaded = true;
     } on ApiException catch (error) {
       errorMessage = error.message;
+    } catch (error) {
+      // Le picker natif (permission refusee, appel concurrent, aucune galerie
+      // disponible...) ou la lecture du fichier choisi peuvent echouer sans
+      // jamais lever d'ApiException -- jamais un tap muet (mission section 38).
+      errorMessage = "Impossible de selectionner ou d'envoyer ce fichier. Reessayez.";
     }
     uploadingProof = false;
     notifyListeners();

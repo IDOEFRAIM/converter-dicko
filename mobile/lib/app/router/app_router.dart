@@ -14,6 +14,7 @@ import '../../features/orders/presentation/order_detail_page.dart';
 import '../../features/orders/presentation/order_list_page.dart';
 import '../../features/orders/presentation/order_tracking_page.dart';
 import '../../features/payment/presentation/payment_submit_page.dart';
+import '../../features/preferred_rate/presentation/preferred_rate_page.dart';
 import '../../features/quote/models/quote_models.dart';
 import '../../features/quote/presentation/quote_create_page.dart';
 import '../../features/rates/presentation/rate_alerts_page.dart';
@@ -153,6 +154,7 @@ GoRouter buildAppRouter(AuthSession authSession) {
                 routes: [
                   GoRoute(path: 'rates', builder: (context, state) => const RateHistoryPage()),
                   GoRoute(path: 'rate-alerts', builder: (context, state) => const RateAlertsPage()),
+                  GoRoute(path: 'preferred-rate', builder: (context, state) => const PreferredRatePage()),
                   GoRoute(
                     path: 'wallet',
                     builder: (context, state) =>

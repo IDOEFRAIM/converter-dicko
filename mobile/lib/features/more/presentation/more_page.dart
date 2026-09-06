@@ -56,6 +56,11 @@ class MorePage extends StatelessWidget {
             onTap: () => context.push('/more/rate-alerts'),
           ),
           _MoreTile(
+            icon: Icons.trending_up,
+            label: 'Taux preferentiel',
+            onTap: () => context.push('/more/preferred-rate'),
+          ),
+          _MoreTile(
             icon: Icons.account_balance_wallet_outlined,
             label: 'Portefeuille',
             onTap: () => context.push('/more/wallet'),

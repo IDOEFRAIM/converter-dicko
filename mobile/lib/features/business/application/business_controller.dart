@@ -21,6 +21,8 @@ class BusinessController extends ChangeNotifier {
   String? errorMessage;
   BusinessProfile? profile;
   BusinessPaymentSummary? summary;
+  String? summaryErrorMessage;
+  bool loadingSummary = false;
   List<OrderHistoryEntry> recentOrders = const [];
 
   bool savingProfile = false;
@@ -42,11 +44,30 @@ class BusinessController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Reessaie uniquement le resume KPI, sans recharger tout l'ecran — le
+  /// resume ne doit jamais disparaitre silencieusement sur un echec reseau
+  /// (mission section 38, meme principe que [ErrorState]).
+  Future<void> retrySummary() async {
+    loadingSummary = true;
+    notifyListeners();
+    try {
+      summary = await _businessApi.paymentsSummary();
+      summaryErrorMessage = null;
+    } on ApiException catch (error) {
+      summary = null;
+      summaryErrorMessage = error.message;
+    }
+    loadingSummary = false;
+    notifyListeners();
+  }
+
   Future<void> _loadSummaryAndActivity() async {
     try {
       summary = await _businessApi.paymentsSummary();
-    } on ApiException {
+      summaryErrorMessage = null;
+    } on ApiException catch (error) {
       summary = null;
+      summaryErrorMessage = error.message;
     }
     try {
       final page = await _orderApi.history(size: 10);

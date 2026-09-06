@@ -8,6 +8,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/money.dart';
 import '../../../shared/utils/date_formatting.dart';
 import '../../../shared/utils/validators.dart';
+import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/primary_action.dart';
 import '../../../shared/widgets/status_badge.dart';
@@ -113,9 +114,9 @@ class _BusinessDashboard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          if (summary != null) ...[
-            Text('APERCU', style: AppTypography.eyebrow),
-            const SizedBox(height: AppSpacing.sm),
+          Text('APERCU', style: AppTypography.eyebrow),
+          const SizedBox(height: AppSpacing.sm),
+          if (summary != null)
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
@@ -132,9 +133,21 @@ class _BusinessDashboard extends StatelessWidget {
                 _kpiTile('Total CNY', Money(summary.totalAmountCny, AppCurrency.cny).formatted()),
                 _kpiTile('Frais', Money(summary.totalFeesXof, AppCurrency.xof).formattedWithCurrency()),
               ],
+            )
+          else if (controller.loadingSummary)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else
+            // Le resume ne doit jamais disparaitre silencieusement sur un
+            // echec reseau — meme principe que partout ailleurs dans l'app
+            // (mission section 38) : jamais un ecran/section muette.
+            ErrorState(
+              message: controller.summaryErrorMessage ?? "Impossible de charger l'apercu.",
+              onRetry: controller.retrySummary,
             ),
-            const SizedBox(height: AppSpacing.xl),
-          ],
+          const SizedBox(height: AppSpacing.xl),
           Text('ACTIVITE RECENTE', style: AppTypography.eyebrow),
           const SizedBox(height: AppSpacing.sm),
           if (controller.recentOrders.isEmpty)
