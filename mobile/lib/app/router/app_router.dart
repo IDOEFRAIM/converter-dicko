@@ -29,7 +29,6 @@ import '../../features/suppliers/presentation/pay_again_page.dart';
 import '../../features/suppliers/presentation/supplier_detail_page.dart';
 import '../../features/suppliers/presentation/supplier_form_page.dart';
 import '../../features/suppliers/presentation/supplier_list_page.dart';
-import '../../shared/models/current_user.dart';
 import '../../shared/widgets/coming_soon_page.dart';
 import 'app_shell.dart';
 
@@ -197,8 +196,7 @@ GoRouter buildAppRouter(AuthSession authSession) {
                   GoRoute(path: 'business', builder: (context, state) => const BusinessPage()),
                   GoRoute(
                     path: 'experience-profile',
-                    builder: (context, state) =>
-                        ExperienceProfileSettingsPage(current: state.extra as ExperienceProfile),
+                    builder: (context, state) => const ExperienceProfileSettingsPage(),
                   ),
                 ],
               ),

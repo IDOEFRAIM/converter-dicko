@@ -78,10 +78,7 @@ class MorePage extends StatelessWidget {
           _MoreTile(
             icon: Icons.palette_outlined,
             label: 'Habillage',
-            onTap: () => context.push(
-              '/more/experience-profile',
-              extra: context.read<AuthSession>().experienceProfile,
-            ),
+            onTap: () => context.push('/more/experience-profile'),
           ),
           const Divider(),
           _MoreTile(
