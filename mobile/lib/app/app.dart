@@ -12,6 +12,7 @@ import '../features/home/application/home_controller.dart';
 import '../features/notifications/data/notification_api.dart';
 import '../features/orders/data/order_api.dart';
 import '../features/payment/data/payment_api.dart';
+import '../features/pools/data/pool_api.dart';
 import '../features/preferred_rate/data/preferred_rate_api.dart';
 import '../features/quote/data/quote_api.dart';
 import '../features/rates/data/rate_history_api.dart';
@@ -56,6 +57,7 @@ class ConverterApp extends StatelessWidget {
         Provider<BusinessApi>(create: (context) => BusinessApi(context.read<ApiClient>())),
         Provider<PreferredRateApi>(create: (context) => PreferredRateApi(context.read<ApiClient>())),
         Provider<AchievementApi>(create: (context) => AchievementApi(context.read<ApiClient>())),
+        Provider<PoolApi>(create: (context) => PoolApi(context.read<ApiClient>())),
         ChangeNotifierProvider<HomeController>(
           create: (context) => HomeController(
             rateHistoryApi: context.read<RateHistoryApi>(),

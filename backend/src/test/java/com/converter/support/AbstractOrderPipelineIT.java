@@ -71,7 +71,7 @@ public abstract class AbstractOrderPipelineIT extends AbstractRateQuoteIT {
     protected ResponseEntity<ApiResponse<OrderDetailResponse>> createOrderRaw(
             String userToken, UUID quoteId, BeneficiaryRequest beneficiary) {
         return restTemplate.exchange("/api/v1/orders", HttpMethod.POST,
-                new HttpEntity<>(new CreateOrderRequest(quoteId, beneficiary, "test", null, null, null), auth(userToken)),
+                new HttpEntity<>(new CreateOrderRequest(quoteId, beneficiary, "test", null, null, null, null), auth(userToken)),
                 new ParameterizedTypeReference<ApiResponse<OrderDetailResponse>>() {
                 });
     }
@@ -83,7 +83,7 @@ public abstract class AbstractOrderPipelineIT extends AbstractRateQuoteIT {
     protected ResponseEntity<ApiResponse<OrderDetailResponse>> createOrderWithSupplierRaw(
             String userToken, UUID quoteId, UUID supplierId) {
         return restTemplate.exchange("/api/v1/orders", HttpMethod.POST,
-                new HttpEntity<>(new CreateOrderRequest(quoteId, null, "test", supplierId, null, null),
+                new HttpEntity<>(new CreateOrderRequest(quoteId, null, "test", supplierId, null, null, null),
                         auth(userToken)),
                 new ParameterizedTypeReference<ApiResponse<OrderDetailResponse>>() {
                 });

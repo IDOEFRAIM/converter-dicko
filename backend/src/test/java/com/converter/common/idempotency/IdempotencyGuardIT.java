@@ -75,7 +75,7 @@ class IdempotencyGuardIT extends AbstractOrderPipelineIT {
         User user = createUser(RoleCode.USER);
         String endpoint = "POST /api/v1/orders";
         String idemKey = "crash-sim-" + UUID.randomUUID();
-        CreateOrderRequest request = new CreateOrderRequest(UUID.randomUUID(), alipayBeneficiary(), "crash-sim", null, null, null);
+        CreateOrderRequest request = new CreateOrderRequest(UUID.randomUUID(), alipayBeneficiary(), "crash-sim", null, null, null, null);
         String requestHash = sha256(objectMapper.writeValueAsString(request));
 
         // Simule EXACTEMENT ce qu'un crash laisserait derriere lui : la capture a commit (sa
@@ -108,7 +108,7 @@ class IdempotencyGuardIT extends AbstractOrderPipelineIT {
         depositCny(admin, "1000000");
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
-        CreateOrderRequest request = new CreateOrderRequest(quote.id(), alipayBeneficiary(), "idem-test", null, null, null);
+        CreateOrderRequest request = new CreateOrderRequest(quote.id(), alipayBeneficiary(), "idem-test", null, null, null, null);
         String idemKey = "order-create-" + UUID.randomUUID();
 
         ResponseEntity<ApiResponse<OrderDetailResponse>> first = postOrder(user, request, idemKey);
@@ -144,13 +144,13 @@ class IdempotencyGuardIT extends AbstractOrderPipelineIT {
         String idemKey = "order-create-conflict-" + UUID.randomUUID();
 
         ResponseEntity<ApiResponse<OrderDetailResponse>> first =
-                postOrder(user, new CreateOrderRequest(quoteA.id(), alipayBeneficiary(), "first", null, null, null), idemKey);
+                postOrder(user, new CreateOrderRequest(quoteA.id(), alipayBeneficiary(), "first", null, null, null, null), idemKey);
         assertThat(first.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         HttpHeaders headers = auth(user);
         headers.set("Idempotency-Key", idemKey);
         ResponseEntity<ErrorResponse> conflict = restTemplate.exchange("/api/v1/orders", HttpMethod.POST,
-                new HttpEntity<>(new CreateOrderRequest(quoteB.id(), alipayBeneficiary(), "second-different-body", null, null, null), headers),
+                new HttpEntity<>(new CreateOrderRequest(quoteB.id(), alipayBeneficiary(), "second-different-body", null, null, null, null), headers),
                 ErrorResponse.class);
 
         assertThat(conflict.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
@@ -174,7 +174,7 @@ class IdempotencyGuardIT extends AbstractOrderPipelineIT {
         QuoteResponse quote = createAcceptedQuote(user, "100000");
 
         ResponseEntity<ApiResponse<OrderDetailResponse>> response = postOrder(user,
-                new CreateOrderRequest(quote.id(), alipayBeneficiary(), "no-key", null, null, null), null);
+                new CreateOrderRequest(quote.id(), alipayBeneficiary(), "no-key", null, null, null, null), null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     }
@@ -233,7 +233,7 @@ class IdempotencyGuardIT extends AbstractOrderPipelineIT {
         QuoteResponse quote = createQuote(user,
                 new com.converter.quote.dto.CreateQuoteRequest(
                         com.converter.quote.domain.QuoteDirection.SEND_XOF, new BigDecimal("100000"), null));
-        CreateOrderRequest request = new CreateOrderRequest(quote.id(), alipayBeneficiary(), "retry-test", null, null, null);
+        CreateOrderRequest request = new CreateOrderRequest(quote.id(), alipayBeneficiary(), "retry-test", null, null, null, null);
         String idemKey = "order-fail-retry-" + UUID.randomUUID();
 
         HttpHeaders headers = auth(user);

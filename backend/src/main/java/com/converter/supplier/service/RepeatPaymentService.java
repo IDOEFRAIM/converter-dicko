@@ -80,7 +80,7 @@ public class RepeatPaymentService {
         // Beneficiary depuis le fournisseur (logique deja construite en Phase 2, non dupliquee
         // ici). note=null : pay-again ne porte pas de champ note libre distinct de purposeDetails.
         return orderService.create(
-                new CreateOrderRequest(quote.id(), null, null, supplierId, purpose, request.purposeDetails()),
+                new CreateOrderRequest(quote.id(), null, null, supplierId, purpose, request.purposeDetails(), null),
                 userId);
     }
 }

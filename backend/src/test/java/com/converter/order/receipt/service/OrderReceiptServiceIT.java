@@ -206,7 +206,7 @@ class OrderReceiptServiceIT extends AbstractOrderPipelineIT {
     }
 
     private com.converter.order.dto.CreateOrderRequest supplierOrderRequest(UUID quoteId, UUID supplierId) {
-        return new com.converter.order.dto.CreateOrderRequest(quoteId, null, "test", supplierId, null, null);
+        return new com.converter.order.dto.CreateOrderRequest(quoteId, null, "test", supplierId, null, null, null);
     }
 
     private org.springframework.http.ResponseEntity<ApiResponse<OrderDetailResponse>> createOrderRawWithSupplier(

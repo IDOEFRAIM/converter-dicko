@@ -5,6 +5,8 @@ import com.converter.common.exception.ResourceNotFoundException;
 import com.converter.order.domain.OrderStatus;
 import com.converter.order.repository.OrderRepository;
 import com.converter.order.repository.OrderStatusAggregate;
+import com.converter.pool.domain.PoolStatus;
+import com.converter.pool.repository.PoolParticipantRepository;
 import com.converter.user.domain.ExperienceProfile;
 import com.converter.user.domain.User;
 import com.converter.user.repository.UserRepository;
@@ -42,6 +44,11 @@ public class AchievementService {
      * jamais une valeur mutable stockee separement (voir la Javadoc de classe). */
     private static final long XP_PER_COMPLETED_TRANSFER = 100;
 
+    /** Bonus XP par Ruee collective reussie (mission "differenciation marketing", Lot 3) — meme
+     * discipline "purement derive" : {@code poolsSucceededCount} est un COMPTE reel de lignes
+     * {@code pool_participants} deja persistees, jamais un compteur XP mutable a part. */
+    private static final long XP_PER_SUCCEEDED_POOL = 250;
+
     private static final List<BadgeTier> STUDENT_MALE_TIERS = List.of(
             new BadgeTier(1, "GUERRIER", "Guerrier"),
             new BadgeTier(5, "BATISSEUR", "Batisseur"),
@@ -55,11 +62,14 @@ public class AchievementService {
 
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
+    private final PoolParticipantRepository poolParticipantRepository;
     private final Clock clock;
 
-    public AchievementService(OrderRepository orderRepository, UserRepository userRepository, Clock clock) {
+    public AchievementService(OrderRepository orderRepository, UserRepository userRepository,
+                              PoolParticipantRepository poolParticipantRepository, Clock clock) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
+        this.poolParticipantRepository = poolParticipantRepository;
         this.clock = clock;
     }
 
@@ -80,15 +90,20 @@ public class AchievementService {
                 ? BigDecimal.ZERO
                 : completedThisMonth.totalAmountXof();
 
-        return toResponse(user.getExperienceProfile(), completedCount, totalAmountXof, currentMonthAmountXof);
+        long poolsSucceededCount = poolParticipantRepository.countByUserIdAndPoolStatus(userId, PoolStatus.SUCCEEDED);
+
+        return toResponse(user.getExperienceProfile(), completedCount, totalAmountXof, currentMonthAmountXof,
+                poolsSucceededCount);
     }
 
     private AchievementSummaryResponse toResponse(ExperienceProfile profile, long completedCount,
-                                                  BigDecimal totalAmountXof, BigDecimal currentMonthAmountXof) {
-        long xp = completedCount * XP_PER_COMPLETED_TRANSFER;
+                                                  BigDecimal totalAmountXof, BigDecimal currentMonthAmountXof,
+                                                  long poolsSucceededCount) {
+        long xp = completedCount * XP_PER_COMPLETED_TRANSFER + poolsSucceededCount * XP_PER_SUCCEEDED_POOL;
         BadgeProgress progress = resolveBadgeProgress(profile, completedCount);
-        return new AchievementSummaryResponse(profile, completedCount, totalAmountXof, currentMonthAmountXof, xp,
-                progress.code(), progress.label(), progress.nextLabel(), progress.transfersUntilNext());
+        return new AchievementSummaryResponse(profile, completedCount, totalAmountXof, currentMonthAmountXof,
+                poolsSucceededCount, xp, progress.code(), progress.label(), progress.nextLabel(),
+                progress.transfersUntilNext());
     }
 
     /**

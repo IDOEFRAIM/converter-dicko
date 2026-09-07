@@ -6,6 +6,8 @@ import com.converter.common.exception.BusinessException;
 import com.converter.common.exception.ErrorCode;
 import com.converter.notification.domain.NotificationType;
 import com.converter.notification.service.NotificationService;
+import com.converter.pool.domain.PoolParticipant;
+import com.converter.pool.repository.PoolParticipantRepository;
 import com.converter.quote.domain.Quote;
 import com.converter.quote.domain.QuoteDirection;
 import com.converter.quote.dto.CreateQuoteRequest;
@@ -55,6 +57,7 @@ public class QuoteService {
     private final OwnershipService ownershipService;
     private final AuditService auditService;
     private final NotificationService notificationService;
+    private final PoolParticipantRepository poolParticipantRepository;
     private final Clock clock;
 
     public QuoteService(QuoteRepository quoteRepository,
@@ -64,6 +67,7 @@ public class QuoteService {
                         OwnershipService ownershipService,
                         AuditService auditService,
                         NotificationService notificationService,
+                        PoolParticipantRepository poolParticipantRepository,
                         Clock clock) {
         this.quoteRepository = quoteRepository;
         this.costRateProvider = costRateProvider;
@@ -72,6 +76,7 @@ public class QuoteService {
         this.ownershipService = ownershipService;
         this.auditService = auditService;
         this.notificationService = notificationService;
+        this.poolParticipantRepository = poolParticipantRepository;
         this.clock = clock;
     }
 
@@ -110,14 +115,31 @@ public class QuoteService {
         BigDecimal feePercentage = settingsService.getDecimal(SettingKey.DEFAULT_FEE_PERCENTAGE);
         BigDecimal fixedFeeXof = settingsService.getDecimal(SettingKey.DEFAULT_FIXED_FEE_XOF);
 
+        // Recompense d'une Ruee collective reussie (mission "differenciation marketing", Lot 3) :
+        // consommee ICI, sur le PROCHAIN devis du participant -- jamais retroactive sur l'ordre qui
+        // a rempli l'objectif du pool (voir PoolService, l'immutabilite du pricing deja fige reste
+        // absolue). Verrouillee pour qu'une seule recompense ne soit jamais consommee deux fois par
+        // deux devis crees concurremment.
+        PoolParticipant activeReward = poolParticipantRepository.findActiveUnconsumedRewardsForUpdate(userId)
+                .stream().findFirst().orElse(null);
+        if (activeReward != null) {
+            marginPercentage = marginPercentage.subtract(activeReward.getRewardMarginReductionPercentage())
+                    .max(BigDecimal.ZERO);
+        }
+
         PricingResult pricing = rateEngine.price(basis, amount, costRate.breakEvenRate(), marginPercentage,
                 feePercentage, fixedFeeXof);
 
         Instant now = clock.instant();
         Duration validity = settingsService.getMinutes(SettingKey.RATE_LOCK_DURATION_MINUTES);
         Quote quote = new Quote(userId, request.direction(), pricing, costRate.costConfigurationId(), now,
-                now.plus(validity));
+                now.plus(validity), activeReward != null);
         Quote saved = quoteRepository.save(quote);
+
+        if (activeReward != null) {
+            activeReward.consumeReward(now);
+            poolParticipantRepository.save(activeReward);
+        }
 
         auditService.record(userId, null, AuditAction.QUOTE_CREATED, "Quote", saved.getId().toString(), null);
         notificationService.create(userId, NotificationType.QUOTE_CREATED, "Devis cree",
@@ -216,6 +238,7 @@ public class QuoteService {
                 quote.getNetAmountXof(),
                 quote.effectiveStatus(clock.instant()),
                 quote.getCreatedAt(),
-                quote.getExpiresAt());
+                quote.getExpiresAt(),
+                quote.isPoolRewardApplied());
     }
 }

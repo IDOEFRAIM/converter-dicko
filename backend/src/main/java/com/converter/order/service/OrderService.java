@@ -19,6 +19,7 @@ import com.converter.order.dto.OrderSummaryResponse;
 import com.converter.order.repository.BeneficiaryRepository;
 import com.converter.order.repository.OrderRepository;
 import com.converter.order.repository.OrderStatusHistoryRepository;
+import com.converter.pool.service.PoolService;
 import com.converter.quote.domain.Quote;
 import com.converter.quote.domain.QuoteStatus;
 import com.converter.quote.repository.QuoteRepository;
@@ -74,6 +75,7 @@ public class OrderService {
     private final SettingsService settingsService;
     private final OwnershipService ownershipService;
     private final AuditService auditService;
+    private final PoolService poolService;
     private final Clock clock;
 
     public OrderService(OrderRepository orderRepository,
@@ -87,6 +89,7 @@ public class OrderService {
                         SettingsService settingsService,
                         OwnershipService ownershipService,
                         AuditService auditService,
+                        PoolService poolService,
                         Clock clock) {
         this.orderRepository = orderRepository;
         this.beneficiaryRepository = beneficiaryRepository;
@@ -99,6 +102,7 @@ public class OrderService {
         this.settingsService = settingsService;
         this.ownershipService = ownershipService;
         this.auditService = auditService;
+        this.poolService = poolService;
         this.clock = clock;
     }
 
@@ -161,6 +165,9 @@ public class OrderService {
         Order order = new Order(reference, userId, quote.getId(), quote.getAmountXof(), quote.getAmountCny(),
                 quote.getCustomerRate(), quote.getFeeXof(), quote.getNetAmountXof(), request.note(),
                 now, now.plus(paymentWindow), request.supplierId(), request.purpose(), request.purposeDetails());
+        if (request.poolId() != null) {
+            order.assignToPool(request.poolId());
+        }
         Order saved;
         try {
             saved = orderRepository.saveAndFlush(order);
@@ -183,6 +190,13 @@ public class OrderService {
             treasuryService.reserve(Currency.CNY, quote.getAmountCny(), saved.getId(), userId);
             saved.markTreasuryReserved();
             orderRepository.save(saved);
+        }
+
+        if (request.poolId() != null) {
+            // Meme transaction que la creation de l'ordre : si le pool n'est plus actif ou que
+            // l'utilisateur ne l'a pas rejoint, toute la creation d'ordre est annulee plutot que de
+            // laisser un ordre "orphelin" d'une contribution refusee (voir PoolService).
+            poolService.recordContribution(request.poolId(), userId, quote.getAmountXof());
         }
 
         String supplierMetadata = request.supplierId() == null ? "" : ",\"supplierId\":\"" + request.supplierId() + "\"";

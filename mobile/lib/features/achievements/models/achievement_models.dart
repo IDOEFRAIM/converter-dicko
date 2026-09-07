@@ -15,6 +15,7 @@ class AchievementSummary {
   final int completedTransferCount;
   final String totalAmountXofCompleted;
   final String currentMonthAmountXofCompleted;
+  final int poolsSucceededCount;
   final int xp;
   final String? badgeCode;
   final String? badgeLabel;
@@ -26,6 +27,7 @@ class AchievementSummary {
     required this.completedTransferCount,
     required this.totalAmountXofCompleted,
     required this.currentMonthAmountXofCompleted,
+    required this.poolsSucceededCount,
     required this.xp,
     required this.badgeCode,
     required this.badgeLabel,
@@ -41,6 +43,7 @@ class AchievementSummary {
       completedTransferCount: json['completedTransferCount'] as int? ?? 0,
       totalAmountXofCompleted: decimalStringFromJson(json['totalAmountXofCompleted']),
       currentMonthAmountXofCompleted: decimalStringFromJson(json['currentMonthAmountXofCompleted']),
+      poolsSucceededCount: json['poolsSucceededCount'] as int? ?? 0,
       xp: json['xp'] as int? ?? 0,
       badgeCode: json['badgeCode'] as String?,
       badgeLabel: json['badgeLabel'] as String?,

@@ -47,6 +47,7 @@ public enum ErrorCode {
     SUPPLIER_NOT_FOUND(HttpStatus.NOT_FOUND, Category.NOT_FOUND),
     RATE_ALERT_NOT_FOUND(HttpStatus.NOT_FOUND, Category.NOT_FOUND),
     BUSINESS_PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND, Category.NOT_FOUND),
+    POOL_NOT_FOUND(HttpStatus.NOT_FOUND, Category.NOT_FOUND),
 
     // ---------------------------------------------------------- 409
     DUPLICATE_RESOURCE(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
@@ -75,6 +76,9 @@ public enum ErrorCode {
     SUPPLIER_INACTIVE(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
     RATE_ALERT_INACTIVE(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
     KYC_VERIFICATION_REQUIRED(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
+    POOL_INACTIVE(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
+    POOL_ALREADY_JOINED(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
+    POOL_NOT_JOINED(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
 
     // ---------------------------------------------------------- 429
     TOO_MANY_ATTEMPTS(HttpStatus.TOO_MANY_REQUESTS, Category.RATE_LIMIT),

@@ -38,6 +38,10 @@ public record CreateOrderRequest(
         Purpose purpose,
 
         @Size(max = 500)
-        String purposeDetails
+        String purposeDetails,
+
+        @Schema(description = "Ruee collective a laquelle cet ordre contribue, optionnelle — le client doit deja "
+                + "l'avoir rejointe (voir POST /api/v1/pools/{id}/join)")
+        UUID poolId
 ) {
 }

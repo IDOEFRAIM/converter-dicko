@@ -56,7 +56,7 @@ class OrderFlowIT extends AbstractOrderPipelineIT {
         createOrder(user, quote.id(), alipayBeneficiary());
 
         ResponseEntity<ErrorResponse> second = restTemplate.exchange("/api/v1/orders", HttpMethod.POST,
-                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null, null, null, null),
+                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null, null, null, null, null),
                         auth(user)),
                 ErrorResponse.class);
 
@@ -75,7 +75,7 @@ class OrderFlowIT extends AbstractOrderPipelineIT {
                 new BigDecimal("50000"), null));
 
         ResponseEntity<ErrorResponse> response = restTemplate.exchange("/api/v1/orders", HttpMethod.POST,
-                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null, null, null, null),
+                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null, null, null, null, null),
                         auth(user)),
                 ErrorResponse.class);
 
@@ -93,7 +93,7 @@ class OrderFlowIT extends AbstractOrderPipelineIT {
 
         String intruder = tokenFor(createUser(RoleCode.USER));
         ResponseEntity<ErrorResponse> response = restTemplate.exchange("/api/v1/orders", HttpMethod.POST,
-                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null, null, null, null),
+                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null, null, null, null, null),
                         auth(intruder)),
                 ErrorResponse.class);
 
@@ -169,7 +169,7 @@ class OrderFlowIT extends AbstractOrderPipelineIT {
         QuoteResponse quote = createAcceptedQuote(user, requiredXof.toPlainString());
 
         ResponseEntity<ErrorResponse> response = restTemplate.exchange("/api/v1/orders", HttpMethod.POST,
-                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null, null, null, null),
+                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null, null, null, null, null),
                         auth(user)),
                 ErrorResponse.class);
 
@@ -237,7 +237,7 @@ class OrderFlowIT extends AbstractOrderPipelineIT {
         QuoteResponse quote = createAcceptedQuote(user, "1000");
 
         ResponseEntity<ErrorResponse> response = restTemplate.exchange("/api/v1/orders", HttpMethod.POST,
-                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null, null, null, null),
+                new HttpEntity<>(new com.converter.order.dto.CreateOrderRequest(quote.id(), alipayBeneficiary(), null, null, null, null, null),
                         auth(user)),
                 ErrorResponse.class);
 

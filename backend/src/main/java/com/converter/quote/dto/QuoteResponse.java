@@ -30,6 +30,9 @@ public record QuoteResponse(
         BigDecimal netAmountXof,
         QuoteStatus status,
         Instant createdAt,
-        Instant expiresAt
+        Instant expiresAt,
+
+        @Schema(description = "Vrai si une reduction issue d'une Ruee collective reussie a ete appliquee a ce devis")
+        boolean poolRewardApplied
 ) {
 }

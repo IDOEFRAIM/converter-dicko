@@ -19,10 +19,19 @@ class OrderCreateController extends ChangeNotifier {
   final OrderApi _orderApi;
   final SupplierApi _supplierApi;
   final Quote quote;
+
+  /// Ruee collective a laquelle cet ordre contribue, optionnelle (mission
+  /// "differenciation marketing", Lot 3) — voir [OrderCreateArgs].
+  final String? poolId;
+
   final _idempotency = IdempotencyAttempt();
 
-  OrderCreateController({required OrderApi orderApi, required SupplierApi supplierApi, required this.quote})
-      : _orderApi = orderApi,
+  OrderCreateController({
+    required OrderApi orderApi,
+    required SupplierApi supplierApi,
+    required this.quote,
+    this.poolId,
+  })  : _orderApi = orderApi,
         _supplierApi = supplierApi;
 
   bool loadingFeasibility = true;
@@ -109,6 +118,7 @@ class OrderCreateController extends ChangeNotifier {
       supplierId: source == BeneficiarySource.supplier ? selectedSupplierId : null,
       purpose: purpose,
       purposeDetails: purposeDetails,
+      poolId: poolId,
     );
 
     submitting = true;

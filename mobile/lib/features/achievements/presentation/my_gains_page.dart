@@ -155,6 +155,13 @@ class _SummaryHero extends StatelessWidget {
               style: AppTypography.caption.copyWith(color: foreground, fontWeight: FontWeight.w700),
             ),
           ],
+          if (summary.poolsSucceededCount > 0) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              '🏆 ${summary.poolsSucceededCount} Ruee(s) collective(s) remportee(s)',
+              style: AppTypography.caption.copyWith(color: foreground, fontWeight: FontWeight.w700),
+            ),
+          ],
         ],
       ),
     );

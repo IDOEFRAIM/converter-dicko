@@ -17,13 +17,25 @@ import '../../suppliers/models/supplier_models.dart';
 import '../application/order_create_controller.dart';
 import '../models/order_models.dart';
 
+/// Regroupe le devis accepte et l'eventuelle Ruee collective a laquelle cet
+/// ordre doit contribuer (mission "differenciation marketing", Lot 3) — un
+/// seul objet transmissible via `extra` au routeur, plutot que deux valeurs
+/// distinctes qui se perdraient l'une l'autre entre les deux ecrans.
+class OrderCreateArgs {
+  final Quote quote;
+  final String? poolId;
+
+  const OrderCreateArgs({required this.quote, this.poolId});
+}
+
 /// Choix du beneficiaire (fournisseur enregistre ou saisie manuelle) + motif,
 /// puis creation de l'ordre a partir d'un devis deja accepte (mission
 /// section 24, entree du parcours).
 class OrderCreatePage extends StatelessWidget {
   final Quote quote;
+  final String? poolId;
 
-  const OrderCreatePage({super.key, required this.quote});
+  const OrderCreatePage({super.key, required this.quote, this.poolId});
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +44,7 @@ class OrderCreatePage extends StatelessWidget {
         orderApi: context.read<OrderApi>(),
         supplierApi: context.read<SupplierApi>(),
         quote: quote,
+        poolId: poolId,
       )..load(),
       child: const _OrderCreateView(),
     );
@@ -86,7 +99,11 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
       purposeDetails: _purposeDetailsController.text.trim().isEmpty ? null : _purposeDetailsController.text.trim(),
     );
     if (order != null && mounted) {
-      context.go('/activity/orders/${order.id}');
+      final poolId = controller.poolId;
+      // Une contribution a une Ruee collective merite de revenir sur son detail (thermometre a
+      // jour, celebration eventuelle) plutot que sur l'ordre lui-meme — l'ordre reste accessible
+      // depuis l'onglet Activite comme d'habitude.
+      context.go(poolId == null ? '/activity/orders/${order.id}' : '/pay/pools/$poolId');
     }
   }
 

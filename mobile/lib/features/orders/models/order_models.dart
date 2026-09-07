@@ -270,6 +270,11 @@ class CreateOrderRequest {
   final Purpose? purpose;
   final String? purposeDetails;
 
+  /// Ruee collective a laquelle cet ordre contribue, optionnelle (mission
+  /// "differenciation marketing", Lot 3) — le client doit deja l'avoir
+  /// rejointe (voir `PoolApi.join`).
+  final String? poolId;
+
   const CreateOrderRequest({
     required this.quoteId,
     this.beneficiary,
@@ -277,6 +282,7 @@ class CreateOrderRequest {
     this.note,
     this.purpose,
     this.purposeDetails,
+    this.poolId,
   }) : assert(
           (beneficiary == null) != (supplierId == null),
           'Exactement un de beneficiary/supplierId doit etre fourni.',
@@ -289,6 +295,7 @@ class CreateOrderRequest {
         'note': note,
         'purpose': purpose?.code,
         'purposeDetails': purposeDetails,
+        'poolId': poolId,
       };
 }
 

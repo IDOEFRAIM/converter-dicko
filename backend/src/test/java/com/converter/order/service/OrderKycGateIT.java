@@ -25,7 +25,7 @@ class OrderKycGateIT extends AbstractOrderPipelineIT {
 
     private ResponseEntity<ErrorResponse> createOrderRaw(String userToken, java.util.UUID quoteId) {
         return restTemplate.exchange("/api/v1/orders", HttpMethod.POST,
-                new HttpEntity<>(new CreateOrderRequest(quoteId, alipayBeneficiary(), null, null, null, null),
+                new HttpEntity<>(new CreateOrderRequest(quoteId, alipayBeneficiary(), null, null, null, null, null),
                         auth(userToken)),
                 ErrorResponse.class);
     }

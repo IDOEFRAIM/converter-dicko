@@ -74,6 +74,15 @@ public class Order extends BaseEntity {
     @Column(name = "supplier_id")
     private UUID supplierId;
 
+    /**
+     * Ruee collective a laquelle cet ordre contribue, optionnelle (mission "differenciation
+     * marketing", Lot 3) — {@code null} pour l'immense majorite des ordres. Assignee une seule
+     * fois par {@code OrderService#create} via {@link #assignToPool}, jamais modifiable ensuite :
+     * mirroir du meme principe de tracabilite figee que {@link #supplierId}.
+     */
+    @Column(name = "pool_id")
+    private UUID poolId;
+
     /** Motif du transfert, optionnel — voir {@link Purpose}. Nullable pour les ordres crees avant son introduction. */
     @Enumerated(EnumType.STRING)
     @Column(name = "purpose", length = 24)
@@ -164,6 +173,11 @@ public class Order extends BaseEntity {
         return !asOf.isBefore(paymentDeadlineAt);
     }
 
+    /** A appeler une seule fois, juste apres la construction (voir la Javadoc de {@link #poolId}). */
+    public void assignToPool(UUID poolId) {
+        this.poolId = poolId;
+    }
+
     /**
      * Applique un statut deja valide par {@code OrderStateMachine}.
      * N'effectue aucune verification de legalite elle-meme.
@@ -236,6 +250,10 @@ public class Order extends BaseEntity {
 
     public UUID getSupplierId() {
         return supplierId;
+    }
+
+    public UUID getPoolId() {
+        return poolId;
     }
 
     public Purpose getPurpose() {

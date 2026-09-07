@@ -75,6 +75,11 @@ class Quote {
   final DateTime createdAt;
   final DateTime expiresAt;
 
+  /// Vrai si une reduction issue d'une Ruee collective reussie a ete appliquee
+  /// a CE devis (mission "differenciation marketing", Lot 3) — jamais
+  /// retroactif, uniquement le prochain devis d'un participant recompense.
+  final bool poolRewardApplied;
+
   const Quote({
     required this.id,
     required this.direction,
@@ -86,6 +91,7 @@ class Quote {
     required this.status,
     required this.createdAt,
     required this.expiresAt,
+    required this.poolRewardApplied,
   });
 
   bool get isExpired => status == QuoteStatus.expired || DateTime.now().toUtc().isAfter(expiresAt);
@@ -104,6 +110,7 @@ class Quote {
       status: QuoteStatus.fromCode(json['status'] as String?),
       createdAt: DateTime.parse(json['createdAt'] as String),
       expiresAt: DateTime.parse(json['expiresAt'] as String),
+      poolRewardApplied: json['poolRewardApplied'] as bool? ?? false,
     );
   }
 }

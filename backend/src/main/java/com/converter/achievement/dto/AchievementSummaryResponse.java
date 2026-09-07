@@ -21,6 +21,7 @@ public record AchievementSummaryResponse(
         long completedTransferCount,
         BigDecimal totalAmountXofCompleted,
         BigDecimal currentMonthAmountXofCompleted,
+        long poolsSucceededCount,
         long xp,
         String badgeCode,
         String badgeLabel,

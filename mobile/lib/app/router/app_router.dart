@@ -16,8 +16,11 @@ import '../../features/orders/presentation/order_detail_page.dart';
 import '../../features/orders/presentation/order_list_page.dart';
 import '../../features/orders/presentation/order_tracking_page.dart';
 import '../../features/payment/presentation/payment_submit_page.dart';
+import '../../features/pools/presentation/my_pools_page.dart';
+import '../../features/pools/presentation/pool_create_page.dart';
+import '../../features/pools/presentation/pool_detail_page.dart';
+import '../../features/pools/presentation/pool_join_page.dart';
 import '../../features/preferred_rate/presentation/preferred_rate_page.dart';
-import '../../features/quote/models/quote_models.dart';
 import '../../features/quote/presentation/quote_create_page.dart';
 import '../../features/rates/presentation/rate_alerts_page.dart';
 import '../../features/rates/presentation/rate_history_page.dart';
@@ -102,7 +105,26 @@ GoRouter buildAppRouter(AuthSession authSession) {
                 routes: [
                   GoRoute(
                     path: 'orders/new',
-                    builder: (context, state) => OrderCreatePage(quote: state.extra as Quote),
+                    builder: (context, state) {
+                      final args = state.extra as OrderCreateArgs;
+                      return OrderCreatePage(quote: args.quote, poolId: args.poolId);
+                    },
+                  ),
+                  // Routes statiques ('pools', 'pools/new', 'pools/join') DOIVENT precéder
+                  // 'pools/:id' dans cette liste : go_router retient la premiere correspondance,
+                  // sans quoi 'new'/'join' seraient captures comme un identifiant de Ruee.
+                  GoRoute(path: 'pools', builder: (context, state) => const MyPoolsPage()),
+                  GoRoute(path: 'pools/new', builder: (context, state) => const PoolCreatePage()),
+                  GoRoute(path: 'pools/join', builder: (context, state) => const PoolJoinPage()),
+                  GoRoute(
+                    path: 'pools/:id',
+                    builder: (context, state) => PoolDetailPage(poolId: state.pathParameters['id']!),
+                    routes: [
+                      GoRoute(
+                        path: 'checkout',
+                        builder: (context, state) => QuoteCreatePage(poolId: state.pathParameters['id']),
+                      ),
+                    ],
                   ),
                 ],
               ),

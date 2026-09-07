@@ -40,7 +40,7 @@ class OrderHistoryHttpIT extends AbstractOrderPipelineIT {
     private OrderDetailResponse createOrderWithPurpose(String userToken, UUID quoteId, Purpose purpose) {
         ResponseEntity<ApiResponse<OrderDetailResponse>> response = restTemplate.exchange("/api/v1/orders",
                 HttpMethod.POST,
-                new HttpEntity<>(new CreateOrderRequest(quoteId, alipayBeneficiary(), "test", null, purpose, null),
+                new HttpEntity<>(new CreateOrderRequest(quoteId, alipayBeneficiary(), "test", null, purpose, null, null),
                         auth(userToken)),
                 new ParameterizedTypeReference<ApiResponse<OrderDetailResponse>>() {
                 });

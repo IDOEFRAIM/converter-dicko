@@ -11,6 +11,7 @@ import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/corridor.dart';
 import '../../../shared/widgets/money_display.dart';
 import '../../../shared/widgets/primary_action.dart';
+import '../../orders/presentation/order_create_page.dart';
 import '../application/quote_create_controller.dart';
 import '../data/quote_api.dart';
 import '../models/quote_models.dart';
@@ -18,20 +19,28 @@ import '../models/quote_models.dart';
 /// "Vous envoyez / Le beneficiaire recoit" (mission section 20). Point
 /// d'entree principal du parcours de paiement, accessible depuis l'onglet
 /// "Payer" et depuis le bouton "Payer un fournisseur" du Home.
+///
+/// [poolId] optionnel (mission "differenciation marketing", Lot 3) : quand
+/// non nul, l'ordre cree en bout de parcours contribuera a cette Ruee
+/// collective (voir [OrderCreateArgs]).
 class QuoteCreatePage extends StatelessWidget {
-  const QuoteCreatePage({super.key});
+  final String? poolId;
+
+  const QuoteCreatePage({super.key, this.poolId});
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) => QuoteCreateController(context.read<QuoteApi>()),
-      child: const _QuoteCreateView(),
+      child: _QuoteCreateView(poolId: poolId),
     );
   }
 }
 
 class _QuoteCreateView extends StatefulWidget {
-  const _QuoteCreateView();
+  final String? poolId;
+
+  const _QuoteCreateView({this.poolId});
 
   @override
   State<_QuoteCreateView> createState() => _QuoteCreateViewState();
@@ -63,7 +72,7 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
     // une fois l'ordre cree, cet ecran navigue lui-meme en `go()` vers le
     // detail de l'ordre (onglet "Activite"), la transaction etant terminee.
     if (context.mounted) {
-      context.push('/pay/orders/new', extra: accepted);
+      context.push('/pay/orders/new', extra: OrderCreateArgs(quote: accepted, poolId: widget.poolId));
     }
   }
 
@@ -73,7 +82,17 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
     final quote = controller.quote;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Payer un fournisseur')),
+      appBar: AppBar(
+        title: const Text('Payer un fournisseur'),
+        actions: [
+          if (widget.poolId == null)
+            IconButton(
+              onPressed: () => context.push('/pay/pools'),
+              icon: const Icon(Icons.groups_outlined),
+              tooltip: 'Mes Ruees',
+            ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -122,6 +141,29 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
   List<Widget> _buildQuoteResult(BuildContext context, QuoteCreateController controller, Quote quote) {
     final isExpired = quote.isExpired;
     return [
+      if (quote.poolRewardApplied) ...[
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.positiveSurface,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.celebration_outlined, color: AppColors.positive, size: 18),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Reduction Ruee collective appliquee a ce devis !',
+                  style: AppTypography.body.copyWith(color: AppColors.positive, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+      ],
       Container(
         width: double.infinity,
         padding: const EdgeInsets.all(AppSpacing.lg),

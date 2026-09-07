@@ -36,7 +36,16 @@ public enum SettingKey {
     RATE_MAX_AGE_MINUTES(SettingType.INTEGER),
 
     /** Montant XOF (inclus) a partir duquel la verification d'identite (KYC) est obligatoire pour creer un ordre. */
-    KYC_REQUIRED_THRESHOLD_XOF(SettingType.DECIMAL);
+    KYC_REQUIRED_THRESHOLD_XOF(SettingType.DECIMAL),
+
+    /**
+     * Points de marge retires (jamais en dessous de zero) sur LE PROCHAIN devis d'un participant
+     * d'une Ruee reussie (mission "differenciation marketing", Lot 3) — jamais applique
+     * retroactivement a l'ordre qui a rempli l'objectif (immutabilite du pricing deja fige, voir
+     * {@code QuoteService}). Snapshot sur chaque {@code Pool} a sa creation : une modification
+     * ulterieure de ce reglage n'affecte jamais une Ruee deja en cours.
+     */
+    POOL_REWARD_MARGIN_REDUCTION_PERCENTAGE(SettingType.DECIMAL);
 
     private final SettingType type;
 

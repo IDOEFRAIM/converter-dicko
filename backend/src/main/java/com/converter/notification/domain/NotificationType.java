@@ -14,5 +14,9 @@ public enum NotificationType {
     /** L'ordre a expire faute de paiement dans le delai imparti ; sa reservation a ete liberee (passe 2, P2-1). */
     ORDER_EXPIRED,
     /** Le taux client public a atteint l'objectif d'une {@code RateAlert} (Phase 6). */
-    RATE_ALERT_TRIGGERED
+    RATE_ALERT_TRIGGERED,
+    /** L'objectif collectif d'une Ruee (mission "differenciation marketing", Lot 3) a ete atteint. */
+    POOL_SUCCEEDED,
+    /** Une Ruee a expire (J+timer) sans atteindre son objectif. */
+    POOL_EXPIRED
 }

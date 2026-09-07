@@ -81,6 +81,15 @@ public class Quote extends BaseEntity {
     @Column(name = "cost_configuration_id", nullable = false)
     private UUID costConfigurationId;
 
+    /**
+     * Vrai si une reduction de marge issue d'une Ruee collective reussie (mission
+     * "differenciation marketing", Lot 3) a ete appliquee a CE devis -- fige a la creation, jamais
+     * recalcule (voir {@code QuoteService#create}, qui consomme la recompense dans la meme
+     * transaction que ce devis).
+     */
+    @Column(name = "pool_reward_applied", nullable = false)
+    private boolean poolRewardApplied;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 16)
     private QuoteStatus status;
@@ -111,6 +120,17 @@ public class Quote extends BaseEntity {
                 UUID costConfigurationId,
                 Instant createdAt,
                 Instant expiresAt) {
+        this(userId, direction, pricing, costConfigurationId, createdAt, expiresAt, false);
+    }
+
+    /** Variante Lot 3 : {@code poolRewardApplied}, voir sa Javadoc de champ. */
+    public Quote(UUID userId,
+                QuoteDirection direction,
+                PricingResult pricing,
+                UUID costConfigurationId,
+                Instant createdAt,
+                Instant expiresAt,
+                boolean poolRewardApplied) {
         this.userId = userId;
         this.direction = direction;
         this.amountXof = pricing.amountXof();
@@ -126,6 +146,7 @@ public class Quote extends BaseEntity {
         this.status = QuoteStatus.ACTIVE;
         this.createdAt = createdAt;
         this.expiresAt = expiresAt;
+        this.poolRewardApplied = poolRewardApplied;
     }
 
     // -----------------------------------------------------------------
@@ -228,6 +249,10 @@ public class Quote extends BaseEntity {
 
     public UUID getCostConfigurationId() {
         return costConfigurationId;
+    }
+
+    public boolean isPoolRewardApplied() {
+        return poolRewardApplied;
     }
 
     public QuoteStatus getStatus() {

@@ -171,7 +171,7 @@ class OrderSupplierIT extends AbstractOrderPipelineIT {
         String intruder = tokenFor(userRepository.findById(intruderId).orElseThrow());
         QuoteResponse quote = createAcceptedQuote(intruder, "50000");
 
-        CreateOrderRequest request = new CreateOrderRequest(quote.id(), null, "test", supplier.id(), null, null);
+        CreateOrderRequest request = new CreateOrderRequest(quote.id(), null, "test", supplier.id(), null, null, null);
 
         assertThatThrownBy(() -> orderService.create(request, intruderId))
                 .isInstanceOf(BusinessException.class)
@@ -208,7 +208,7 @@ class OrderSupplierIT extends AbstractOrderPipelineIT {
         ResponseEntity<ApiResponse<OrderDetailResponse>> response = restTemplate.exchange(
                 "/api/v1/orders", HttpMethod.POST,
                 new HttpEntity<>(new CreateOrderRequest(quote.id(), alipayBeneficiary(), "test", null,
-                        Purpose.IMPORT_GOODS, "Bulk textile order, batch 12"), auth(user)),
+                        Purpose.IMPORT_GOODS, "Bulk textile order, batch 12", null), auth(user)),
                 new ParameterizedTypeReference<ApiResponse<OrderDetailResponse>>() {
                 });
 
@@ -241,7 +241,7 @@ class OrderSupplierIT extends AbstractOrderPipelineIT {
         ResponseEntity<ApiResponse<OrderDetailResponse>> response = restTemplate.exchange(
                 "/api/v1/orders", HttpMethod.POST,
                 new HttpEntity<>(new CreateOrderRequest(quote.id(), alipayBeneficiary(), "test", supplier.id(),
-                        null, null), auth(user)),
+                        null, null, null), auth(user)),
                 new ParameterizedTypeReference<ApiResponse<OrderDetailResponse>>() {
                 });
 
@@ -258,7 +258,7 @@ class OrderSupplierIT extends AbstractOrderPipelineIT {
 
         ResponseEntity<ApiResponse<OrderDetailResponse>> response = restTemplate.exchange(
                 "/api/v1/orders", HttpMethod.POST,
-                new HttpEntity<>(new CreateOrderRequest(quote.id(), null, "test", null, null, null), auth(user)),
+                new HttpEntity<>(new CreateOrderRequest(quote.id(), null, "test", null, null, null, null), auth(user)),
                 new ParameterizedTypeReference<ApiResponse<OrderDetailResponse>>() {
                 });
 
