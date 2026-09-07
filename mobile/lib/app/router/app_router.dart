@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_session.dart';
+import '../../features/achievements/presentation/my_gains_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
 import '../../features/auth/presentation/splash_page.dart';
@@ -83,7 +84,15 @@ GoRouter buildAppRouter(AuthSession authSession) {
         builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
         branches: [
           StatefulShellBranch(
-            routes: [GoRoute(path: '/home', builder: (context, state) => const HomePage())],
+            routes: [
+              GoRoute(
+                path: '/home',
+                builder: (context, state) => const HomePage(),
+                routes: [
+                  GoRoute(path: 'gains', builder: (context, state) => const MyGainsPage()),
+                ],
+              ),
+            ],
           ),
           StatefulShellBranch(
             routes: [

@@ -5,6 +5,7 @@ import '../core/auth/auth_session.dart';
 import '../core/config/app_config.dart';
 import '../core/network/api_client.dart';
 import '../core/theme/app_theme.dart';
+import '../features/achievements/data/achievement_api.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/business/data/business_api.dart';
 import '../features/home/application/home_controller.dart';
@@ -54,11 +55,13 @@ class ConverterApp extends StatelessWidget {
         Provider<NotificationApi>(create: (context) => NotificationApi(context.read<ApiClient>())),
         Provider<BusinessApi>(create: (context) => BusinessApi(context.read<ApiClient>())),
         Provider<PreferredRateApi>(create: (context) => PreferredRateApi(context.read<ApiClient>())),
+        Provider<AchievementApi>(create: (context) => AchievementApi(context.read<ApiClient>())),
         ChangeNotifierProvider<HomeController>(
           create: (context) => HomeController(
             rateHistoryApi: context.read<RateHistoryApi>(),
             orderApi: context.read<OrderApi>(),
             supplierApi: context.read<SupplierApi>(),
+            achievementApi: context.read<AchievementApi>(),
           ),
         ),
       ],

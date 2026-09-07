@@ -6,6 +6,8 @@ import '../../../core/auth/auth_session.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/experience_theme.dart';
+import '../../../shared/models/current_user.dart';
 import '../../../shared/models/money.dart';
 import '../../../shared/utils/async_value.dart';
 import '../../../shared/utils/date_formatting.dart';
@@ -17,6 +19,7 @@ import '../../../shared/widgets/primary_action.dart';
 import '../../../shared/widgets/rate_display.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../../shared/widgets/status_badge.dart';
+import '../../achievements/models/achievement_models.dart';
 import '../../orders/models/order_models.dart';
 import '../../rates/models/rate_models.dart';
 import '../../suppliers/models/supplier_models.dart';
@@ -44,7 +47,8 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<HomeController>();
-    final user = context.watch<AuthSession>().currentUser;
+    final authSession = context.watch<AuthSession>();
+    final user = authSession.currentUser;
 
     return Scaffold(
       body: SafeArea(
@@ -68,6 +72,8 @@ class _HomePageState extends State<HomePage> {
                 icon: Icons.send_outlined,
                 onPressed: () => context.go('/pay'),
               ),
+              const SizedBox(height: AppSpacing.xl),
+              _AchievementsCard(state: controller.achievements, profile: authSession.experienceProfile),
               const SizedBox(height: AppSpacing.xxl),
               SectionHeader(
                 title: 'DERNIERE OPERATION',
@@ -246,6 +252,69 @@ class _SuppliersPreview extends StatelessWidget {
                 ),
               )
               .toList(growable: false),
+        );
+      },
+    );
+  }
+}
+
+/// "Mes gains" en un coup d'oeil (mission "differenciation marketing") : un
+/// compteur sobre pour PRO, un badge/XP pour STUDENT_MALE/FEMALE — voir
+/// [MyGainsPage] pour le detail complet.
+class _AchievementsCard extends StatelessWidget {
+  final AsyncValue<AchievementSummary> state;
+  final ExperienceProfile profile;
+
+  const _AchievementsCard({required this.state, required this.profile});
+
+  @override
+  Widget build(BuildContext context) {
+    return state.when(
+      loading: () => const SizedBox(height: 72, child: LoadingView()),
+      // Purement indicatif sur Home : un echec ici ne doit jamais bloquer le
+      // reste de l'ecran (voir MyGainsPage pour un retry dedie).
+      error: (_) => const SizedBox.shrink(),
+      data: (summary) {
+        final isPro = profile == ExperienceProfile.pro;
+        final gradient = isPro ? null : ExperiencePalette.gradientFor(profile);
+        final foreground = gradient?.foreground ?? AppColors.navy;
+
+        return InkWell(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          onTap: () => context.push('/home/gains'),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: isPro ? Colors.white : null,
+              gradient: gradient?.gradient,
+              border: isPro ? Border.all(color: AppColors.outline) : null,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isPro ? 'VOLUME CE MOIS-CI' : (summary.badgeLabel ?? 'AUCUN BADGE ENCORE'),
+                        style: AppTypography.eyebrow.copyWith(color: isPro ? AppColors.inkMuted : foreground),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        isPro
+                            ? Money(summary.currentMonthAmountXofCompleted, AppCurrency.xof).formattedWithCurrency()
+                            : '${summary.xp} XP',
+                        style: AppTypography.titleMedium.copyWith(color: isPro ? AppColors.ink : foreground),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: foreground.withValues(alpha: isPro ? 1 : 0.85)),
+              ],
+            ),
+          ),
         );
       },
     );

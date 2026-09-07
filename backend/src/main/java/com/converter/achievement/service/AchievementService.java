@@ -1,0 +1,135 @@
+package com.converter.achievement.service;
+
+import com.converter.achievement.dto.AchievementSummaryResponse;
+import com.converter.common.exception.ResourceNotFoundException;
+import com.converter.order.domain.OrderStatus;
+import com.converter.order.repository.OrderRepository;
+import com.converter.order.repository.OrderStatusAggregate;
+import com.converter.user.domain.ExperienceProfile;
+import com.converter.user.domain.User;
+import com.converter.user.repository.UserRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * "Mes gains" (mission "differenciation marketing", Lot 2) : une seule lecture agregee, jamais un
+ * compteur mutable persiste separement — {@code xp} et le palier de badge sont deriverives a
+ * chaque appel a partir des ordres {@code COMPLETED} deja en base (meme discipline que {@code
+ * BusinessPaymentReportService} : {@code OrderRepository#aggregateByStatus}, jamais un chargement
+ * complet suivi d'une somme cote Java).
+ *
+ * <p><b>PRO ne recoit jamais de badge</b> (mission : "Uniquement un compteur d'economies
+ * mensuelles" pour ce profil, aucune gamification) — voir {@link #toResponse}. Seuls les profils
+ * STUDENT_MALE/STUDENT_FEMALE progressent a travers des paliers, avec un vocabulaire de badges
+ * distinct par profil (mission section "LES 3 INTERFACES").
+ *
+ * <p>Contrairement a {@code BusinessPaymentReportService}, cet endpoint n'est jamais reserve a un
+ * sous-ensemble d'utilisateurs (pas de 404 conditionnel) : tout compte authentifie a des gains,
+ * memes nuls.
+ */
+@Service
+public class AchievementService {
+
+    /** XP = nombre d'ordres COMPLETED * ce facteur — formule volontairement simple et transparente,
+     * jamais une valeur mutable stockee separement (voir la Javadoc de classe). */
+    private static final long XP_PER_COMPLETED_TRANSFER = 100;
+
+    private static final List<BadgeTier> STUDENT_MALE_TIERS = List.of(
+            new BadgeTier(1, "GUERRIER", "Guerrier"),
+            new BadgeTier(5, "BATISSEUR", "Batisseur"),
+            new BadgeTier(15, "COMMANDANT", "Commandant"),
+            new BadgeTier(30, "LEGENDE", "Legende"));
+
+    private static final List<BadgeTier> STUDENT_FEMALE_TIERS = List.of(
+            new BadgeTier(1, "ECLAIREUSE", "Eclaireuse"),
+            new BadgeTier(5, "PROTECTRICE", "Protectrice"),
+            new BadgeTier(15, "AMBASSADRICE", "Ambassadrice"));
+
+    private final OrderRepository orderRepository;
+    private final UserRepository userRepository;
+    private final Clock clock;
+
+    public AchievementService(OrderRepository orderRepository, UserRepository userRepository, Clock clock) {
+        this.orderRepository = orderRepository;
+        this.userRepository = userRepository;
+        this.clock = clock;
+    }
+
+    @Transactional(readOnly = true)
+    public AchievementSummaryResponse summary(UUID userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> ResourceNotFoundException.user(userId));
+
+        List<OrderStatusAggregate> allTime = orderRepository.aggregateByStatus(userId, false, null, false, null);
+        OrderStatusAggregate completedAllTime = rowFor(allTime, OrderStatus.COMPLETED);
+        long completedCount = completedAllTime == null ? 0 : completedAllTime.count();
+        BigDecimal totalAmountXof = completedAllTime == null ? BigDecimal.ZERO : completedAllTime.totalAmountXof();
+
+        Instant startOfMonth = LocalDate.now(clock).withDayOfMonth(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+        List<OrderStatusAggregate> currentMonth = orderRepository.aggregateByStatus(
+                userId, true, startOfMonth, false, null);
+        OrderStatusAggregate completedThisMonth = rowFor(currentMonth, OrderStatus.COMPLETED);
+        BigDecimal currentMonthAmountXof = completedThisMonth == null
+                ? BigDecimal.ZERO
+                : completedThisMonth.totalAmountXof();
+
+        return toResponse(user.getExperienceProfile(), completedCount, totalAmountXof, currentMonthAmountXof);
+    }
+
+    private AchievementSummaryResponse toResponse(ExperienceProfile profile, long completedCount,
+                                                  BigDecimal totalAmountXof, BigDecimal currentMonthAmountXof) {
+        long xp = completedCount * XP_PER_COMPLETED_TRANSFER;
+        BadgeProgress progress = resolveBadgeProgress(profile, completedCount);
+        return new AchievementSummaryResponse(profile, completedCount, totalAmountXof, currentMonthAmountXof, xp,
+                progress.code(), progress.label(), progress.nextLabel(), progress.transfersUntilNext());
+    }
+
+    /**
+     * Pure, sans dependance (testee unitairement dans {@code AchievementServiceTest}, sans
+     * contexte Spring ni base) : {@code PRO} n'a jamais de badge (mission : compteur sobre
+     * uniquement) ; les autres profils progressent a travers leur propre vocabulaire de paliers.
+     */
+    static BadgeProgress resolveBadgeProgress(ExperienceProfile profile, long completedCount) {
+        if (profile == ExperienceProfile.PRO) {
+            return new BadgeProgress(null, null, null, null);
+        }
+
+        List<BadgeTier> tiers = profile == ExperienceProfile.STUDENT_MALE ? STUDENT_MALE_TIERS : STUDENT_FEMALE_TIERS;
+
+        BadgeTier current = null;
+        BadgeTier next = null;
+        for (BadgeTier tier : tiers) {
+            if (completedCount >= tier.threshold()) {
+                current = tier;
+            } else if (next == null) {
+                next = tier;
+            }
+        }
+
+        Long transfersUntilNext = next == null ? null : next.threshold() - completedCount;
+        return new BadgeProgress(
+                current == null ? null : current.code(),
+                current == null ? null : current.label(),
+                next == null ? null : next.label(),
+                transfersUntilNext);
+    }
+
+    private static OrderStatusAggregate rowFor(List<OrderStatusAggregate> rows, OrderStatus status) {
+        return rows.stream().filter(row -> row.status() == status).findFirst().orElse(null);
+    }
+
+    /** Palier de badge : {@code threshold} = nombre minimal d'ordres COMPLETED pour l'atteindre. */
+    private record BadgeTier(long threshold, String code, String label) {
+    }
+
+    /** Resultat pur de {@link #resolveBadgeProgress} — jamais expose directement, voir {@link #toResponse}. */
+    record BadgeProgress(String code, String label, String nextLabel, Long transfersUntilNext) {
+    }
+}
