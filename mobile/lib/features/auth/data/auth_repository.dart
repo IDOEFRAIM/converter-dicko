@@ -47,4 +47,14 @@ class AuthRepository {
   }
 
   Future<void> logout() => _session.clear();
+
+  /// Change l'habillage mobile du compte connecte — purement cosmetique,
+  /// jamais lie au taux ni aux frais (voir `AuthService.updateExperienceProfile`
+  /// backend). Met a jour [AuthSession] pour que le theme se rafraichisse
+  /// immediatement partout ou il est observe.
+  Future<void> updateExperienceProfile(ExperienceProfile profile) async {
+    final body = await _client.patch('/auth/me/experience-profile', data: {'experienceProfile': profile.code});
+    final user = CurrentUser.fromJson(body['data'] as Map<String, dynamic>);
+    _session.updateCurrentUser(user);
+  }
 }

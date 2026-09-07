@@ -1,6 +1,7 @@
 package com.converter.auth.dto;
 
 import com.converter.common.validation.PhoneNumber;
+import com.converter.user.domain.ExperienceProfile;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -34,6 +35,10 @@ public record RegisterRequest(
 
         @NotBlank(message = "Le nom est obligatoire")
         @Size(max = 80)
-        String lastName
+        String lastName,
+
+        @Schema(description = "Habillage mobile choisi a l'inscription — PRO par defaut si omis",
+                example = "STUDENT_MALE")
+        ExperienceProfile experienceProfile
 ) {
 }

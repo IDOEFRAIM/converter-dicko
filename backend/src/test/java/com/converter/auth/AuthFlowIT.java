@@ -5,7 +5,9 @@ import com.converter.auth.dto.LoginRequest;
 import com.converter.auth.dto.RegisterRequest;
 import com.converter.common.api.ApiResponse;
 import com.converter.common.api.ErrorResponse;
+import com.converter.auth.dto.UpdateExperienceProfileRequest;
 import com.converter.support.AbstractIntegrationTest;
+import com.converter.user.domain.ExperienceProfile;
 import com.converter.user.dto.UserResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpEntity;
@@ -26,7 +28,7 @@ class AuthFlowIT extends AbstractIntegrationTest {
     @Test
     void registerThenLoginThenMe_succeeds() {
         String phone = uniquePhone();
-        RegisterRequest register = new RegisterRequest(phone, "correct-horse-battery", "Jean", "Kouassi");
+        RegisterRequest register = new RegisterRequest(phone, "correct-horse-battery", "Jean", "Kouassi", null);
 
         ResponseEntity<ApiResponse<AuthResponse>> registerResponse = restTemplate.exchange(
                 "/api/auth/register", HttpMethod.POST,
@@ -61,12 +63,60 @@ class AuthFlowIT extends AbstractIntegrationTest {
 
         assertThat(meResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(meResponse.getBody().data().phone()).isEqualTo(phone);
+        // PRO par defaut : jamais de bascule silencieuse vers un habillage jamais choisi.
+        assertThat(meResponse.getBody().data().experienceProfile()).isEqualTo(ExperienceProfile.PRO);
+    }
+
+    @Test
+    void register_withExplicitExperienceProfile_isPersisted() {
+        String phone = uniquePhone();
+        RegisterRequest register = new RegisterRequest(
+                phone, "correct-horse-battery", "Ali", "Traore", ExperienceProfile.STUDENT_MALE);
+
+        ResponseEntity<ApiResponse<AuthResponse>> registerResponse = restTemplate.exchange(
+                "/api/auth/register", HttpMethod.POST,
+                new HttpEntity<>(register),
+                new org.springframework.core.ParameterizedTypeReference<ApiResponse<AuthResponse>>() {
+                });
+
+        assertThat(registerResponse.getBody().data().user().experienceProfile())
+                .isEqualTo(ExperienceProfile.STUDENT_MALE);
+    }
+
+    @Test
+    void updateExperienceProfile_changesItForSubsequentMeCalls() {
+        String phone = uniquePhone();
+        restTemplate.postForEntity("/api/auth/register",
+                new RegisterRequest(phone, "correct-horse-battery", "Fatou", "Ba", null), ApiResponse.class);
+        ResponseEntity<ApiResponse<AuthResponse>> loginResponse = restTemplate.exchange(
+                "/api/auth/login", HttpMethod.POST,
+                new HttpEntity<>(new LoginRequest(phone, "correct-horse-battery")),
+                new org.springframework.core.ParameterizedTypeReference<ApiResponse<AuthResponse>>() {
+                });
+        String token = loginResponse.getBody().data().accessToken();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        ResponseEntity<ApiResponse<UserResponse>> updateResponse = restTemplate.exchange(
+                "/api/auth/me/experience-profile", HttpMethod.PATCH,
+                new HttpEntity<>(new UpdateExperienceProfileRequest(ExperienceProfile.STUDENT_FEMALE), headers),
+                new org.springframework.core.ParameterizedTypeReference<ApiResponse<UserResponse>>() {
+                });
+        assertThat(updateResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(updateResponse.getBody().data().experienceProfile()).isEqualTo(ExperienceProfile.STUDENT_FEMALE);
+
+        ResponseEntity<ApiResponse<UserResponse>> meResponse = restTemplate.exchange(
+                "/api/auth/me", HttpMethod.GET,
+                new HttpEntity<>(headers),
+                new org.springframework.core.ParameterizedTypeReference<ApiResponse<UserResponse>>() {
+                });
+        assertThat(meResponse.getBody().data().experienceProfile()).isEqualTo(ExperienceProfile.STUDENT_FEMALE);
     }
 
     @Test
     void register_withAlreadyUsedPhone_returns409() {
         String phone = uniquePhone();
-        RegisterRequest register = new RegisterRequest(phone, "first-password-123", "Awa", "Diallo");
+        RegisterRequest register = new RegisterRequest(phone, "first-password-123", "Awa", "Diallo", null);
         restTemplate.postForEntity("/api/auth/register", register, ApiResponse.class);
 
         ResponseEntity<ErrorResponse> second = restTemplate.postForEntity(
@@ -80,7 +130,7 @@ class AuthFlowIT extends AbstractIntegrationTest {
     void login_withWrongPassword_returns401WithGenericMessage() {
         String phone = uniquePhone();
         restTemplate.postForEntity("/api/auth/register",
-                new RegisterRequest(phone, "the-real-password", "Fatou", "Sy"), ApiResponse.class);
+                new RegisterRequest(phone, "the-real-password", "Fatou", "Sy", null), ApiResponse.class);
 
         ResponseEntity<ErrorResponse> response = restTemplate.postForEntity(
                 "/api/auth/login", new LoginRequest(phone, "wrong-password"), ErrorResponse.class);
@@ -110,7 +160,7 @@ class AuthFlowIT extends AbstractIntegrationTest {
 
     @Test
     void register_withInvalidPhoneFormat_returns400ValidationError() {
-        RegisterRequest invalid = new RegisterRequest("0700000000", "some-password-123", "Jean", "Kouassi");
+        RegisterRequest invalid = new RegisterRequest("0700000000", "some-password-123", "Jean", "Kouassi", null);
 
         ResponseEntity<ErrorResponse> response = restTemplate.postForEntity(
                 "/api/auth/register", invalid, ErrorResponse.class);

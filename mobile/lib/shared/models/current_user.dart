@@ -1,3 +1,30 @@
+/// Habillage mobile choisi par le client — miroir de
+/// `com.converter.user.domain.ExperienceProfile`. Pilote uniquement les
+/// couleurs/le ton de l'interface, jamais le taux, les frais ni aucune regle
+/// metier : memes calculs, meme backend pour les trois valeurs.
+enum ExperienceProfile {
+  pro,
+  studentMale,
+  studentFemale;
+
+  String get code => switch (this) {
+        ExperienceProfile.pro => 'PRO',
+        ExperienceProfile.studentMale => 'STUDENT_MALE',
+        ExperienceProfile.studentFemale => 'STUDENT_FEMALE',
+      };
+
+  static ExperienceProfile fromCode(String? code) {
+    switch (code) {
+      case 'STUDENT_MALE':
+        return ExperienceProfile.studentMale;
+      case 'STUDENT_FEMALE':
+        return ExperienceProfile.studentFemale;
+      default:
+        return ExperienceProfile.pro;
+    }
+  }
+}
+
 /// Compte utilisateur connecte — miroir de `UserResponse` / `CurrentUser`
 /// (backend `com.converter.user.dto.UserResponse`, Angular `user.model.ts`).
 ///
@@ -14,6 +41,7 @@ class CurrentUser {
   final List<String> roles;
   final DateTime createdAt;
   final DateTime? lastLoginAt;
+  final ExperienceProfile experienceProfile;
 
   const CurrentUser({
     required this.id,
@@ -25,6 +53,7 @@ class CurrentUser {
     required this.roles,
     required this.createdAt,
     required this.lastLoginAt,
+    required this.experienceProfile,
   });
 
   bool get isAdmin => roles.contains('ADMIN');
@@ -44,6 +73,7 @@ class CurrentUser {
       roles: (json['roles'] as List<dynamic>? ?? const []).map((e) => e as String).toList(growable: false),
       createdAt: DateTime.parse(json['createdAt'] as String),
       lastLoginAt: json['lastLoginAt'] == null ? null : DateTime.parse(json['lastLoginAt'] as String),
+      experienceProfile: ExperienceProfile.fromCode(json['experienceProfile'] as String?),
     );
   }
 }

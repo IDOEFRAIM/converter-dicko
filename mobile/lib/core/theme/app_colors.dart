@@ -41,4 +41,28 @@ abstract final class AppColors {
     colors: [navyLight, navy, navyDark],
     stops: [0.0, 0.55, 1.0],
   );
+
+  // ---- Habillage "Mode Epopee" (STUDENT_MALE) — degrade chaud, reutilise
+  // ochre/chinaRed deja dans la palette de marque plutot que d'introduire un
+  // vocabulaire de couleurs totalement disjoint (mission section 6/7).
+  static const epicPrimary = Color(0xFF7A1E3C);
+
+  static const epicGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [epicPrimary, ochre, chinaRed],
+    stops: [0.0, 0.55, 1.0],
+  );
+
+  // ---- Habillage "Mode Histoire" (STUDENT_FEMALE) — degrade pastel.
+  static const blushPink = Color(0xFFF3C9D8);
+  static const softMauve = Color(0xFFB27DC4);
+  static const skyBlue = Color(0xFFAEDFF7);
+
+  static const storyGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [blushPink, softMauve, skyBlue],
+    stops: [0.0, 0.55, 1.0],
+  );
 }

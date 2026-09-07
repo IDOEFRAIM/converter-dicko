@@ -6,7 +6,9 @@ import '../../../core/errors/api_exception.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../shared/models/current_user.dart';
 import '../../../shared/utils/validators.dart';
+import '../../../shared/widgets/experience_profile_picker.dart';
 import '../../../shared/widgets/primary_action.dart';
 import '../data/auth_repository.dart';
 import '../models/auth_models.dart';
@@ -31,6 +33,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _submitting = false;
   String? _errorMessage;
   bool _obscurePassword = true;
+  ExperienceProfile _experienceProfile = ExperienceProfile.pro;
 
   @override
   void dispose() {
@@ -58,6 +61,7 @@ class _RegisterPageState extends State<RegisterPage> {
           password: _passwordController.text,
           firstName: _firstNameController.text.trim(),
           lastName: _lastNameController.text.trim(),
+          experienceProfile: _experienceProfile,
         ),
       );
       if (!mounted) return;
@@ -149,7 +153,19 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   validator: Validators.password,
                 ),
-                const SizedBox(height: AppSpacing.xxl),
+                const SizedBox(height: AppSpacing.xl),
+                Text('CHOISIS TON HABILLAGE', style: AppTypography.eyebrow),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Purement esthetique — meme taux, memes frais pour tout le monde. Modifiable plus tard dans "Plus".',
+                  style: AppTypography.caption,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                ExperienceProfilePicker(
+                  selected: _experienceProfile,
+                  onChanged: (profile) => setState(() => _experienceProfile = profile),
+                ),
+                const SizedBox(height: AppSpacing.xl),
                 PrimaryAction(label: 'Creer mon compte', onPressed: _submit, loading: _submitting),
               ],
             ),

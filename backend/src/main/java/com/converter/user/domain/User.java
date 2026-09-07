@@ -78,6 +78,15 @@ public class User extends AuditableEntity {
     @Column(name = "last_login_at")
     private Instant lastLoginAt;
 
+    /**
+     * Profil d'experience marketing (habillage mobile uniquement) — voir
+     * {@link ExperienceProfile}. Jamais controle par un administrateur,
+     * contrairement a {@link #kycVerified}.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "experience_profile", nullable = false, length = 20)
+    private ExperienceProfile experienceProfile = ExperienceProfile.PRO;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_roles",
@@ -141,6 +150,10 @@ public class User extends AuditableEntity {
 
     public void addRole(Role role) {
         this.roles.add(role);
+    }
+
+    public void changeExperienceProfile(ExperienceProfile profile) {
+        this.experienceProfile = profile;
     }
 
     public void recordLogin(Instant at) {
@@ -225,6 +238,10 @@ public class User extends AuditableEntity {
 
     public Instant getLastLoginAt() {
         return lastLoginAt;
+    }
+
+    public ExperienceProfile getExperienceProfile() {
+        return experienceProfile;
     }
 
     public Set<Role> getRoles() {

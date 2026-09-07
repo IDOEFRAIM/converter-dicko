@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../core/auth/auth_session.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 
@@ -30,14 +32,20 @@ class Corridor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (level == CorridorLevel.hero) {
+      final experienceGradient = context.watch<AuthSession>().experienceGradient;
       return DecoratedBox(
         decoration: BoxDecoration(
-          gradient: AppColors.gradient,
+          gradient: experienceGradient.gradient,
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.lg),
-          child: _row(flagSize: 26, labelSize: 15, lineColor: Colors.white, labelColor: Colors.white),
+          child: _row(
+            flagSize: 26,
+            labelSize: 15,
+            lineColor: experienceGradient.foreground,
+            labelColor: experienceGradient.foreground,
+          ),
         ),
       );
     }

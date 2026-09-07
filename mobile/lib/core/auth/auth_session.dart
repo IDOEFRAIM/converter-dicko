@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:mobile/core/storage/secure_token_storage.dart';
 import '../../shared/models/current_user.dart';
+import '../theme/experience_theme.dart';
 
 /// Etat de session courant : jeton JWT + utilisateur connecte.
 ///
@@ -23,6 +24,12 @@ class AuthSession extends ChangeNotifier {
   String? get token => _token;
   CurrentUser? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
+
+  /// PRO tant qu'aucun utilisateur n'est connu (splash/login) — jamais de
+  /// bascule visuelle avant qu'un compte reel n'ait choisi un habillage.
+  ExperienceProfile get experienceProfile => _currentUser?.experienceProfile ?? ExperienceProfile.pro;
+
+  ExperienceGradient get experienceGradient => ExperiencePalette.gradientFor(experienceProfile);
 
   /// Vrai une fois que la tentative de restauration de session au demarrage
   /// (jeton persiste -> `GET /api/auth/me`) est terminee, succes ou echec.

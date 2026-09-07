@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/auth/auth_session.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
@@ -37,6 +38,8 @@ class _RateHistoryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<RateHistoryController>();
+    final experienceGradient = context.watch<AuthSession>().experienceGradient;
+    final heroForeground = experienceGradient.foreground;
 
     return Scaffold(
       appBar: AppBar(
@@ -89,7 +92,7 @@ class _RateHistoryView extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     decoration: BoxDecoration(
-                      gradient: AppColors.gradient,
+                      gradient: experienceGradient.gradient,
                       borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                     ),
                     child: Column(
@@ -97,21 +100,27 @@ class _RateHistoryView extends StatelessWidget {
                       children: [
                         Text(
                           'TAUX ACTUEL',
-                          style: AppTypography.eyebrow.copyWith(color: Colors.white.withValues(alpha: 0.85)),
+                          style: AppTypography.eyebrow.copyWith(color: heroForeground.withValues(alpha: 0.85)),
                         ),
                         const SizedBox(height: AppSpacing.xs),
-                        RateDisplay(customerRate: latest.customerRate, large: true, color: Colors.white),
+                        RateDisplay(customerRate: latest.customerRate, large: true, color: heroForeground),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
                           'Mis a jour le ${DateFormatting.dayTime(latest.recordedAt)}',
-                          style: AppTypography.caption.copyWith(color: Colors.white.withValues(alpha: 0.85)),
+                          style: AppTypography.caption.copyWith(color: heroForeground.withValues(alpha: 0.85)),
                         ),
                         if (variation != null) ...[
                           const SizedBox(height: AppSpacing.xs),
                           Text(
                             '${variation.percent > 0 ? '+' : ''}${variation.percent.toStringAsFixed(2)}% depuis le releve precedent',
                             style: AppTypography.caption.copyWith(
-                              color: variation.percent >= 0 ? const Color(0xFFB8F0C0) : const Color(0xFFFFD3D3),
+                              // Teintes choisies selon le contraste du degrade courant (voir
+                              // heroForeground) : un vert/rouge clair lirait mal sur un fond
+                              // pastel clair (Mode Histoire) tout comme il lirait bien sur un
+                              // fond sombre (PRO/Mode Epopee).
+                              color: heroForeground == Colors.white
+                                  ? (variation.percent >= 0 ? const Color(0xFFB8F0C0) : const Color(0xFFFFD3D3))
+                                  : (variation.percent >= 0 ? const Color(0xFF1B5E20) : const Color(0xFF8A1416)),
                               fontWeight: FontWeight.w700,
                             ),
                           ),

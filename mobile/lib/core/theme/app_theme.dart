@@ -1,18 +1,29 @@
 import 'package:flutter/material.dart';
 
+import '../../shared/models/current_user.dart';
 import 'app_colors.dart';
 import 'app_spacing.dart';
 import 'app_typography.dart';
+import 'experience_theme.dart';
 
 /// Theme Material central de l'application. Aucun widget ne doit ecrire
 /// `Color(0xFF...)` directement — toujours passer par [AppColors]/ce theme
 /// (mission section 16).
+///
+/// [forProfile] fait varier UNIQUEMENT l'accent de marque (boutons, barre de
+/// navigation, focus des champs, degrade) selon [ExperienceProfile] — jamais
+/// les tons neutres (fond ivoire, texte, bordures), qui restent identiques
+/// pour garder une lisibilite constante quel que soit l'habillage choisi.
 abstract final class AppTheme {
-  static ThemeData light() {
+  static ThemeData light() => forProfile(ExperienceProfile.pro);
+
+  static ThemeData forProfile(ExperienceProfile profile) {
+    final primary = ExperiencePalette.primaryFor(profile);
+
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.navy,
+      seedColor: primary,
       brightness: Brightness.light,
-      primary: AppColors.navy,
+      primary: primary,
       secondary: AppColors.ochre,
       error: AppColors.negative,
       surface: AppColors.surface,
@@ -30,9 +41,9 @@ abstract final class AppTheme {
         bodySmall: AppTypography.caption,
         labelLarge: AppTypography.button,
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.ivory,
-        foregroundColor: AppColors.navy,
+        foregroundColor: primary,
         elevation: 0,
         scrolledUnderElevation: 1,
         centerTitle: false,
@@ -50,9 +61,9 @@ abstract final class AppTheme {
       dividerTheme: const DividerThemeData(color: AppColors.outline, thickness: 1, space: 1),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.navy,
+          backgroundColor: primary,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: AppColors.navy.withValues(alpha: 0.4),
+          disabledBackgroundColor: primary.withValues(alpha: 0.4),
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
           textStyle: AppTypography.button,
@@ -61,17 +72,17 @@ abstract final class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.navy,
+          foregroundColor: primary,
           side: const BorderSide(color: AppColors.outline),
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
-          textStyle: AppTypography.bodyStrong.copyWith(color: AppColors.navy),
+          textStyle: AppTypography.bodyStrong.copyWith(color: primary),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.navy,
-          textStyle: AppTypography.bodyStrong.copyWith(color: AppColors.navy),
+          foregroundColor: primary,
+          textStyle: AppTypography.bodyStrong.copyWith(color: primary),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -88,7 +99,7 @@ abstract final class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-          borderSide: const BorderSide(color: AppColors.navy, width: 1.5),
+          borderSide: BorderSide(color: primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
@@ -101,18 +112,18 @@ abstract final class AppTheme {
       // ThemeData et ne serait jamais applique ici.
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.surface,
-        indicatorColor: AppColors.navy.withValues(alpha: 0.1),
+        indicatorColor: primary.withValues(alpha: 0.1),
         elevation: 0,
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
             fontSize: 12,
             fontWeight: states.contains(WidgetState.selected) ? FontWeight.w700 : FontWeight.w500,
-            color: states.contains(WidgetState.selected) ? AppColors.navy : AppColors.inkFaint,
+            color: states.contains(WidgetState.selected) ? primary : AppColors.inkFaint,
           ),
         ),
         iconTheme: WidgetStateProperty.resolveWith(
           (states) => IconThemeData(
-            color: states.contains(WidgetState.selected) ? AppColors.navy : AppColors.inkFaint,
+            color: states.contains(WidgetState.selected) ? primary : AppColors.inkFaint,
           ),
         ),
       ),

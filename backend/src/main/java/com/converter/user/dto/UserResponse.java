@@ -1,5 +1,6 @@
 package com.converter.user.dto;
 
+import com.converter.user.domain.ExperienceProfile;
 import com.converter.user.domain.UserStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -38,6 +39,9 @@ public record UserResponse(
         Instant createdAt,
 
         @Schema(description = "Derniere connexion reussie, null si jamais connecte")
-        Instant lastLoginAt
+        Instant lastLoginAt,
+
+        @Schema(description = "Habillage mobile choisi par le client — pilote uniquement l'interface, jamais le pricing")
+        ExperienceProfile experienceProfile
 ) {
 }

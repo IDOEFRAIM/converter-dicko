@@ -75,6 +75,14 @@ class MorePage extends StatelessWidget {
             label: 'Espace professionnel',
             onTap: () => context.push('/more/business'),
           ),
+          _MoreTile(
+            icon: Icons.palette_outlined,
+            label: 'Habillage',
+            onTap: () => context.push(
+              '/more/experience-profile',
+              extra: context.read<AuthSession>().experienceProfile,
+            ),
+          ),
           const Divider(),
           _MoreTile(
             icon: Icons.logout,

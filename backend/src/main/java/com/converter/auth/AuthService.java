@@ -12,6 +12,7 @@ import com.converter.common.exception.ResourceNotFoundException;
 import com.converter.common.exception.UserBlockedException;
 import com.converter.common.validation.PhoneNumberValidator;
 import com.converter.security.jwt.JwtService;
+import com.converter.user.domain.ExperienceProfile;
 import com.converter.user.domain.Role;
 import com.converter.user.domain.RoleCode;
 import com.converter.user.domain.User;
@@ -87,6 +88,9 @@ public class AuthService {
                 request.firstName().trim(),
                 request.lastName().trim());
         user.addRole(userRole);
+        if (request.experienceProfile() != null) {
+            user.changeExperienceProfile(request.experienceProfile());
+        }
 
         User saved = userRepository.save(user);
 
@@ -137,5 +141,25 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> ResourceNotFoundException.user(userId));
         return userMapper.toResponse(user);
+    }
+
+    /**
+     * Auto-selectionnable par le client lui-meme : contrairement au KYC, aucun controle
+     * administrateur n'entoure ce choix, purement cosmetique (voir {@link
+     * com.converter.user.domain.ExperienceProfile}).
+     */
+    @Transactional
+    public UserResponse updateExperienceProfile(UUID userId, ExperienceProfile profile) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> ResourceNotFoundException.user(userId));
+
+        user.changeExperienceProfile(profile);
+        User saved = userRepository.save(user);
+
+        auditService.record(userId, saved.getPhone(), AuditAction.USER_EXPERIENCE_PROFILE_CHANGED,
+                "User", userId.toString(), "{\"experienceProfile\":\"" + profile + "\"}");
+        log.info("Profil d'experience de {} change en {}", userId, profile);
+
+        return userMapper.toResponse(saved);
     }
 }

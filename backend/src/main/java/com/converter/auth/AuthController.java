@@ -3,6 +3,7 @@ package com.converter.auth;
 import com.converter.auth.dto.AuthResponse;
 import com.converter.auth.dto.LoginRequest;
 import com.converter.auth.dto.RegisterRequest;
+import com.converter.auth.dto.UpdateExperienceProfileRequest;
 import com.converter.common.api.ApiResponse;
 import com.converter.security.AuthenticatedUser;
 import com.converter.security.CurrentUser;
@@ -14,6 +15,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -55,5 +57,17 @@ public class AuthController {
     public ResponseEntity<ApiResponse<UserResponse>> me(@AuthenticatedUser CurrentUser currentUser) {
         UserResponse response = authService.me(currentUser.getId());
         return ResponseEntity.ok(ApiResponse.of(response));
+    }
+
+    @PatchMapping("/me/experience-profile")
+    @SecurityRequirement(name = "bearer-jwt")
+    @Operation(summary = "Changer mon habillage mobile (PRO / STUDENT_MALE / STUDENT_FEMALE)",
+            description = "Purement cosmetique : ne modifie jamais le taux, les frais ni aucune regle metier. "
+                    + "Auto-selectionnable, aucun controle administrateur.")
+    public ResponseEntity<ApiResponse<UserResponse>> updateExperienceProfile(
+            @Valid @RequestBody UpdateExperienceProfileRequest request,
+            @AuthenticatedUser CurrentUser currentUser) {
+        UserResponse response = authService.updateExperienceProfile(currentUser.getId(), request.experienceProfile());
+        return ResponseEntity.ok(ApiResponse.of(response, "Habillage mis a jour."));
     }
 }

@@ -81,10 +81,15 @@ class _RouterHostState extends State<_RouterHost> {
 
   @override
   Widget build(BuildContext context) {
+    // watch (pas read) : le theme doit se rafraichir immediatement quand le
+    // client change son habillage (voir AuthRepository.updateExperienceProfile),
+    // sans jamais reconstruire le routeur lui-meme (voir le commentaire de
+    // classe sur la perte de pile de navigation).
+    final experienceProfile = context.watch<AuthSession>().experienceProfile;
     return MaterialApp.router(
       title: 'Converter',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
+      theme: AppTheme.forProfile(experienceProfile),
       routerConfig: _router,
     );
   }

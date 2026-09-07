@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../core/auth/auth_session.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 
@@ -24,9 +26,11 @@ class PrimaryAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final disabled = loading || onPressed == null;
+    final experienceGradient = context.watch<AuthSession>().experienceGradient;
+    final foreground = experienceGradient.foreground;
     return DecoratedBox(
       decoration: BoxDecoration(
-        gradient: disabled ? null : AppColors.gradient,
+        gradient: disabled ? null : experienceGradient.gradient,
         color: disabled ? AppColors.navy.withValues(alpha: 0.35) : null,
         borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
       ),
@@ -42,18 +46,21 @@ class PrimaryAction extends StatelessWidget {
                   ? const SizedBox(
                       width: 22,
                       height: 22,
+                      // Toujours blanc : `loading` implique `disabled`, et le fond bascule
+                      // alors sur un navy translucide (jamais le degrade), quel que soit
+                      // le profil — voir la decoration ci-dessus.
                       child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
                     )
                   : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (icon != null) ...[
-                          Icon(icon, color: Colors.white, size: 20),
+                          Icon(icon, color: foreground, size: 20),
                           const SizedBox(width: AppSpacing.sm),
                         ],
                         Text(
                           label,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15),
+                          style: TextStyle(color: foreground, fontWeight: FontWeight.w700, fontSize: 15),
                         ),
                       ],
                     ),

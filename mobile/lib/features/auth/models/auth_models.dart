@@ -15,11 +15,16 @@ class RegisterRequest {
   final String firstName;
   final String lastName;
 
+  /// Habillage choisi a l'inscription — `null` => PRO cote backend (design
+  /// sobre actuel), jamais une bascule silencieuse vers un theme non choisi.
+  final ExperienceProfile? experienceProfile;
+
   const RegisterRequest({
     required this.phone,
     required this.password,
     required this.firstName,
     required this.lastName,
+    this.experienceProfile,
   });
 
   Map<String, dynamic> toJson() => {
@@ -27,6 +32,7 @@ class RegisterRequest {
         'password': password,
         'firstName': firstName,
         'lastName': lastName,
+        'experienceProfile': experienceProfile?.code,
       };
 }
 
