@@ -5,10 +5,10 @@ import 'dart:ui';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-/// Materialise des octets deja telecharges (justificatif PDF...) dans le
-/// repertoire temporaire de l'app puis ouvre la feuille de partage/ouverture
-/// systeme — jamais de PDF genere cote mobile, uniquement le contenu deja
-/// recu du backend (mission section 28).
+/// Materialise des octets (justificatif PDF telecharge du backend, ou PDF
+/// genere localement — voir `pro_activity_report.dart`, mission
+/// "differenciation marketing") dans le repertoire temporaire de l'app puis
+/// ouvre la feuille de partage/ouverture systeme (mission section 28).
 ///
 /// [sharePositionOrigin] ancre la popover sur iPad au bouton presse (sinon
 /// repli sur le centre de l'ecran, sans crash sur les versions recentes de

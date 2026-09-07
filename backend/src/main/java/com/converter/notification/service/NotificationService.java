@@ -8,6 +8,8 @@ import com.converter.notification.domain.NotificationType;
 import com.converter.notification.dto.NotificationResponse;
 import com.converter.notification.repository.NotificationRepository;
 import com.converter.security.OwnershipService;
+import com.converter.user.domain.ExperienceProfile;
+import com.converter.user.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
@@ -30,13 +32,16 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final OwnershipService ownershipService;
+    private final UserRepository userRepository;
     private final Clock clock;
 
     public NotificationService(NotificationRepository notificationRepository,
                                OwnershipService ownershipService,
+                               UserRepository userRepository,
                                Clock clock) {
         this.notificationRepository = notificationRepository;
         this.ownershipService = ownershipService;
+        this.userRepository = userRepository;
         this.clock = clock;
     }
 
@@ -50,11 +55,21 @@ public class NotificationService {
      * d'ecriture est absorbe (journalise) plutot que propage — un incident sur la table
      * {@code notifications} ne doit jamais faire echouer (ni rollback) un devis, un paiement ou
      * un declenchement de taux preferentiel deja valides.
+     *
+     * <p>Le {@code title} fourni par l'appelant est un texte PRO neutre par defaut ; pour un
+     * profil STUDENT_MALE/STUDENT_FEMALE et un type de notification celebrable, il est remplace
+     * par une variante differenciee via {@link NotificationCopy} (mission "differenciation
+     * marketing" section "Notifications"). Le {@code message} n'est jamais modifie : il porte les
+     * donnees reelles calculees par le service appelant (montants, references...).
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Notification create(UUID userId, NotificationType type, String title, String message) {
         try {
-            Notification notification = new Notification(userId, type, title, message, clock.instant());
+            ExperienceProfile profile = userRepository.findById(userId)
+                    .map(user -> user.getExperienceProfile())
+                    .orElse(ExperienceProfile.PRO);
+            String personalizedTitle = NotificationCopy.title(type, profile, title);
+            Notification notification = new Notification(userId, type, personalizedTitle, message, clock.instant());
             return notificationRepository.save(notification);
         } catch (RuntimeException ex) {
             log.error("Echec d'ecriture de la notification {} pour l'utilisateur {}", type, userId, ex);

@@ -68,6 +68,11 @@ dependencies:
   # aucune API Flutter SDK ne le permet sans plugin (mission section 26).
   image_picker: ^1.1.2
 
+  # Generation de PDF cote client (mission "differenciation marketing" : le
+  # "Rapport d'activite" du profil PRO) — pur Dart, aucune dependance native
+  # supplementaire au-dela de ce package.
+  pdf: ^3.13.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -6,7 +6,10 @@ import com.converter.notification.domain.NotificationType;
 import com.converter.notification.dto.NotificationResponse;
 import com.converter.notification.repository.NotificationRepository;
 import com.converter.support.AbstractRateQuoteIT;
+import com.converter.user.domain.ExperienceProfile;
 import com.converter.user.domain.RoleCode;
+import com.converter.user.domain.User;
+import com.converter.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -25,6 +28,40 @@ class NotificationServiceIT extends AbstractRateQuoteIT {
 
     @Autowired
     private NotificationRepository notificationRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    private User withProfile(User user, ExperienceProfile profile) {
+        user.changeExperienceProfile(profile);
+        return userRepository.saveAndFlush(user);
+    }
+
+    /**
+     * Titre differencie (mission "differenciation marketing" section "Notifications") : seul le
+     * profil STUDENT_MALE/STUDENT_FEMALE et un type "celebrable" declenchent une variante — voir
+     * {@code NotificationCopyTest} pour la logique pure exhaustive.
+     */
+    @Test
+    void create_personalizesTitle_forStudentProfileAndCelebratedType() {
+        UUID userId = withProfile(createUser(RoleCode.USER), ExperienceProfile.STUDENT_MALE).getId();
+
+        Notification notification = notificationService.create(
+                userId, NotificationType.RATE_ALERT_TRIGGERED, "Objectif de taux atteint", "Detail reel");
+
+        assertThat(notification.getTitle()).isNotEqualTo("Objectif de taux atteint");
+        assertThat(notification.getMessage()).isEqualTo("Detail reel");
+    }
+
+    @Test
+    void create_keepsDefaultTitle_forProProfile() {
+        UUID userId = createUser(RoleCode.USER).getId();
+
+        Notification notification = notificationService.create(
+                userId, NotificationType.RATE_ALERT_TRIGGERED, "Objectif de taux atteint", "Detail reel");
+
+        assertThat(notification.getTitle()).isEqualTo("Objectif de taux atteint");
+    }
 
     @Test
     void create_persistsUnreadNotification() {
