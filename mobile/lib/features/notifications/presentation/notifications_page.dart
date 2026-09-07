@@ -57,7 +57,7 @@ class _NotificationsView extends StatelessWidget {
               child: ListView.separated(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 itemCount: controller.notifications.length,
-                separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+                separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
                 itemBuilder: (context, index) {
                   final notification = controller.notifications[index];
                   return _NotificationTile(
