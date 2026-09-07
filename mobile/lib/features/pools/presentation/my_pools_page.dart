@@ -50,7 +50,7 @@ class _MyPoolsView extends StatelessWidget {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: controller.load,
-          color: AppColors.navy,
+          color: Theme.of(context).colorScheme.primary,
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [

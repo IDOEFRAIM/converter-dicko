@@ -49,26 +49,31 @@ class _HomePageState extends State<HomePage> {
     final controller = context.watch<HomeController>();
     final authSession = context.watch<AuthSession>();
     final user = authSession.currentUser;
+    final profile = authSession.experienceProfile;
 
     return Scaffold(
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: controller.loadAll,
-          color: AppColors.navy,
+          color: Theme.of(context).colorScheme.primary,
           child: ListView(
             padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.xxxl),
             children: [
               Text(
-                user == null ? 'Bonjour 👋' : 'Bonjour ${user.firstName} 👋',
-                style: AppTypography.titleLarge,
+                // profile reste PRO tant que user est null (voir AuthSession.experienceProfile),
+                // donc le fallback "Bonjour" plus bas ne correspond jamais a un habillage etudiant.
+                user == null
+                    ? 'Bonjour ${ExperienceCopy.greetingEmoji(profile)}'
+                    : '${ExperienceCopy.greeting(profile, user.firstName)} ${ExperienceCopy.greetingEmoji(profile)}',
+                style: AppTypography.titleLarge(Theme.of(context).colorScheme.primary),
               ),
               const SizedBox(height: AppSpacing.lg),
               const Corridor(level: CorridorLevel.hero),
               const SizedBox(height: AppSpacing.xl),
-              _RateHero(state: controller.latestRate, onRetry: controller.loadRate),
+              _RateHero(state: controller.latestRate, onRetry: controller.loadRate, profile: profile),
               const SizedBox(height: AppSpacing.lg),
               PrimaryAction(
-                label: 'Payer un fournisseur',
+                label: ExperienceCopy.payCta(profile),
                 icon: Icons.send_outlined,
                 onPressed: () => context.go('/pay'),
               ),
@@ -99,8 +104,9 @@ class _HomePageState extends State<HomePage> {
 class _RateHero extends StatelessWidget {
   final AsyncValue<PublicRateHistoryEntry?> state;
   final VoidCallback onRetry;
+  final ExperienceProfile profile;
 
-  const _RateHero({required this.state, required this.onRetry});
+  const _RateHero({required this.state, required this.onRetry, required this.profile});
 
   @override
   Widget build(BuildContext context) {
@@ -126,9 +132,9 @@ class _RateHero extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('TAUX DU MOMENT', style: AppTypography.eyebrow),
+              Text(ExperienceCopy.homeRateEyebrow(profile), style: AppTypography.eyebrow),
               const SizedBox(height: AppSpacing.xs),
-              RateDisplay(customerRate: entry.customerRate, large: true, color: AppColors.navy),
+              RateDisplay(customerRate: entry.customerRate, large: true, color: Theme.of(context).colorScheme.primary),
               const SizedBox(height: AppSpacing.xs),
               Text('Mis a jour le ${DateFormatting.dayTime(entry.recordedAt)}', style: AppTypography.caption),
             ],
@@ -229,7 +235,7 @@ class _SuppliersPreview extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           backgroundColor: AppColors.ivoryDim,
-                          foregroundColor: AppColors.navy,
+                          foregroundColor: Theme.of(context).colorScheme.primary,
                           child: Text(supplier.displayName.isEmpty ? '?' : supplier.displayName[0].toUpperCase()),
                         ),
                         const SizedBox(width: AppSpacing.md),
@@ -277,7 +283,7 @@ class _AchievementsCard extends StatelessWidget {
       data: (summary) {
         final isPro = profile == ExperienceProfile.pro;
         final gradient = isPro ? null : ExperiencePalette.gradientFor(profile);
-        final foreground = gradient?.foreground ?? AppColors.navy;
+        final foreground = gradient?.foreground ?? Theme.of(context).colorScheme.primary;
 
         return InkWell(
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),

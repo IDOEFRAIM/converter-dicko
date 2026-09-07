@@ -110,7 +110,7 @@ class _TimelineTile extends StatelessWidget {
       dotColor = AppColors.ochre;
       icon = Icons.sync;
     } else {
-      dotColor = AppColors.navy;
+      dotColor = Theme.of(context).colorScheme.primary;
       icon = Icons.check;
     }
 

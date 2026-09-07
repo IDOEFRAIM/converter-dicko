@@ -185,7 +185,7 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
             const SizedBox(height: AppSpacing.xs),
             Text(
               '≈ ${Money(quote.amountCny, AppCurrency.cny).formattedWithCurrency()}',
-              style: AppTypography.metricLarge.copyWith(color: AppColors.navy),
+              style: AppTypography.metricLarge.copyWith(color: Theme.of(context).colorScheme.primary),
             ),
             const SizedBox(height: AppSpacing.md),
             const Divider(),

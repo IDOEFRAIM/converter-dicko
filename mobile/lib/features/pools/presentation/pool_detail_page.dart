@@ -93,7 +93,7 @@ class _PoolDetailView extends StatelessWidget {
             }
             return RefreshIndicator(
               onRefresh: controller.load,
-              color: AppColors.navy,
+              color: Theme.of(context).colorScheme.primary,
               child: ListView(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 children: [
@@ -249,7 +249,7 @@ class _ParticipantTile extends StatelessWidget {
         children: [
           CircleAvatar(
             backgroundColor: AppColors.ivoryDim,
-            foregroundColor: AppColors.navy,
+            foregroundColor: Theme.of(context).colorScheme.primary,
             child: Text(participant.firstName.isEmpty ? '?' : participant.firstName[0].toUpperCase()),
           ),
           const SizedBox(width: AppSpacing.md),

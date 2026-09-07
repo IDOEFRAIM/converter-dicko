@@ -24,7 +24,11 @@ abstract final class AppTypography {
     height: 1.1,
   );
 
-  static final titleLarge = _base.copyWith(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.navy);
+  /// Prend l'accent en parametre (jamais `AppColors.navy` en dur) : un titre
+  /// de page doit refleter l'habillage du profil courant — passer
+  /// `Theme.of(context).colorScheme.primary`, deja le bon accent (voir
+  /// `AppTheme.forProfile`).
+  static TextStyle titleLarge(Color accent) => _base.copyWith(fontSize: 22, fontWeight: FontWeight.w700, color: accent);
 
   static final titleMedium = _base.copyWith(fontSize: 17, fontWeight: FontWeight.w700);
 

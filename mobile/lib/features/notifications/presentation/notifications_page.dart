@@ -53,7 +53,7 @@ class _NotificationsView extends StatelessWidget {
             }
             return RefreshIndicator(
               onRefresh: controller.load,
-              color: AppColors.navy,
+              color: Theme.of(context).colorScheme.primary,
               child: ListView.separated(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 itemCount: controller.notifications.length,
@@ -97,8 +97,8 @@ class _NotificationTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CircleAvatar(
-              backgroundColor: AppColors.navy.withValues(alpha: 0.1),
-              foregroundColor: AppColors.navy,
+              backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              foregroundColor: Theme.of(context).colorScheme.primary,
               child: Icon(notification.kind.icon, size: 18),
             ),
             const SizedBox(width: AppSpacing.md),

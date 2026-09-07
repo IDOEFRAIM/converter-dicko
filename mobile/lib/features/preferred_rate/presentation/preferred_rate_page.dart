@@ -98,7 +98,7 @@ class _PreferredRateViewState extends State<_PreferredRateView> {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: controller.load,
-          color: AppColors.navy,
+          color: Theme.of(context).colorScheme.primary,
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
@@ -237,7 +237,7 @@ class _PreferredRateCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
-          ..._buildPhaseContent(),
+          ..._buildPhaseContent(context),
           Text(
             'Cree le ${DateFormatting.dayOnly(request.createdAt)}',
             style: AppTypography.caption,
@@ -257,7 +257,7 @@ class _PreferredRateCard extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildPhaseContent() {
+  List<Widget> _buildPhaseContent(BuildContext context) {
     switch (request.phase) {
       case PreferredRatePhase.waiting:
         return [
@@ -283,7 +283,10 @@ class _PreferredRateCard extends StatelessWidget {
             Text('Vers ${Money(exchange.amountCny, AppCurrency.cny).formattedWithCurrency()}',
                 style: AppTypography.caption),
             const SizedBox(height: AppSpacing.xs),
-            Text(_stageLabel(exchange.stage), style: AppTypography.caption.copyWith(color: AppColors.navy)),
+            Text(
+              _stageLabel(exchange.stage),
+              style: AppTypography.caption.copyWith(color: Theme.of(context).colorScheme.primary),
+            ),
           ],
           const SizedBox(height: AppSpacing.xs),
         ];

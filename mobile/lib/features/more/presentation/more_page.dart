@@ -29,7 +29,7 @@ class MorePage extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 22,
-                    backgroundColor: AppColors.navy,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     child: Text(
                       user.firstName.isEmpty ? '?' : user.firstName[0].toUpperCase(),
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
@@ -104,7 +104,7 @@ class _MoreTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: color ?? AppColors.navy),
+      leading: Icon(icon, color: color ?? Theme.of(context).colorScheme.primary),
       title: Text(label, style: AppTypography.body.copyWith(color: color)),
       trailing: color == null ? const Icon(Icons.chevron_right, color: AppColors.inkFaint) : null,
       onTap: onTap,

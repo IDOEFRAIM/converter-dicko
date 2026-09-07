@@ -253,7 +253,7 @@ class _StepLabel extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 12,
-          backgroundColor: AppColors.navy,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           child: Text('$number', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
         ),
         const SizedBox(width: AppSpacing.sm),

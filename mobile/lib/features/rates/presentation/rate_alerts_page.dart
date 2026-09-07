@@ -230,7 +230,10 @@ class _ActiveAlertCard extends StatelessWidget {
                 if (gap != null) ...[
                   Text(
                     'Ecart : ${gap! > 0 ? '+' : ''}${gap!.toStringAsFixed(2)} %',
-                    style: AppTypography.caption.copyWith(fontWeight: FontWeight.w700, color: AppColors.navy),
+                    style: AppTypography.caption.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 ],
                 Text(

@@ -98,7 +98,7 @@ class _OrderDetailView extends StatelessWidget {
             }
             return RefreshIndicator(
               onRefresh: controller.load,
-              color: AppColors.navy,
+              color: Theme.of(context).colorScheme.primary,
               child: ListView(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 children: [
@@ -108,7 +108,7 @@ class _OrderDetailView extends StatelessWidget {
                   const SizedBox(height: AppSpacing.lg),
                   _buildStatusPanel(order),
                   const SizedBox(height: AppSpacing.lg),
-                  _buildAmountFlow(order),
+                  _buildAmountFlow(context, order),
                   const SizedBox(height: AppSpacing.lg),
                   if (order.status == OrderStatus.awaitingPayment) _buildAwaitingPaymentActions(context, controller),
                   if (order.status == OrderStatus.completed) _buildReceiptPanel(context, controller),
@@ -116,7 +116,7 @@ class _OrderDetailView extends StatelessWidget {
                   _buildTrackingLink(context, order),
                   const SizedBox(height: AppSpacing.lg),
                   if (order.status == OrderStatus.processing || order.status == OrderStatus.completed)
-                    _buildSettlementPanel(order),
+                    _buildSettlementPanel(context, order),
                   const SizedBox(height: AppSpacing.lg),
                   _buildSupplierPanel(order),
                 ],
@@ -150,7 +150,7 @@ class _OrderDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildAmountFlow(OrderDetail order) {
+  Widget _buildAmountFlow(BuildContext context, OrderDetail order) {
     return Column(
       children: [
         Column(
@@ -178,7 +178,7 @@ class _OrderDetailView extends StatelessWidget {
             MoneyDisplay(
               money: Money(order.amountCny, AppCurrency.cny),
               size: MoneyDisplaySize.large,
-              color: AppColors.navy,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ],
         ),
@@ -213,7 +213,7 @@ class _OrderDetailView extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.receipt_long, color: AppColors.navy, size: 18),
+              Icon(Icons.receipt_long, color: Theme.of(context).colorScheme.primary, size: 18),
               const SizedBox(width: AppSpacing.xs),
               Text('JUSTIFICATIF', style: AppTypography.eyebrow),
             ],
@@ -247,7 +247,7 @@ class _OrderDetailView extends StatelessWidget {
       child: _panel(
         child: Row(
           children: [
-            const Icon(Icons.timeline, color: AppColors.navy),
+            Icon(Icons.timeline, color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: AppSpacing.md),
             const Expanded(child: Text('Voir le suivi du transfert')),
             const Icon(Icons.chevron_right, color: AppColors.inkFaint),
@@ -257,7 +257,7 @@ class _OrderDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildSettlementPanel(OrderDetail order) {
+  Widget _buildSettlementPanel(BuildContext context, OrderDetail order) {
     final settlement = deriveSettlementView(order.status);
     return _panel(
       child: Column(
@@ -265,7 +265,7 @@ class _OrderDetailView extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.local_shipping_outlined, color: AppColors.navy, size: 18),
+              Icon(Icons.local_shipping_outlined, color: Theme.of(context).colorScheme.primary, size: 18),
               const SizedBox(width: AppSpacing.xs),
               Text('REGLEMENT EN CHINE', style: AppTypography.eyebrow),
             ],

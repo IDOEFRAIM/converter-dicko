@@ -54,7 +54,7 @@ class _OrderListView extends StatelessWidget {
             }
             return RefreshIndicator(
               onRefresh: controller.load,
-              color: AppColors.navy,
+              color: Theme.of(context).colorScheme.primary,
               child: ListView.separated(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 itemCount: controller.orders.length,

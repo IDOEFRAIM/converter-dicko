@@ -82,7 +82,7 @@ class _RateHistoryView extends StatelessWidget {
 
             return RefreshIndicator(
               onRefresh: controller.load,
-              color: AppColors.navy,
+              color: Theme.of(context).colorScheme.primary,
               child: ListView(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 children: [
@@ -138,7 +138,7 @@ class _RateHistoryView extends StatelessWidget {
                     ),
                     child: Sparkline(
                       values: controller.chronological.map((e) => double.parse(e.customerRate)).toList(),
-                      color: AppColors.navy,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                   if (range != null) ...[

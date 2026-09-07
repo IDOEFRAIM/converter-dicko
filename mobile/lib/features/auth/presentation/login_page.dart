@@ -79,9 +79,12 @@ class _LoginPageState extends State<LoginPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: AppSpacing.xxl),
-                Text('🇧🇫 → 🇨🇳', style: AppTypography.metricMedium.copyWith(color: AppColors.navy)),
+                Text(
+                  '🇧🇫 → 🇨🇳',
+                  style: AppTypography.metricMedium.copyWith(color: Theme.of(context).colorScheme.primary),
+                ),
                 const SizedBox(height: AppSpacing.md),
-                Text('Bon retour', style: AppTypography.titleLarge),
+                Text('Bon retour', style: AppTypography.titleLarge(Theme.of(context).colorScheme.primary)),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   'Connectez-vous pour suivre vos paiements vers la Chine.',

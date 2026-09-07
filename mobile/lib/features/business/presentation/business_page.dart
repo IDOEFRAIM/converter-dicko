@@ -73,7 +73,7 @@ class _BusinessDashboard extends StatelessWidget {
 
     return RefreshIndicator(
       onRefresh: controller.load,
-      color: AppColors.navy,
+      color: Theme.of(context).colorScheme.primary,
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [

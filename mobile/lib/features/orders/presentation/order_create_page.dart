@@ -132,7 +132,7 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
                   const Icon(Icons.arrow_forward, size: 16, color: AppColors.inkFaint),
                   Text(
                     Money(quote.amountCny, AppCurrency.cny).formattedWithCurrency(),
-                    style: AppTypography.bodyStrong.copyWith(color: AppColors.navy),
+                    style: AppTypography.bodyStrong.copyWith(color: Theme.of(context).colorScheme.primary),
                   ),
                 ],
               ),

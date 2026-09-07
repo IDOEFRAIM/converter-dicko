@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/auth/auth_session.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../data/auth_repository.dart';
 
@@ -36,9 +35,13 @@ class _SplashPageState extends State<SplashPage> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: AppColors.navy,
-      body: Center(
+    // Toujours l'accent PRO ici en pratique : la session (et donc le profil)
+    // n'est restauree qu'apres ce premier rendu (voir _bootstrap) -- lu via
+    // le Theme malgre tout, jamais AppColors.navy en dur, pour rester
+    // coherent si ce timing change un jour.
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      body: const Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

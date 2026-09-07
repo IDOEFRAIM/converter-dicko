@@ -52,7 +52,12 @@ class Corridor extends StatelessWidget {
 
     final flagSize = level == CorridorLevel.compact ? 13.0 : 18.0;
     final labelSize = level == CorridorLevel.compact ? 11.0 : 13.0;
-    return _row(flagSize: flagSize, labelSize: labelSize, lineColor: AppColors.navy, labelColor: AppColors.ink);
+    return _row(
+      flagSize: flagSize,
+      labelSize: labelSize,
+      lineColor: Theme.of(context).colorScheme.primary,
+      labelColor: AppColors.ink,
+    );
   }
 
   Widget _row({

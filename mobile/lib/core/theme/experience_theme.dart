@@ -33,3 +33,34 @@ abstract final class ExperiencePalette {
           const ExperienceGradient(gradient: AppColors.storyGradient, foreground: AppColors.navyDark),
       };
 }
+
+/// Textes qui varient selon [ExperienceProfile] (mission "differenciation
+/// marketing" : "Taux OR aujourd'hui !" pour STUDENT_MALE, ton chaleureux
+/// pour STUDENT_FEMALE) — volontairement limite aux points de contact les
+/// plus visibles (accueil), jamais une reecriture de tous les textes de
+/// l'app. PRO garde exactement le ton sobre actuel, inchange.
+abstract final class ExperienceCopy {
+  static String greeting(ExperienceProfile profile, String firstName) => switch (profile) {
+        ExperienceProfile.pro => 'Bonjour $firstName',
+        ExperienceProfile.studentMale => 'Pret a en decoudre, $firstName ?',
+        ExperienceProfile.studentFemale => 'Coucou $firstName',
+      };
+
+  static String greetingEmoji(ExperienceProfile profile) => switch (profile) {
+        ExperienceProfile.pro => '👋',
+        ExperienceProfile.studentMale => '🔥',
+        ExperienceProfile.studentFemale => '✨',
+      };
+
+  static String homeRateEyebrow(ExperienceProfile profile) => switch (profile) {
+        ExperienceProfile.pro => 'TAUX DU MOMENT',
+        ExperienceProfile.studentMale => 'TAUX OR AUJOURD\'HUI',
+        ExperienceProfile.studentFemale => 'LE TAUX DU JOUR',
+      };
+
+  static String payCta(ExperienceProfile profile) => switch (profile) {
+        ExperienceProfile.pro => 'Payer un fournisseur',
+        ExperienceProfile.studentMale => 'Lancer le transfert',
+        ExperienceProfile.studentFemale => 'Envoyer mon transfert',
+      };
+}

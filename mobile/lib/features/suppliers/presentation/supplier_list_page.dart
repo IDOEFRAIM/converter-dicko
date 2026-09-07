@@ -101,7 +101,7 @@ class _SupplierListView extends StatelessWidget {
     }
     return RefreshIndicator(
       onRefresh: controller.load,
-      color: AppColors.navy,
+      color: Theme.of(context).colorScheme.primary,
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
         itemCount: suppliers.length,
@@ -133,7 +133,7 @@ class _SupplierTile extends StatelessWidget {
           children: [
             CircleAvatar(
               backgroundColor: AppColors.ivoryDim,
-              foregroundColor: AppColors.navy,
+              foregroundColor: Theme.of(context).colorScheme.primary,
               child: Text(supplier.displayName.isEmpty ? '?' : supplier.displayName[0].toUpperCase()),
             ),
             const SizedBox(width: AppSpacing.md),
