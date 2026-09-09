@@ -9,8 +9,8 @@ import '../../../shared/models/money.dart';
 import '../../../shared/utils/date_formatting.dart';
 import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/corridor.dart';
-import '../../../shared/widgets/money_display.dart';
 import '../../../shared/widgets/primary_action.dart';
+import '../../../shared/widgets/transfer_ticket.dart';
 import '../../orders/presentation/order_create_page.dart';
 import '../application/quote_create_controller.dart';
 import '../data/quote_api.dart';
@@ -101,7 +101,7 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
             children: [
               const Corridor(level: CorridorLevel.normal),
               const SizedBox(height: AppSpacing.xl),
-              if (quote == null) ..._buildAmountForm(controller) else ..._buildQuoteResult(context, controller, quote),
+              if (quote == null) ..._buildAmountForm(controller) else ..._buildQuoteResult(controller, quote),
             ],
           ),
         ),
@@ -138,7 +138,7 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
     ];
   }
 
-  List<Widget> _buildQuoteResult(BuildContext context, QuoteCreateController controller, Quote quote) {
+  List<Widget> _buildQuoteResult(QuoteCreateController controller, Quote quote) {
     final isExpired = quote.isExpired;
     return [
       if (quote.poolRewardApplied) ...[
@@ -164,44 +164,20 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
         ),
         const SizedBox(height: AppSpacing.md),
       ],
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          border: Border.all(color: AppColors.outline),
+      TransferTicket(
+        sendAmount: Money(quote.amountXof, AppCurrency.xof),
+        receiveAmount: Money(quote.amountCny, AppCurrency.cny),
+        receiveApprox: true,
+        rows: [
+          TicketRow('Taux', '1 CNY = ${quote.customerRate} XOF'),
+          TicketRow('Frais', Money(quote.feeXof, AppCurrency.xof).formattedWithCurrency()),
+        ],
+        footnote: Text(
+          isExpired
+              ? 'Ce devis a expire. Demandez-en un nouveau.'
+              : 'Devis valable jusqu\'a ${DateFormatting.dayTime(quote.expiresAt)}.',
+          style: AppTypography.caption.copyWith(color: isExpired ? AppColors.negative : AppColors.inkMuted),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('VOUS ENVOYEZ', style: AppTypography.eyebrow),
-            const SizedBox(height: AppSpacing.xs),
-            MoneyDisplay(money: Money(quote.amountXof, AppCurrency.xof), size: MoneyDisplaySize.large),
-            const SizedBox(height: AppSpacing.lg),
-            const Center(child: Icon(Icons.arrow_downward, color: AppColors.inkFaint)),
-            const SizedBox(height: AppSpacing.lg),
-            Text('LE BENEFICIAIRE RECOIT', style: AppTypography.eyebrow),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              '≈ ${Money(quote.amountCny, AppCurrency.cny).formattedWithCurrency()}',
-              style: AppTypography.metricLarge.copyWith(color: Theme.of(context).colorScheme.primary),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            const Divider(),
-            const SizedBox(height: AppSpacing.md),
-            _kv('Taux', '1 CNY = ${quote.customerRate} XOF'),
-            const SizedBox(height: AppSpacing.sm),
-            _kv('Frais', Money(quote.feeXof, AppCurrency.xof).formattedWithCurrency()),
-          ],
-        ),
-      ),
-      const SizedBox(height: AppSpacing.md),
-      Text(
-        isExpired
-            ? 'Ce devis a expire. Demandez-en un nouveau.'
-            : 'Devis valable jusqu\'a ${DateFormatting.dayTime(quote.expiresAt)}.',
-        style: AppTypography.caption.copyWith(color: isExpired ? AppColors.negative : AppColors.inkMuted),
       ),
       if (controller.errorMessage != null) ...[
         const SizedBox(height: AppSpacing.md),
@@ -224,15 +200,5 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
         ),
       ),
     ];
-  }
-
-  Widget _kv(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: AppTypography.caption),
-        Text(value, style: AppTypography.bodyStrong),
-      ],
-    );
   }
 }

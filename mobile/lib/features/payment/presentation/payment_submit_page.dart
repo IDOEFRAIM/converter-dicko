@@ -10,6 +10,7 @@ import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/primary_action.dart';
+import '../../../shared/widgets/proof_dropzone.dart';
 import '../../orders/data/order_api.dart';
 import '../../settings/data/settings_api.dart';
 import '../application/payment_submit_controller.dart';
@@ -202,29 +203,15 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
       const SizedBox(height: AppSpacing.xl),
       const _StepLabel(number: 2, label: 'Ajoutez la preuve'),
       const SizedBox(height: AppSpacing.md),
-      if (controller.proofUploaded)
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.positiveSurface,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.check_circle, color: AppColors.positive, size: 18),
-              SizedBox(width: AppSpacing.sm),
-              Expanded(child: Text('Preuve ajoutee.')),
-            ],
-          ),
-        )
-      else
-        OutlinedButton.icon(
-          onPressed: controller.uploadingProof ? null : controller.pickAndUploadProof,
-          icon: controller.uploadingProof
-              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Icon(Icons.attach_file),
-          label: Text(controller.uploadingProof ? 'Envoi...' : 'Choisir un fichier'),
-        ),
+      ProofDropzone(
+        uploading: controller.uploadingProof,
+        done: controller.proofUploaded,
+        previewPath: controller.proofPreviewPath,
+        fileName: controller.proofFileName,
+        onTap: controller.uploadingProof || controller.proofUploaded
+            ? null
+            : controller.pickAndUploadProof,
+      ),
       if (controller.errorMessage != null) ...[
         const SizedBox(height: AppSpacing.md),
         Text(controller.errorMessage!, style: AppTypography.body.copyWith(color: AppColors.negative)),

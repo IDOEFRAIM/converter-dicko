@@ -125,3 +125,37 @@ notification culpabilisante, pas de dark pattern à la fermeture de compte.
   d'activation `mobile/assets/fonts/README.md` (Sora + IBM Plex Mono, mécanisme natif —
   **pas** `google_fonts`, qui télécharge au premier usage). Activation = déposer 8 `.ttf`
   + décommenter + basculer 2 constantes.
+- **Lot F — Ticket & copie** (fait) : `TransferTicket` — la forme monétaire d'une opération
+  (« vous envoyez / bénéficiaire reçoit / taux / frais / référence ») rendue comme une
+  **pièce physique** : surface papier, perforation + ligne de déchire (`CustomPainter` qui
+  perce deux « bites » dans la couleur de fond), montants en `figureLarge` tabulaire,
+  `FittedBox` anti-débordement, et **copie d'un tap** (`Clipboard` + `HapticFeedback`
+  discret, morph « copié ✓ ») sur référence / taux / frais. Remplace l'empilement plat
+  dans `quote_create` (devis) et `order_detail` (récap) ; le n° de transfert vit désormais
+  *dans* le ticket. `MoneyDisplay` n'est plus utilisé.
+- **Lot G — Suivi vivant** (fait) : montée en puissance de `CorridorTimeline` (bande peinte)
+  — ombre portée sous l'arc (relief), graduations « radar » perpendiculaires, **lumière qui
+  avance en temps réel** le long de la portion parcourue (comète : traînée qui s'estompe +
+  cœur + halo flou), et stations rendues en **jauges circulaires** par tonalité (anneau or
+  plein = fait ; balise `signal` pulsée = étape courante ; anneau rouge + croix = échec ;
+  anneau pointillé = remboursement). Deux `AnimationController` (`_flow` comète, `_pulse`
+  halo), coupés dès l'état terminal ou si `reduceMotion`. La liste en clair reste statique
+  (lisibilité / accessibilité).
+- **Lot H — Dépôt de preuve** (fait) : `ProofDropzone` remplace le bouton « Choisir un
+  fichier » nu de la page paiement. Un **cadre de capture** (repères d'angle peints,
+  surface papier) au repos ; pendant l'envoi, **un seul balayage or** doux traverse le
+  cadre en boucle lente (`_SweepPainter`, jamais un laser stroboscopique) + bordure or ;
+  une fois reçue, la preuve devient une **miniature scellée sur laque** (`Image.file`
+  `cacheWidth: 300` pour le parc bas de gamme, filet or, cachet « PREUVE SCELLÉE »).
+  Le contrôleur expose `proofPreviewPath` / `proofFileName` (chemin local de l'image
+  choisie) — aucun changement de flux : toujours galerie, jamais la caméra.
+- **Lot I — Ruée collective** (fait) : la barre linéaire + bandeau vert plat du détail de
+  Ruée deviennent une **jauge manomètre** (`CollectionGauge`, qui réutilise `ObjectiveDial`
+  — même famille d'instruments que la console PRO et le méridien) sur carte **laque** ;
+  à l'objectif l'aiguille se fige et un **sceau se frappe** au centre (`PoolSeal` :
+  disque laqué, double filet d'or, guilloché, coche gravée — **pas de confettis**).
+  `ParticipantMonograms` : les participants en **jetons gravés qui se chevauchent** (+N),
+  jamais de photos (le backend n'expose que l'initiale du prénom). `_SuccessBanner` et
+  `_ParticipantTile` repassés en laque / papier + `Monogram` ; touche cohérente sur
+  `my_pools_page` (filet de progression or). Le tuilage profil-dégradé de la carte cède
+  la place à la laque : l'instrument prime sur l'habillage.

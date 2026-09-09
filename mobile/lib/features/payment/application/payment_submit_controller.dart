@@ -42,6 +42,11 @@ class PaymentSubmitController extends ChangeNotifier {
   bool uploadingProof = false;
   bool proofUploaded = false;
 
+  /// Chemin local de l'image choisie + son nom — pour la miniature « preuve
+  /// scellee » (Lot H). Renseignes seulement apres un envoi reussi.
+  String? proofPreviewPath;
+  String? proofFileName;
+
   Future<void> load() async {
     loading = true;
     notifyListeners();
@@ -123,6 +128,8 @@ class PaymentSubmitController extends ChangeNotifier {
       }
       await _paymentApi.uploadProof(currentPayment.id, picked.path, picked.name);
       proofUploaded = true;
+      proofPreviewPath = picked.path;
+      proofFileName = picked.name;
     } on ApiException catch (error) {
       errorMessage = error.message;
     } catch (error) {

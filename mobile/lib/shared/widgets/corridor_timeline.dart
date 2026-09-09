@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -22,14 +24,16 @@ class CorridorStation {
 }
 
 /// Suivi d'un transfert rendu *le long du corridor* (langage de design
-/// "Le Comptoir", voir docs/MOBILE_DESIGN_LANGUAGE.md, Lot C) : la route
+/// "Le Comptoir", voir docs/MOBILE_DESIGN_LANGUAGE.md, Lots C & G) : la route
 /// 🇧🇫 -> 🇨🇳 tracee sur une surface laque, chaque evenement pose comme une
-/// station le long de la courbe, la portion parcourue en filet d'or, et un
-/// noeud lumineux la ou en est l'ordre. Sous la carte, la meme liste en clair
-/// (libelles + horodatages en figures tabulaires) pour la lisibilite et
-/// l'accessibilite.
+/// jauge circulaire le long de la courbe, la portion parcourue en filet d'or,
+/// et — tant que l'ordre est en cours — une **lumiere qui avance en temps
+/// reel** le long du corridor jusqu'a l'etape courante (facon suivi de vol).
+/// Sous la carte, la meme liste en clair (libelles + horodatages en figures
+/// tabulaires) pour la lisibilite et l'accessibilite.
 ///
-/// Purement une vue : aucune logique d'etat, aucune donnee inventee.
+/// Purement une vue : aucune logique d'etat, aucune donnee inventee. Toute
+/// l'animation se fige si l'utilisateur a demande la reduction des mouvements.
 class CorridorTimeline extends StatefulWidget {
   final List<CorridorStation> stations;
 
@@ -47,38 +51,46 @@ class CorridorTimeline extends StatefulWidget {
   State<CorridorTimeline> createState() => _CorridorTimelineState();
 }
 
-class _CorridorTimelineState extends State<CorridorTimeline> with SingleTickerProviderStateMixin {
+class _CorridorTimelineState extends State<CorridorTimeline> with TickerProviderStateMixin {
+  // Lumiere qui parcourt le corridor (boucle continue).
+  late final AnimationController _flow =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 3800));
+
+  // Halo qui bat sur la station courante.
   late final AnimationController _pulse =
       AnimationController(vsync: this, duration: const Duration(milliseconds: 1700));
 
   bool get _hasCurrent => widget.stations.any((s) => s.tone == StationTone.current);
 
+  void _syncAnimations() {
+    final run = _hasCurrent && !AppMotion.reduceMotion(context);
+    for (final c in [_flow, _pulse]) {
+      if (run) {
+        if (!c.isAnimating) c.repeat();
+      } else {
+        c.stop();
+        c.value = 0;
+      }
+    }
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (AppMotion.reduceMotion(context) || !_hasCurrent) {
-      _pulse.stop();
-      _pulse.value = 0;
-    } else if (!_pulse.isAnimating) {
-      _pulse.repeat();
-    }
+    _syncAnimations();
   }
 
   @override
   void didUpdateWidget(CorridorTimeline oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Un rafraichissement a pu faire passer l'ordre a un etat terminal :
-    // plus de station "courante" => on coupe la boucle de pulsation.
-    if (AppMotion.reduceMotion(context) || !_hasCurrent) {
-      _pulse.stop();
-      _pulse.value = 0;
-    } else if (!_pulse.isAnimating) {
-      _pulse.repeat();
-    }
+    // plus de station "courante" => on coupe les boucles.
+    _syncAnimations();
   }
 
   @override
   void dispose() {
+    _flow.dispose();
     _pulse.dispose();
     super.dispose();
   }
@@ -102,7 +114,7 @@ class _CorridorTimelineState extends State<CorridorTimeline> with SingleTickerPr
                   Text('LE CORRIDOR', style: AppTypography.eyebrow.copyWith(color: AppColors.keyline)),
                   const SizedBox(height: AppSpacing.md),
                   SizedBox(
-                    height: 104,
+                    height: 118,
                     width: double.infinity,
                     child: RepaintBoundary(
                       child: CustomPaint(
@@ -110,6 +122,7 @@ class _CorridorTimelineState extends State<CorridorTimeline> with SingleTickerPr
                         painter: _CorridorMapPainter(
                           stations: widget.stations,
                           reachedDestination: widget.reachedDestination,
+                          flow: _flow,
                           pulse: _pulse,
                           animated: animated,
                         ),
@@ -228,15 +241,17 @@ class _StationTile extends StatelessWidget {
 class _CorridorMapPainter extends CustomPainter {
   final List<CorridorStation> stations;
   final bool reachedDestination;
+  final Animation<double> flow;
   final Animation<double> pulse;
   final bool animated;
 
   _CorridorMapPainter({
     required this.stations,
     required this.reachedDestination,
+    required this.flow,
     required this.pulse,
     required this.animated,
-  }) : super(repaint: pulse);
+  }) : super(repaint: Listenable.merge([flow, pulse]));
 
   /// Position fractionnaire d'une station le long de la courbe — legerement
   /// rentree des deux bouts pour laisser les drapeaux respirer.
@@ -246,8 +261,8 @@ class _CorridorMapPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (size.isEmpty || stations.isEmpty) return;
 
-    final midY = size.height * 0.58;
-    final amp = size.height * 0.24;
+    final midY = size.height * 0.56;
+    final amp = size.height * 0.22;
     final path = Path()
       ..moveTo(0, midY + amp * 0.15)
       ..cubicTo(size.width * 0.30, midY + amp, size.width * 0.70, midY - amp, size.width, midY - amp * 0.15);
@@ -257,24 +272,48 @@ class _CorridorMapPainter extends CustomPainter {
     final n = stations.length;
     final hasNegative = stations.any((s) => s.tone == StationTone.negative);
     final headT = reachedDestination ? 1.0 : _tOf(n - 1, n);
+    final trackColor = hasNegative ? AppColors.chinaRed : AppColors.keyline;
 
-    // Rail complet (route encore a parcourir).
+    // --- Ombre portee de l'arc : un leger relief 3D sous le corridor. ---
+    canvas.save();
+    canvas.translate(0, 2.5);
     canvas.drawPath(
       path,
       Paint()
-        ..color = AppColors.onLacquerMuted.withValues(alpha: 0.28)
+        ..color = AppColors.navyDark.withValues(alpha: 0.4)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+    );
+    canvas.restore();
+
+    // --- Rail complet + graduations « radar ». ---
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = AppColors.onLacquerMuted.withValues(alpha: 0.26)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5
         ..strokeCap = StrokeCap.round,
     );
+    final tick = Paint()
+      ..color = AppColors.onLacquerMuted.withValues(alpha: 0.14)
+      ..strokeWidth = 1
+      ..strokeCap = StrokeCap.round;
+    for (final f in const [0.12, 0.28, 0.44, 0.6, 0.76, 0.9]) {
+      final t = metric.getTangentForOffset(length * f);
+      if (t == null) continue;
+      final perp = Offset(-t.vector.dy, t.vector.dx);
+      canvas.drawLine(t.position - perp * 3, t.position + perp * 3, tick);
+    }
 
-    // Portion parcourue, en filet d'or (ou rouge si l'ordre a echoue).
+    // --- Portion parcourue, en filet d'or (ou rouge si l'ordre a echoue). ---
     canvas.drawPath(
       metric.extractPath(0, length * headT),
       Paint()
-        ..color = hasNegative ? AppColors.chinaRed : AppColors.keyline
+        ..color = trackColor
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.2
+        ..strokeWidth = 2.4
         ..strokeCap = StrokeCap.round,
     );
 
@@ -285,70 +324,127 @@ class _CorridorMapPainter extends CustomPainter {
     _flag(canvas, '\u{1F1E8}\u{1F1F3}', Offset(endPos.dx - 18, endPos.dy - 30));
 
     canvas.drawCircle(
+      startPos,
+      3.4,
+      Paint()
+        ..color = AppColors.keyline.withValues(alpha: 0.7)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+    canvas.drawCircle(
       endPos,
-      3.5,
+      3.6,
       Paint()..color = AppColors.keyline.withValues(alpha: reachedDestination ? 1 : 0.35),
     );
 
+    // --- Lumiere qui avance en temps reel sur la portion parcourue. ---
+    if (animated && headT > 0) {
+      final head = flow.value * headT;
+      for (var k = 12; k >= 1; k--) {
+        final t = head - k * 0.010;
+        if (t <= 0) continue;
+        final p = metric.getTangentForOffset(length * t)?.position;
+        if (p == null) continue;
+        canvas.drawCircle(p, 1.7, Paint()..color = AppColors.signal.withValues(alpha: (1 - k / 13) * 0.6));
+      }
+      final hp = metric.getTangentForOffset(length * head)?.position;
+      if (hp != null) {
+        canvas.drawCircle(
+          hp,
+          6,
+          Paint()
+            ..color = AppColors.signal.withValues(alpha: 0.5)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+        );
+        canvas.drawCircle(hp, 2.6, Paint()..color = AppColors.signal);
+        canvas.drawCircle(
+          hp,
+          2.6,
+          Paint()
+            ..color = AppColors.onLacquer
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1,
+        );
+      }
+    }
+
+    // --- Stations : jauges circulaires. ---
     for (var i = 0; i < n; i++) {
       final pos = metric.getTangentForOffset(length * _tOf(i, n))?.position;
       if (pos == null) continue;
-      switch (stations[i].tone) {
-        case StationTone.done:
-          canvas.drawCircle(pos, 3.6, Paint()..color = AppColors.keyline);
+      _gauge(canvas, pos, stations[i].tone, animated && stations[i].tone == StationTone.current ? pulse.value : null);
+    }
+  }
+
+  void _gauge(Canvas canvas, Offset c, StationTone tone, double? pulseV) {
+    switch (tone) {
+      case StationTone.done:
+        canvas.drawCircle(
+          c,
+          4.8,
+          Paint()
+            ..color = AppColors.keyline
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2,
+        );
+        canvas.drawCircle(c, 1.6, Paint()..color = AppColors.keyline);
+      case StationTone.current:
+        if (pulseV != null) {
           canvas.drawCircle(
-            pos,
-            3.6,
-            Paint()
-              ..color = AppColors.onLacquer.withValues(alpha: 0.5)
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 1,
+            c,
+            5 + 9 * pulseV,
+            Paint()..color = AppColors.signal.withValues(alpha: 0.4 * (1 - pulseV)),
           );
-        case StationTone.current:
-          if (animated) {
-            final p = pulse.value;
-            canvas.drawCircle(
-              pos,
-              4 + 9 * p,
-              Paint()..color = AppColors.signal.withValues(alpha: 0.45 * (1 - p)),
-            );
-          }
-          canvas.drawCircle(
-            pos,
-            6,
-            Paint()
-              ..color = AppColors.signal.withValues(alpha: 0.3)
-              ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
-          );
-          canvas.drawCircle(pos, 4.2, Paint()..color = AppColors.signal);
-          canvas.drawCircle(
-            pos,
-            4.2,
-            Paint()
-              ..color = AppColors.onLacquer
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 1.4,
-          );
-        case StationTone.negative:
-          canvas.drawCircle(pos, 4.2, Paint()..color = AppColors.chinaRed);
-          canvas.drawCircle(
-            pos,
-            4.2,
-            Paint()
-              ..color = AppColors.onLacquer
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 1.2,
-          );
-        case StationTone.refund:
-          canvas.drawCircle(
-            pos,
-            3.6,
-            Paint()
-              ..color = AppColors.onLacquerMuted
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 1.4,
-          );
-      }
+        }
+        canvas.drawCircle(
+          c,
+          7,
+          Paint()
+            ..color = AppColors.signal.withValues(alpha: 0.28)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+        );
+        canvas.drawCircle(
+          c,
+          5,
+          Paint()
+            ..color = AppColors.signal
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2,
+        );
+        canvas.drawCircle(c, 2, Paint()..color = AppColors.signal);
+        canvas.drawCircle(
+          c,
+          5,
+          Paint()
+            ..color = AppColors.onLacquer
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1,
+        );
+      case StationTone.negative:
+        canvas.drawCircle(
+          c,
+          4.8,
+          Paint()
+            ..color = AppColors.chinaRed
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2,
+        );
+        final x = Paint()
+          ..color = AppColors.chinaRed
+          ..strokeWidth = 1.6
+          ..strokeCap = StrokeCap.round;
+        canvas.drawLine(c + const Offset(-2.4, -2.4), c + const Offset(2.4, 2.4), x);
+        canvas.drawLine(c + const Offset(-2.4, 2.4), c + const Offset(2.4, -2.4), x);
+      case StationTone.refund:
+        final rect = Rect.fromCircle(center: c, radius: 4.8);
+        final rp = Paint()
+          ..color = AppColors.onLacquerMuted
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.4
+          ..strokeCap = StrokeCap.round;
+        for (var s = 0; s < 8; s++) {
+          canvas.drawArc(rect, s * math.pi / 4 + 0.16, math.pi / 4 - 0.32, false, rp);
+        }
     }
   }
 

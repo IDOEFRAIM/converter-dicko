@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_surfaces.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/money.dart';
 import '../../../shared/widgets/empty_state.dart';
@@ -114,28 +115,39 @@ class _PoolTile extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.sm),
         padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: AppColors.outline),
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        ),
-        child: Row(
+        decoration: AppSurfaces.paper(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Code ${pool.code}', style: AppTypography.bodyStrong),
-                  Text(
-                    '${Money(pool.currentAmountXof, AppCurrency.xof).formattedWithCurrency()} / '
-                    '${Money(pool.targetAmountXof, AppCurrency.xof).formattedWithCurrency()} · '
-                    '${pool.participantCount} participant(s)',
-                    style: AppTypography.caption,
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Code ${pool.code}', style: AppTypography.bodyStrong),
+                      Text(
+                        '${Money(pool.currentAmountXof, AppCurrency.xof).formattedWithCurrency()} / '
+                        '${Money(pool.targetAmountXof, AppCurrency.xof).formattedWithCurrency()} · '
+                        '${pool.participantCount} participant(s)',
+                        style: AppTypography.caption,
+                      ),
+                    ],
                   ),
-                ],
+                ),
+                StatusBadge(status: pool.status.code),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+              child: LinearProgressIndicator(
+                value: pool.progress,
+                minHeight: 3,
+                backgroundColor: AppColors.paperEdge,
+                valueColor: const AlwaysStoppedAnimation(AppColors.keyline),
               ),
             ),
-            StatusBadge(status: pool.status.code),
           ],
         ),
       ),

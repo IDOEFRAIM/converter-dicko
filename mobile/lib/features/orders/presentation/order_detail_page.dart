@@ -10,11 +10,11 @@ import '../../../shared/models/money.dart';
 import '../../../shared/utils/file_share.dart';
 import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/corridor.dart';
-import '../../../shared/widgets/grain.dart';
 import '../../../shared/widgets/error_state.dart';
+import '../../../shared/widgets/grain.dart';
 import '../../../shared/widgets/loading_view.dart';
-import '../../../shared/widgets/money_display.dart';
 import '../../../shared/widgets/status_badge.dart';
+import '../../../shared/widgets/transfer_ticket.dart';
 import '../application/order_detail_controller.dart';
 import '../data/order_api.dart';
 import '../models/order_models.dart';
@@ -104,13 +104,11 @@ class _OrderDetailView extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 children: [
-                  Text('#${order.reference}', style: AppTypography.eyebrow),
-                  const SizedBox(height: AppSpacing.sm),
                   const Corridor(level: CorridorLevel.compact),
                   const SizedBox(height: AppSpacing.lg),
                   _buildStatusPanel(order),
                   const SizedBox(height: AppSpacing.lg),
-                  _buildAmountFlow(context, order),
+                  _buildAmountFlow(order),
                   const SizedBox(height: AppSpacing.lg),
                   if (order.status == OrderStatus.awaitingPayment) _buildAwaitingPaymentActions(context, controller),
                   if (order.status == OrderStatus.completed) _buildReceiptPanel(context, controller),
@@ -152,39 +150,15 @@ class _OrderDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildAmountFlow(BuildContext context, OrderDetail order) {
-    return Column(
-      children: [
-        Column(
-          children: [
-            Text('VOUS ENVOYEZ', style: AppTypography.eyebrow),
-            const SizedBox(height: AppSpacing.xs),
-            MoneyDisplay(money: Money(order.amountXof, AppCurrency.xof), size: MoneyDisplaySize.large),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Frais ', style: AppTypography.caption),
-            Text(Money(order.feeXof, AppCurrency.xof).formattedWithCurrency(), style: AppTypography.bodyStrong),
-            Text('  ·  Taux ', style: AppTypography.caption),
-            Text('1 CNY = ${order.customerRate} XOF', style: AppTypography.bodyStrong),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Column(
-          children: [
-            Text('LE BENEFICIAIRE RECOIT', style: AppTypography.eyebrow),
-            const SizedBox(height: AppSpacing.xs),
-            MoneyDisplay(
-              money: Money(order.amountCny, AppCurrency.cny),
-              size: MoneyDisplaySize.large,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ],
-        ),
+  Widget _buildAmountFlow(OrderDetail order) {
+    return TransferTicket(
+      sendAmount: Money(order.amountXof, AppCurrency.xof),
+      receiveAmount: Money(order.amountCny, AppCurrency.cny),
+      rows: [
+        TicketRow('Taux', '1 CNY = ${order.customerRate} XOF'),
+        TicketRow('Frais', Money(order.feeXof, AppCurrency.xof).formattedWithCurrency()),
       ],
+      serial: order.reference,
     );
   }
 

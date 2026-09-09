@@ -3,14 +3,15 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../../core/auth/auth_session.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_surfaces.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/theme/experience_theme.dart';
 import '../../../shared/models/money.dart';
 import '../../../shared/utils/date_formatting.dart';
+import '../../../shared/widgets/collection_gauge.dart';
 import '../../../shared/widgets/error_state.dart';
+import '../../../shared/widgets/grain.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/primary_action.dart';
 import '../../../shared/widgets/status_badge.dart';
@@ -73,8 +74,6 @@ class _PoolDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<PoolDetailController>();
-    final profile = context.watch<AuthSession>().experienceProfile;
-    final gradient = ExperiencePalette.gradientFor(profile);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Ruee collective')),
@@ -97,9 +96,13 @@ class _PoolDetailView extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 children: [
-                  _ThermometerCard(pool: pool, gradient: gradient, onShare: () => _share(pool)),
+                  _ThermometerCard(
+                    pool: pool,
+                    participants: controller.participants,
+                    onShare: () => _share(pool),
+                  ),
                   const SizedBox(height: AppSpacing.lg),
-                  if (pool.status == PoolStatus.succeeded) _SuccessBanner(pool: pool, gradient: gradient),
+                  if (pool.status == PoolStatus.succeeded) _SuccessBanner(pool: pool),
                   if (pool.status == PoolStatus.expired || pool.status == PoolStatus.cancelled)
                     _ClosedBanner(pool: pool),
                   const SizedBox(height: AppSpacing.lg),
@@ -120,60 +123,94 @@ class _PoolDetailView extends StatelessWidget {
 
 class _ThermometerCard extends StatelessWidget {
   final Pool pool;
-  final ExperienceGradient gradient;
+  final List<PoolParticipant> participants;
   final VoidCallback onShare;
 
-  const _ThermometerCard({required this.pool, required this.gradient, required this.onShare});
+  const _ThermometerCard({required this.pool, required this.participants, required this.onShare});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(gradient: gradient.gradient, borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('CODE ${pool.code}', style: AppTypography.eyebrow.copyWith(color: gradient.foreground)),
-              StatusBadge(status: pool.status.code),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            '${Money(pool.currentAmountXof, AppCurrency.xof).formattedWithCurrency()} / '
-            '${Money(pool.targetAmountXof, AppCurrency.xof).formattedWithCurrency()}',
-            style: AppTypography.metricLarge.copyWith(color: gradient.foreground),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
-            child: LinearProgressIndicator(
-              value: pool.progress,
-              minHeight: 10,
-              backgroundColor: gradient.foreground.withValues(alpha: 0.25),
-              valueColor: AlwaysStoppedAnimation(gradient.foreground),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            pool.isActive
-                ? 'Expire le ${DateFormatting.dayTime(pool.expiresAt)}'
-                : 'Cloturee le ${DateFormatting.dayTime(pool.succeededAt ?? pool.expiredAt ?? pool.cancelledAt ?? pool.expiresAt)}',
-            style: AppTypography.caption.copyWith(color: gradient.foreground.withValues(alpha: 0.85)),
-          ),
-          if (pool.isActive) ...[
-            const SizedBox(height: AppSpacing.md),
-            OutlinedButton.icon(
-              onPressed: onShare,
-              icon: Icon(Icons.share_outlined, color: gradient.foreground),
-              label: Text('Inviter des amis', style: TextStyle(color: gradient.foreground)),
-              style: OutlinedButton.styleFrom(side: BorderSide(color: gradient.foreground.withValues(alpha: 0.6))),
+    final succeeded = pool.status == PoolStatus.succeeded;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: AppSurfaces.lacquer(),
+        child: Stack(
+          children: [
+            const Positioned.fill(child: LedgerGrain(opacity: 0.05)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('CODE ${pool.code}',
+                        style: AppTypography.eyebrow.copyWith(color: AppColors.keyline)),
+                    StatusBadge(status: pool.status.code),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Center(
+                  child: CollectionGauge(
+                    progress: pool.progress,
+                    currentLabel: Money(pool.currentAmountXof, AppCurrency.xof).formattedWithCurrency(),
+                    targetLabel: Money(pool.targetAmountXof, AppCurrency.xof).formattedWithCurrency(),
+                    succeeded: succeeded,
+                  ),
+                ),
+                if (pool.isActive) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Center(
+                    child: Text(
+                      'Recompense a l\'objectif : -${pool.rewardMarginReductionPercentage} pts de marge',
+                      textAlign: TextAlign.center,
+                      style: AppTypography.caption.copyWith(color: AppColors.keyline, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.md),
+                Divider(color: AppColors.onLacquer.withValues(alpha: 0.12), height: 1),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    ParticipantMonograms(
+                      names: participants.map((p) => p.firstName).toList(growable: false),
+                      foreground: AppColors.onLacquer,
+                      background: AppColors.lacquerEdge,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        '${pool.participantCount} participant(s)',
+                        style: AppTypography.caption.copyWith(color: AppColors.onLacquerMuted),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  pool.isActive
+                      ? 'Expire le ${DateFormatting.dayTime(pool.expiresAt)}'
+                      : 'Cloturee le ${DateFormatting.dayTime(pool.succeededAt ?? pool.expiredAt ?? pool.cancelledAt ?? pool.expiresAt)}',
+                  style: AppTypography.caption.copyWith(color: AppColors.onLacquerMuted),
+                ),
+                if (pool.isActive) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  OutlinedButton.icon(
+                    onPressed: onShare,
+                    icon: const Icon(Icons.share_outlined, color: AppColors.keyline),
+                    label: const Text('Inviter des amis', style: TextStyle(color: AppColors.keyline)),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: AppColors.keyline.withValues(alpha: 0.6)),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -181,30 +218,34 @@ class _ThermometerCard extends StatelessWidget {
 
 class _SuccessBanner extends StatelessWidget {
   final Pool pool;
-  final ExperienceGradient gradient;
 
-  const _SuccessBanner({required this.pool, required this.gradient});
+  const _SuccessBanner({required this.pool});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.positiveSurface,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.celebration_outlined, color: AppColors.positive),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              'Objectif atteint ! Vous beneficiez de -${pool.rewardMarginReductionPercentage} points de marge sur '
-              'votre prochain transfert.',
-              style: AppTypography.body.copyWith(color: AppColors.positive),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: AppSurfaces.lacquer(),
+        child: Stack(
+          children: [
+            const Positioned.fill(child: LedgerGrain(opacity: 0.06)),
+            Row(
+              children: [
+                const PoolSeal(size: 40),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    'Objectif atteint ! -${pool.rewardMarginReductionPercentage} points de marge sur '
+                    'ton prochain transfert.',
+                    style: AppTypography.body.copyWith(color: AppColors.onLacquer),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -240,17 +281,14 @@ class _ParticipantTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: AppColors.outline),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-      ),
+      decoration: AppSurfaces.paper(),
       child: Row(
         children: [
-          CircleAvatar(
-            backgroundColor: AppColors.ivoryDim,
-            foregroundColor: Theme.of(context).colorScheme.primary,
-            child: Text(participant.firstName.isEmpty ? '?' : participant.firstName[0].toUpperCase()),
+          Monogram(
+            name: participant.firstName,
+            size: 40,
+            foreground: Theme.of(context).colorScheme.primary,
+            background: AppColors.ivoryDim,
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
