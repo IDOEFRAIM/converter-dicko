@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/utils/date_formatting.dart';
-import '../../../shared/widgets/corridor.dart';
+import '../../../shared/widgets/corridor_timeline.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../application/order_tracking_controller.dart';
 import '../data/order_api.dart';
+import '../models/order_models.dart';
 import '../models/tracking_models.dart';
 
-/// Timeline verticale du transfert (mission section 25) — utilise
+/// Suivi du transfert (mission section 25) — la timeline est tracee *le long
+/// du corridor* (langage de design "Le Comptoir", Lot C). On utilise
 /// exclusivement `event.code` (jamais un `label` backend brut), jamais une
-/// machine d'etat independante.
+/// machine d'etat independante : [CorridorTimeline] n'est qu'une vue.
 class OrderTrackingPage extends StatelessWidget {
   final String orderId;
 
@@ -31,6 +32,13 @@ class OrderTrackingPage extends StatelessWidget {
 
 class _OrderTrackingView extends StatelessWidget {
   const _OrderTrackingView();
+
+  StationTone _toneFor(TrackingEvent event, bool isCurrent) {
+    if (event.code.isNegative) return StationTone.negative;
+    if (event.code.isRefund) return StationTone.refund;
+    if (isCurrent) return StationTone.current;
+    return StationTone.done;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,91 +68,37 @@ class _OrderTrackingView extends StatelessWidget {
                 onRetry: controller.load,
               );
             }
-            return ListView(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              children: [
-                const Corridor(level: CorridorLevel.compact),
-                const SizedBox(height: AppSpacing.lg),
-                if (controller.lastUpdatedAt != null)
-                  Text(
-                    'Derniere mise a jour affichee : ${DateFormatting.dayTime(controller.lastUpdatedAt!.toUtc())}',
-                    style: AppTypography.caption,
+
+            final stations = [
+              for (var i = 0; i < tracking.timeline.length; i++)
+                CorridorStation(
+                  label: tracking.timeline[i].code.label,
+                  timestamp: DateFormatting.dayTime(tracking.timeline[i].occurredAt),
+                  tone: _toneFor(tracking.timeline[i], controller.isCurrent(tracking.timeline[i], i)),
+                ),
+            ];
+
+            return RefreshIndicator(
+              onRefresh: controller.load,
+              child: ListView(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  CorridorTimeline(
+                    stations: stations,
+                    reachedDestination: tracking.currentStatus == OrderStatus.completed,
                   ),
-                const SizedBox(height: AppSpacing.lg),
-                for (var i = 0; i < tracking.timeline.length; i++)
-                  _TimelineTile(
-                    event: tracking.timeline[i],
-                    isCurrent: controller.isCurrent(tracking.timeline[i], i),
-                    isLast: i == tracking.timeline.length - 1,
-                  ),
-              ],
+                  const SizedBox(height: AppSpacing.md),
+                  if (controller.lastUpdatedAt != null)
+                    Text(
+                      'Derniere mise a jour affichee : ${DateFormatting.dayTime(controller.lastUpdatedAt!.toUtc())}',
+                      style: AppTypography.caption,
+                    ),
+                ],
+              ),
             );
           },
         ),
-      ),
-    );
-  }
-}
-
-class _TimelineTile extends StatelessWidget {
-  final TrackingEvent event;
-  final bool isCurrent;
-  final bool isLast;
-
-  const _TimelineTile({required this.event, required this.isCurrent, required this.isLast});
-
-  @override
-  Widget build(BuildContext context) {
-    final isNegative = event.code.isNegative;
-    final isRefund = event.code.isRefund;
-
-    final Color dotColor;
-    final IconData icon;
-    if (isNegative) {
-      dotColor = AppColors.negative;
-      icon = Icons.error;
-    } else if (isRefund) {
-      dotColor = AppColors.inkFaint;
-      icon = Icons.undo;
-    } else if (isCurrent) {
-      dotColor = AppColors.ochre;
-      icon = Icons.sync;
-    } else {
-      dotColor = Theme.of(context).colorScheme.primary;
-      icon = Icons.check;
-    }
-
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(color: dotColor.withValues(alpha: isNegative || isCurrent || isRefund ? 1 : 0.15), shape: BoxShape.circle),
-                child: Icon(icon, size: 16, color: isNegative || isCurrent || isRefund ? Colors.white : dotColor),
-              ),
-              if (!isLast) Expanded(child: Container(width: 2, color: AppColors.outline)),
-            ],
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (isRefund)
-                    Text('REMBOURSEMENT', style: AppTypography.eyebrow.copyWith(color: AppColors.inkFaint)),
-                  Text(event.code.label, style: AppTypography.bodyStrong),
-                  Text(DateFormatting.dayTime(event.occurredAt), style: AppTypography.caption),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

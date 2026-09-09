@@ -1,5 +1,6 @@
 package com.converter.order.service;
 
+import com.converter.achievement.service.AchievementService;
 import com.converter.audit.domain.AuditAction;
 import com.converter.audit.service.AuditService;
 import com.converter.common.api.PageResponse;
@@ -76,6 +77,7 @@ public class OrderService {
     private final OwnershipService ownershipService;
     private final AuditService auditService;
     private final PoolService poolService;
+    private final AchievementService achievementService;
     private final Clock clock;
 
     public OrderService(OrderRepository orderRepository,
@@ -90,6 +92,7 @@ public class OrderService {
                         OwnershipService ownershipService,
                         AuditService auditService,
                         PoolService poolService,
+                        AchievementService achievementService,
                         Clock clock) {
         this.orderRepository = orderRepository;
         this.beneficiaryRepository = beneficiaryRepository;
@@ -103,6 +106,7 @@ public class OrderService {
         this.ownershipService = ownershipService;
         this.auditService = auditService;
         this.poolService = poolService;
+        this.achievementService = achievementService;
         this.clock = clock;
     }
 
@@ -339,6 +343,10 @@ public class OrderService {
         transition(order, OrderStatus.COMPLETED, actorId, null);
         orderRepository.save(order);
         auditService.record(actorId, null, AuditAction.ORDER_COMPLETED, "Order", orderId.toString(), null);
+        // Celebration d'un eventuel nouveau palier de badge (mission "differenciation
+        // marketing") -- effet de bord, jamais une condition de succes de la transition
+        // elle-meme (meme discipline que NotificationService, qui isole deja son ecriture).
+        achievementService.checkBadgeUnlock(order.getUserId());
     }
 
     /**

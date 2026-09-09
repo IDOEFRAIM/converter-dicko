@@ -16,6 +16,9 @@ enum NotificationKind {
   exchangeCancelled,
   orderExpired,
   rateAlertTriggered,
+  poolSucceeded,
+  poolExpired,
+  badgeUnlocked,
   unknown;
 
   static NotificationKind fromCode(String? code) {
@@ -42,6 +45,12 @@ enum NotificationKind {
         return NotificationKind.orderExpired;
       case 'RATE_ALERT_TRIGGERED':
         return NotificationKind.rateAlertTriggered;
+      case 'POOL_SUCCEEDED':
+        return NotificationKind.poolSucceeded;
+      case 'POOL_EXPIRED':
+        return NotificationKind.poolExpired;
+      case 'BADGE_UNLOCKED':
+        return NotificationKind.badgeUnlocked;
       default:
         return NotificationKind.unknown;
     }
@@ -60,6 +69,9 @@ enum NotificationKind {
         NotificationKind.exchangeCancelled => Icons.cancel_outlined,
         NotificationKind.orderExpired => Icons.timer_off_outlined,
         NotificationKind.rateAlertTriggered => Icons.notifications_active_outlined,
+        NotificationKind.poolSucceeded => Icons.celebration_outlined,
+        NotificationKind.poolExpired => Icons.hourglass_disabled_outlined,
+        NotificationKind.badgeUnlocked => Icons.military_tech_outlined,
         NotificationKind.unknown => Icons.notifications_outlined,
       };
 }

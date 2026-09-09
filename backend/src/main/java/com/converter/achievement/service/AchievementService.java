@@ -2,6 +2,8 @@ package com.converter.achievement.service;
 
 import com.converter.achievement.dto.AchievementSummaryResponse;
 import com.converter.common.exception.ResourceNotFoundException;
+import com.converter.notification.domain.NotificationType;
+import com.converter.notification.service.NotificationService;
 import com.converter.order.domain.OrderStatus;
 import com.converter.order.repository.OrderRepository;
 import com.converter.order.repository.OrderStatusAggregate;
@@ -10,6 +12,8 @@ import com.converter.pool.repository.PoolParticipantRepository;
 import com.converter.user.domain.ExperienceProfile;
 import com.converter.user.domain.User;
 import com.converter.user.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +44,8 @@ import java.util.UUID;
 @Service
 public class AchievementService {
 
+    private static final Logger log = LoggerFactory.getLogger(AchievementService.class);
+
     /** XP = nombre d'ordres COMPLETED * ce facteur — formule volontairement simple et transparente,
      * jamais une valeur mutable stockee separement (voir la Javadoc de classe). */
     private static final long XP_PER_COMPLETED_TRANSFER = 100;
@@ -63,13 +69,16 @@ public class AchievementService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final PoolParticipantRepository poolParticipantRepository;
+    private final NotificationService notificationService;
     private final Clock clock;
 
     public AchievementService(OrderRepository orderRepository, UserRepository userRepository,
-                              PoolParticipantRepository poolParticipantRepository, Clock clock) {
+                              PoolParticipantRepository poolParticipantRepository,
+                              NotificationService notificationService, Clock clock) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.poolParticipantRepository = poolParticipantRepository;
+        this.notificationService = notificationService;
         this.clock = clock;
     }
 
@@ -96,6 +105,57 @@ public class AchievementService {
                 poolsSucceededCount);
     }
 
+    /**
+     * Celebre le franchissement d'un nouveau palier de badge (mission "differenciation
+     * marketing" : le moment doit etre ressenti, pas seulement decouvert au prochain chargement
+     * de "Mes gains"). Appele par {@link com.converter.order.service.OrderService} juste apres
+     * qu'un ordre a transitionne vers {@code COMPLETED} <b>dans la meme transaction</b> — cet
+     * ordre est donc deja compte dans {@code completedCount} ; le palier "avant" se deduit par
+     * simple soustraction (un seul ordre vient de passer COMPLETED, jamais une deuxieme lecture a
+     * un instant different qui exposerait a une race).
+     *
+     * <p>PRO n'a jamais de badge ({@link #resolveBadgeProgress}) : ce mecanisme ne se declenche
+     * donc jamais pour ce profil, sans aucun cas particulier necessaire ici. Idempotent en
+     * pratique : si le palier n'a pas change (ex. 2e ordre alors que le prochain palier est a 5),
+     * aucune notification n'est creee.
+     *
+     * <p>Appele depuis la transaction de {@code OrderService#transitionToCompleted} : un incident
+     * ici (lecture, calcul) est absorbe (journalise) plutot que propage, pour ne jamais faire
+     * echouer la transition d'ordre elle-meme — meme discipline que {@code
+     * NotificationService#create}, dont l'ecriture est de toute façon deja isolee dans sa propre
+     * transaction {@code REQUIRES_NEW}.
+     */
+    @Transactional
+    public void checkBadgeUnlock(UUID userId) {
+        try {
+            User user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+                return;
+            }
+            ExperienceProfile profile = user.getExperienceProfile();
+            if (profile == ExperienceProfile.PRO) {
+                return;
+            }
+
+            List<OrderStatusAggregate> allTime = orderRepository.aggregateByStatus(userId, false, null, false, null);
+            OrderStatusAggregate completedAllTime = rowFor(allTime, OrderStatus.COMPLETED);
+            long completedCount = completedAllTime == null ? 0 : completedAllTime.count();
+            if (completedCount == 0) {
+                return;
+            }
+
+            BadgeProgress after = resolveBadgeProgress(profile, completedCount);
+            BadgeProgress before = resolveBadgeProgress(profile, completedCount - 1);
+            if (after.code() != null && !after.code().equals(before.code())) {
+                notificationService.create(userId, NotificationType.BADGE_UNLOCKED, "Nouveau rang debloque !",
+                        "Felicitations, tu es maintenant " + after.label() + " !");
+            }
+        } catch (RuntimeException ex) {
+            log.error("Echec de la verification de franchissement de palier de badge pour l'utilisateur {}",
+                    userId, ex);
+        }
+    }
+
     private AchievementSummaryResponse toResponse(ExperienceProfile profile, long completedCount,
                                                   BigDecimal totalAmountXof, BigDecimal currentMonthAmountXof,
                                                   long poolsSucceededCount) {
@@ -103,7 +163,7 @@ public class AchievementService {
         BadgeProgress progress = resolveBadgeProgress(profile, completedCount);
         return new AchievementSummaryResponse(profile, completedCount, totalAmountXof, currentMonthAmountXof,
                 poolsSucceededCount, xp, progress.code(), progress.label(), progress.nextLabel(),
-                progress.transfersUntilNext());
+                progress.transfersUntilNext(), progress.currentThreshold(), progress.nextThreshold());
     }
 
     /**
@@ -113,7 +173,7 @@ public class AchievementService {
      */
     static BadgeProgress resolveBadgeProgress(ExperienceProfile profile, long completedCount) {
         if (profile == ExperienceProfile.PRO) {
-            return new BadgeProgress(null, null, null, null);
+            return new BadgeProgress(null, null, null, null, null, null);
         }
 
         List<BadgeTier> tiers = profile == ExperienceProfile.STUDENT_MALE ? STUDENT_MALE_TIERS : STUDENT_FEMALE_TIERS;
@@ -133,7 +193,9 @@ public class AchievementService {
                 current == null ? null : current.code(),
                 current == null ? null : current.label(),
                 next == null ? null : next.label(),
-                transfersUntilNext);
+                transfersUntilNext,
+                current == null ? null : current.threshold(),
+                next == null ? null : next.threshold());
     }
 
     private static OrderStatusAggregate rowFor(List<OrderStatusAggregate> rows, OrderStatus status) {
@@ -145,6 +207,7 @@ public class AchievementService {
     }
 
     /** Resultat pur de {@link #resolveBadgeProgress} — jamais expose directement, voir {@link #toResponse}. */
-    record BadgeProgress(String code, String label, String nextLabel, Long transfersUntilNext) {
+    record BadgeProgress(String code, String label, String nextLabel, Long transfersUntilNext,
+                         Long currentThreshold, Long nextThreshold) {
     }
 }

@@ -22,6 +22,13 @@ class AchievementSummary {
   final String? nextBadgeLabel;
   final int? transfersUntilNextBadge;
 
+  /// Bornes (nombre de transferts COMPLETED) du palier courant et du suivant —
+  /// pour tracer une progression honnete dans le rang sans repliquer le
+  /// bareme cote client. `null` pour PRO / aucun badge, et
+  /// `nextBadgeThreshold` `null` au palier maximal.
+  final int? currentBadgeThreshold;
+  final int? nextBadgeThreshold;
+
   const AchievementSummary({
     required this.experienceProfile,
     required this.completedTransferCount,
@@ -33,9 +40,22 @@ class AchievementSummary {
     required this.badgeLabel,
     required this.nextBadgeLabel,
     required this.transfersUntilNextBadge,
+    required this.currentBadgeThreshold,
+    required this.nextBadgeThreshold,
   });
 
   bool get hasBadge => badgeLabel != null;
+
+  /// Avancement 0..1 dans le rang courant vers le suivant. `null` si non
+  /// applicable (PRO / aucun transfert) ; `1.0` au palier maximal.
+  double? get tierProgress {
+    if (!hasBadge) return null;
+    if (nextBadgeThreshold == null) return 1;
+    final floor = currentBadgeThreshold ?? 0;
+    final span = nextBadgeThreshold! - floor;
+    if (span <= 0) return 1;
+    return ((completedTransferCount - floor) / span).clamp(0.0, 1.0);
+  }
 
   factory AchievementSummary.fromJson(Map<String, dynamic> json) {
     return AchievementSummary(
@@ -49,6 +69,8 @@ class AchievementSummary {
       badgeLabel: json['badgeLabel'] as String?,
       nextBadgeLabel: json['nextBadgeLabel'] as String?,
       transfersUntilNextBadge: json['transfersUntilNextBadge'] as int?,
+      currentBadgeThreshold: json['currentBadgeThreshold'] as int?,
+      nextBadgeThreshold: json['nextBadgeThreshold'] as int?,
     );
   }
 }

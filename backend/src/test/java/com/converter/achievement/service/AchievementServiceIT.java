@@ -1,6 +1,9 @@
 package com.converter.achievement.service;
 
 import com.converter.achievement.dto.AchievementSummaryResponse;
+import com.converter.notification.domain.Notification;
+import com.converter.notification.domain.NotificationType;
+import com.converter.notification.repository.NotificationRepository;
 import com.converter.order.dto.OrderDetailResponse;
 import com.converter.quote.dto.QuoteResponse;
 import com.converter.support.AbstractOrderPipelineIT;
@@ -10,7 +13,9 @@ import com.converter.user.domain.User;
 import com.converter.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,6 +32,9 @@ class AchievementServiceIT extends AbstractOrderPipelineIT {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private NotificationRepository notificationRepository;
+
     private User withProfile(User user, ExperienceProfile profile) {
         user.changeExperienceProfile(profile);
         return userRepository.saveAndFlush(user);
@@ -37,6 +45,13 @@ class AchievementServiceIT extends AbstractOrderPipelineIT {
         OrderDetailResponse order = createOrder(userToken, quote.id(), alipayBeneficiary());
         return completeOrder(adminToken, userToken, order.id(), "100000", "ref-" + UUID.randomUUID(),
                 "settlement-" + UUID.randomUUID());
+    }
+
+    private List<Notification> badgeUnlockNotifications(UUID userId) {
+        return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId, Pageable.unpaged())
+                .getContent().stream()
+                .filter(notification -> notification.getType() == NotificationType.BADGE_UNLOCKED)
+                .toList();
     }
 
     @Test
@@ -126,5 +141,54 @@ class AchievementServiceIT extends AbstractOrderPipelineIT {
 
         assertThat(achievementService.summary(userA.getId()).completedTransferCount()).isEqualTo(1);
         assertThat(achievementService.summary(userB.getId()).completedTransferCount()).isZero();
+    }
+
+    /**
+     * Mission "differenciation marketing" : celebrer le franchissement d'un palier au moment ou
+     * il se produit (voir {@link AchievementService#checkBadgeUnlock}), pas seulement l'afficher
+     * au prochain chargement de "Mes gains". Declenche depuis {@code OrderService#transitionToCompleted}
+     * : {@code completeOneOrder} suffit donc a l'exercer, sans appel direct.
+     */
+    @Test
+    void checkBadgeUnlock_firesNotification_onFirstCompletedOrder() {
+        String admin = adminToken();
+        resetMarginToZero();
+        publishRate(admin, "85.000000");
+        depositCny(admin, "1000000");
+        User user = withProfile(createUser(RoleCode.USER), ExperienceProfile.STUDENT_MALE);
+
+        completeOneOrder(admin, tokenFor(user));
+
+        List<Notification> notifications = badgeUnlockNotifications(user.getId());
+        assertThat(notifications).hasSize(1);
+        assertThat(notifications.get(0).getMessage()).contains("Guerrier");
+    }
+
+    @Test
+    void checkBadgeUnlock_doesNotFireAgain_whileStillWithinTheSameTier() {
+        String admin = adminToken();
+        resetMarginToZero();
+        publishRate(admin, "85.000000");
+        depositCny(admin, "1000000");
+        User user = withProfile(createUser(RoleCode.USER), ExperienceProfile.STUDENT_MALE);
+        String userToken = tokenFor(user);
+
+        completeOneOrder(admin, userToken); // 1er ordre -> franchit GUERRIER
+        completeOneOrder(admin, userToken); // 2e ordre -> reste GUERRIER (prochain palier a 5)
+
+        assertThat(badgeUnlockNotifications(user.getId())).hasSize(1);
+    }
+
+    @Test
+    void checkBadgeUnlock_neverFiresForPro() {
+        String admin = adminToken();
+        resetMarginToZero();
+        publishRate(admin, "85.000000");
+        depositCny(admin, "1000000");
+        User user = createUser(RoleCode.USER); // PRO par defaut
+
+        completeOneOrder(admin, tokenFor(user));
+
+        assertThat(badgeUnlockNotifications(user.getId())).isEmpty();
     }
 }

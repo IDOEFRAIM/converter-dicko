@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/achievements/presentation/badge_unlock_overlay.dart';
+
 /// Coquille de navigation persistante — 4 destinations principales +
 /// "Plus" pour les fonctionnalites secondaires (mission section 19).
 /// Chaque branche garde sa propre pile de navigation (`StatefulShellRoute`),
@@ -13,7 +15,9 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: navigationShell,
+      // Enveloppe unique pour l'overlay "nouveau rang debloque" : il doit
+      // pouvoir apparaitre au-dessus de n'importe quel onglet.
+      body: BadgeCelebrationHost(child: navigationShell),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (index) => navigationShell.goBranch(

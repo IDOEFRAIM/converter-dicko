@@ -33,8 +33,11 @@ abstract final class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.ivory,
-      fontFamily: null,
+      // Repli pour tout texte hors AppTypography (rare) — suit la famille de
+      // titres/corps. `null` = police systeme tant que Lot E n'est pas active.
+      fontFamily: AppTypography.displayFontFamily,
       textTheme: TextTheme(
+        displaySmall: AppTypography.displayXl,
         headlineSmall: AppTypography.titleLarge(primary),
         titleMedium: AppTypography.titleMedium,
         bodyMedium: AppTypography.body,
@@ -50,8 +53,12 @@ abstract final class AppTheme {
         titleTextStyle: null,
       ),
       cardTheme: CardThemeData(
-        color: AppColors.surface,
-        elevation: 0,
+        // Base "papier" chaude plutot que blanc pur + une ombre basse tres
+        // douce : la profondeur ne vient plus du seul filet gris.
+        color: AppColors.paper,
+        elevation: 0.5,
+        shadowColor: AppColors.navy.withValues(alpha: 0.12),
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           side: const BorderSide(color: AppColors.outline),

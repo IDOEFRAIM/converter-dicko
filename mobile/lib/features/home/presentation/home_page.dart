@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../core/auth/auth_session.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_surfaces.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/experience_theme.dart';
 import '../../../shared/models/current_user.dart';
@@ -12,10 +13,13 @@ import '../../../shared/models/money.dart';
 import '../../../shared/utils/async_value.dart';
 import '../../../shared/utils/date_formatting.dart';
 import '../../../shared/widgets/corridor.dart';
+import '../../../shared/widgets/count_up_text.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_view.dart';
+import '../../../shared/widgets/pressable.dart';
 import '../../../shared/widgets/primary_action.dart';
+import '../../../shared/widgets/rank_seal.dart';
 import '../../../shared/widgets/rate_display.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../../shared/widgets/status_badge.dart';
@@ -280,49 +284,88 @@ class _AchievementsCard extends StatelessWidget {
       // Purement indicatif sur Home : un echec ici ne doit jamais bloquer le
       // reste de l'ecran (voir MyGainsPage pour un retry dedie).
       error: (_) => const SizedBox.shrink(),
-      data: (summary) {
-        final isPro = profile == ExperienceProfile.pro;
-        final gradient = isPro ? null : ExperiencePalette.gradientFor(profile);
-        final foreground = gradient?.foreground ?? Theme.of(context).colorScheme.primary;
+      data: (summary) => Pressable(
+        onTap: () => context.push('/home/gains'),
+        child: profile == ExperienceProfile.pro ? _proStrip(context, summary) : _studentStrip(context, summary),
+      ),
+    );
+  }
 
-        return InkWell(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          onTap: () => context.push('/home/gains'),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(
-              color: isPro ? Colors.white : null,
-              gradient: gradient?.gradient,
-              border: isPro ? Border.all(color: AppColors.outline) : null,
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-            ),
-            child: Row(
+  /// PRO : bande sobre "papier" — volume du mois + nombre de transferts qui
+  /// s'incremente. Aucune fioriture (le serieux EST sa gamification).
+  Widget _proStrip(BuildContext context, AchievementSummary summary) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: AppSurfaces.paper(),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isPro ? 'VOLUME CE MOIS-CI' : (summary.badgeLabel ?? 'AUCUN BADGE ENCORE'),
-                        style: AppTypography.eyebrow.copyWith(color: isPro ? AppColors.inkMuted : foreground),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        isPro
-                            ? Money(summary.currentMonthAmountXofCompleted, AppCurrency.xof).formattedWithCurrency()
-                            : '${summary.xp} XP',
-                        style: AppTypography.titleMedium.copyWith(color: isPro ? AppColors.ink : foreground),
-                      ),
-                    ],
-                  ),
+                Text('VOLUME CE MOIS-CI', style: AppTypography.eyebrow),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  Money(summary.currentMonthAmountXofCompleted, AppCurrency.xof).formattedWithCurrency(),
+                  style: AppTypography.figureMedium,
                 ),
-                Icon(Icons.chevron_right, color: foreground.withValues(alpha: isPro ? 1 : 0.85)),
+                const SizedBox(height: 2),
+                CountUpText(
+                  value: summary.completedTransferCount.toDouble(),
+                  formatter: (v) => '${v.round()} transfert(s) termine(s)',
+                  style: AppTypography.caption,
+                ),
               ],
             ),
           ),
-        );
-      },
+          const Icon(Icons.chevron_right, color: AppColors.inkMuted),
+        ],
+      ),
+    );
+  }
+
+  /// STUDENT_* : bande "laque" — sceau du rang, XP qui grimpe, distance au
+  /// prochain rang.
+  Widget _studentStrip(BuildContext context, AchievementSummary summary) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: AppSurfaces.lacquer(),
+        child: Row(
+          children: [
+            RankSeal(profile: profile, initial: summary.badgeLabel, size: 46, locked: !summary.hasBadge),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    summary.badgeLabel ?? 'AUCUN RANG ENCORE',
+                    style: AppTypography.eyebrow.copyWith(color: AppColors.keyline),
+                  ),
+                  const SizedBox(height: 2),
+                  CountUpText(
+                    value: summary.xp.toDouble(),
+                    formatter: (v) => '${v.round()} XP',
+                    style: AppTypography.figureMedium.copyWith(color: AppColors.onLacquer),
+                  ),
+                  if (summary.nextBadgeLabel != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      'Encore ${summary.transfersUntilNextBadge} pour ${summary.nextBadgeLabel}',
+                      style: AppTypography.caption.copyWith(color: AppColors.onLacquerMuted),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.onLacquerMuted),
+          ],
+        ),
+      ),
     );
   }
 }

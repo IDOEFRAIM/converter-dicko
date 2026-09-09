@@ -15,6 +15,12 @@ import java.math.BigDecimal;
  * voir la Javadoc de classe de {@code AchievementService}) et pour un profil STUDENT_* qui n'a
  * encore aucun ordre {@code COMPLETED}. {@code nextBadgeLabel}/{@code transfersUntilNextBadge}
  * sont {@code null} des que le palier maximal est atteint, ou pour {@code PRO}.
+ *
+ * <p>{@code currentBadgeThreshold}/{@code nextBadgeThreshold} : nombre d'ordres {@code COMPLETED}
+ * qui borne le palier courant et le suivant — permet a l'affichage mobile de tracer une
+ * progression honnete ("X sur N transferts dans ce rang") sans repliquer le bareme cote client.
+ * {@code null} avec la meme logique que ci-dessus (PRO, aucun badge, ou palier maximal atteint
+ * pour {@code nextBadgeThreshold}).
  */
 public record AchievementSummaryResponse(
         ExperienceProfile experienceProfile,
@@ -26,6 +32,8 @@ public record AchievementSummaryResponse(
         String badgeCode,
         String badgeLabel,
         String nextBadgeLabel,
-        Long transfersUntilNextBadge
+        Long transfersUntilNextBadge,
+        Long currentBadgeThreshold,
+        Long nextBadgeThreshold
 ) {
 }

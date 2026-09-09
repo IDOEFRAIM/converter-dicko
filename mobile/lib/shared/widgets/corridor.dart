@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../core/auth/auth_session.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import 'corridor_flow.dart';
+import 'grain.dart';
 
 /// Niveau de presence visuelle du corridor — ne jamais utiliser [hero]
 /// plusieurs fois sur le meme ecran (mission section 8 : sobre, pas repete
@@ -33,18 +35,36 @@ class Corridor extends StatelessWidget {
   Widget build(BuildContext context) {
     if (level == CorridorLevel.hero) {
       final experienceGradient = context.watch<AuthSession>().experienceGradient;
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: experienceGradient.gradient,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.lg),
-          child: _row(
-            flagSize: 26,
-            labelSize: 15,
-            lineColor: experienceGradient.foreground,
-            labelColor: experienceGradient.foreground,
+      final fg = experienceGradient.foreground;
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: experienceGradient.gradient,
+            border: Border.all(color: AppColors.keyline.withValues(alpha: 0.45)),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          ),
+          child: Stack(
+            children: [
+              Positioned.fill(child: LedgerGrain(color: fg, opacity: 0.06)),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Extremites nommees, sans ligne : le fil anime la relie.
+                    Row(
+                      children: [
+                        Flexible(child: _endpoint('🇧🇫', leftLabel, fg)),
+                        const Spacer(),
+                        Flexible(child: _endpoint('🇨🇳', rightLabel, fg, trailing: true)),
+                      ],
+                    ),
+                    CorridorFlow(color: fg, height: 56),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -57,6 +77,26 @@ class Corridor extends StatelessWidget {
       labelSize: labelSize,
       lineColor: Theme.of(context).colorScheme.primary,
       labelColor: AppColors.ink,
+    );
+  }
+
+  /// Extremite nommee du corridor hero (drapeau + libelle).
+  Widget _endpoint(String flag, String label, Color color, {bool trailing = false}) {
+    final children = <Widget>[
+      Text(flag, style: const TextStyle(fontSize: 22)),
+      const SizedBox(width: AppSpacing.xs),
+      Flexible(
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -0.2, color: color),
+        ),
+      ),
+    ];
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: trailing ? children.reversed.toList() : children,
     );
   }
 

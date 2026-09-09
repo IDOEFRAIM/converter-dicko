@@ -18,5 +18,9 @@ public enum NotificationType {
     /** L'objectif collectif d'une Ruee (mission "differenciation marketing", Lot 3) a ete atteint. */
     POOL_SUCCEEDED,
     /** Une Ruee a expire (J+timer) sans atteindre son objectif. */
-    POOL_EXPIRED
+    POOL_EXPIRED,
+    /** Un profil STUDENT_MALE/STUDENT_FEMALE vient de franchir un nouveau palier de badge
+     * (mission "differenciation marketing" : celebrer le moment, jamais seulement l'afficher au
+     * prochain chargement de "Mes gains") — jamais declenche pour PRO (aucun badge). */
+    BADGE_UNLOCKED
 }

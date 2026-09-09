@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../core/auth/auth_session.dart';
 import '../core/config/app_config.dart';
 import '../core/network/api_client.dart';
+import '../core/storage/celebrated_badges_store.dart';
 import '../core/theme/app_theme.dart';
+import '../features/achievements/application/badge_celebration_controller.dart';
 import '../features/achievements/data/achievement_api.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/business/data/business_api.dart';
@@ -58,12 +60,23 @@ class ConverterApp extends StatelessWidget {
         Provider<PreferredRateApi>(create: (context) => PreferredRateApi(context.read<ApiClient>())),
         Provider<AchievementApi>(create: (context) => AchievementApi(context.read<ApiClient>())),
         Provider<PoolApi>(create: (context) => PoolApi(context.read<ApiClient>())),
+        Provider<CelebratedBadgesStore>(create: (_) => const CelebratedBadgesStore()),
         ChangeNotifierProvider<HomeController>(
           create: (context) => HomeController(
             rateHistoryApi: context.read<RateHistoryApi>(),
             orderApi: context.read<OrderApi>(),
             supplierApi: context.read<SupplierApi>(),
             achievementApi: context.read<AchievementApi>(),
+          ),
+        ),
+        // Celebration "nouveau rang debloque" (mission "differenciation
+        // marketing") : global, comme HomeController — un franchissement de
+        // palier peut survenir apres n'importe quel parcours, pas seulement
+        // en revenant sur l'accueil.
+        ChangeNotifierProvider<BadgeCelebrationController>(
+          create: (context) => BadgeCelebrationController(
+            notificationApi: context.read<NotificationApi>(),
+            store: context.read<CelebratedBadgesStore>(),
           ),
         ),
       ],

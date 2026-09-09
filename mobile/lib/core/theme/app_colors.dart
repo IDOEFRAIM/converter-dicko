@@ -22,6 +22,31 @@ abstract final class AppColors {
   static const surface = Color(0xFFFFFFFF);
   static const outline = Color(0xFFE6E9F0);
 
+  // ---- Matiere "Registre" (langage de design "Le Comptoir", voir
+  // docs/MOBILE_DESIGN_LANGUAGE.md) ---------------------------------------
+  /// Base chaude des cartes — remplace le blanc pur, evoque le papier relie.
+  static const paper = Color(0xFFFBF8F1);
+  /// Regle "en creux" sur le papier (separateurs internes d'une carte).
+  static const paperEdge = Color(0xFFEDE7D9);
+  /// Surface premium (hero, rang debloque, recu) — navy laque profond.
+  static const lacquer = Color(0xFF10203F);
+  static const lacquerEdge = Color(0xFF24365C);
+  /// Filet d'or, un seul trait, jamais un aplat — laiton plus rare que l'ochre.
+  static const keyline = Color(0xFFC7A54B);
+  /// Textes / icones poses sur la laque.
+  static const onLacquer = Color(0xFFF2F1EA);
+  static const onLacquerMuted = Color(0xFF9FB0CE);
+  /// Accent "vivant" — reserve au taux qui bat, jamais un statut metier.
+  static const signal = Color(0xFF2FB8A6);
+  static const signalGlow = Color(0x332FB8A6);
+
+  static const lacquerGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [lacquerEdge, lacquer, Color(0xFF0A1730)],
+    stops: [0.0, 0.5, 1.0],
+  );
+
   // ---- Texte / neutres ----
   static const ink = Color(0xFF1A1C1E);
   static const inkMuted = Color(0xFF616161);

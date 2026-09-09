@@ -4,11 +4,13 @@ import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_surfaces.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/money.dart';
 import '../../../shared/utils/file_share.dart';
 import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/corridor.dart';
+import '../../../shared/widgets/grain.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/money_display.dart';
@@ -206,36 +208,63 @@ class _OrderDetailView extends StatelessWidget {
     );
   }
 
+  /// Recu "laque + or" (langage de design "Le Comptoir", Lot C) : le
+  /// justificatif d'un transfert termine se presente comme une piece scellee,
+  /// pas comme un bouton de telechargement gris.
   Widget _buildReceiptPanel(BuildContext context, OrderDetailController controller) {
-    return _panel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.receipt_long, color: Theme.of(context).colorScheme.primary, size: 18),
-              const SizedBox(width: AppSpacing.xs),
-              Text('JUSTIFICATIF', style: AppTypography.eyebrow),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text('Votre transfert est termine.', style: AppTypography.body.copyWith(color: AppColors.inkMuted)),
-          const SizedBox(height: AppSpacing.md),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: controller.downloadingReceipt ? null : () => _downloadReceipt(context, controller),
-              icon: controller.downloadingReceipt
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Icon(Icons.download_outlined, size: 18),
-              label: Text(controller.downloadingReceipt ? 'Preparation...' : 'Telecharger le justificatif'),
+    final reference = controller.order?.reference;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: AppSurfaces.lacquer(),
+        child: Stack(
+          children: [
+            const Positioned.fill(child: LedgerGrain(opacity: 0.06)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.workspace_premium_outlined, color: AppColors.keyline, size: 18),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text('JUSTIFICATIF OFFICIEL', style: AppTypography.eyebrow.copyWith(color: AppColors.keyline)),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  reference != null ? 'Transfert #$reference — termine' : 'Transfert termine',
+                  style: AppTypography.figureSmall.copyWith(color: AppColors.onLacquer),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Recu scelle, opposable a votre fournisseur.',
+                  style: AppTypography.body.copyWith(color: AppColors.onLacquerMuted),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.keyline,
+                      foregroundColor: AppColors.lacquer,
+                    ),
+                    onPressed: controller.downloadingReceipt ? null : () => _downloadReceipt(context, controller),
+                    icon: controller.downloadingReceipt
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.lacquer),
+                          )
+                        : const Icon(Icons.download_outlined, size: 18),
+                    label: Text(controller.downloadingReceipt ? 'Preparation...' : 'Telecharger le recu PDF'),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
