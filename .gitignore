@@ -38,7 +38,10 @@ yarn-error.log*
 Thumbs.db
 
 # ---- Données applicatives locales ----
-storage/
-uploads/
-logs/
+# Anchored: ces dossiers d'exécution vivent sous backend/. Un `storage/` non
+# ancré masquait aussi du CODE SOURCE (backend com.converter.storage,
+# mobile lib/core/storage) — jamais committé de ce fait.
+/backend/storage/
+/backend/uploads/
+/backend/logs/
 *.log
