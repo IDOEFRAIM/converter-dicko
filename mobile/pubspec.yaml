@@ -71,7 +71,7 @@ dependencies:
   # Generation de PDF cote client (mission "differenciation marketing" : le
   # "Rapport d'activite" du profil PRO) — pur Dart, aucune dependance native
   # supplementaire au-dela de ce package.
-  pdf: ^3.13.0
+  pdf: ^3.11.1
 
 dev_dependencies:
   flutter_test:
