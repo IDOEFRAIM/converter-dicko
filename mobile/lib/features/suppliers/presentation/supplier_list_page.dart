@@ -105,7 +105,7 @@ class _SupplierListView extends StatelessWidget {
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
         itemCount: suppliers.length,
-        separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+        separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
         itemBuilder: (context, index) => _SupplierTile(supplier: suppliers[index]),
       ),
     );

@@ -45,7 +45,7 @@ dependencies:
 
   # Stockage du jeton JWT dans le Keychain (iOS) / Keystore (Android) — jamais en
   # clair, contrairement au localStorage utilise cote web (section 15).
-  flutter_secure_storage: ^9.2.2
+  flutter_secure_storage: ^11.0.0
 
   # State management simple (ChangeNotifier + Provider/Consumer) : suffisant pour la
   # taille de l'application, pas de solution plus lourde (section 12).

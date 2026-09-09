@@ -58,7 +58,7 @@ class _OrderListView extends StatelessWidget {
               child: ListView.separated(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 itemCount: controller.orders.length,
-                separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+                separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
                 itemBuilder: (context, index) {
                   final order = controller.orders[index];
                   return InkWell(
