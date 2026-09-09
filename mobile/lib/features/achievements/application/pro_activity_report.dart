@@ -46,7 +46,7 @@ Future<Uint8List> buildProActivityReportPdf({
         if (completedTransfers.isEmpty)
           pw.Text('Aucun transfert termine pour le moment.')
         else
-          pw.Table.fromTextArray(
+          pw.TableHelper.fromTextArray(
             headers: const ['Reference', 'Date', 'Montant', 'Statut'],
             data: completedTransfers
                 .map((entry) => [

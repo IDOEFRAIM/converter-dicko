@@ -45,7 +45,7 @@ class ObjectiveDial extends StatelessWidget {
           CustomPaint(
             size: Size.square(size),
             painter: _ObjectiveDialPainter(
-              progress: progress == null ? null : progress!.clamp(0.0, 1.0).toDouble(),
+              progress: progress?.clamp(0.0, 1.0).toDouble(),
               track: track,
               fill: fill,
               tick: tick,

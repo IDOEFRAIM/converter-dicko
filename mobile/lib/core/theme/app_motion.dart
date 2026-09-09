@@ -1,5 +1,3 @@
-import 'package:flutter/animation.dart';
-import 'package:flutter/physics.dart';
 import 'package:flutter/widgets.dart';
 
 /// Vocabulaire de mouvement unique de l'app (langage de design "Le Comptoir",

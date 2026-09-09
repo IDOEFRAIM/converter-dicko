@@ -71,8 +71,8 @@ class _BadgeCelebrationHostState extends State<BadgeCelebrationHost> with Widget
       barrierLabel: 'Nouveau rang',
       barrierColor: Colors.black.withValues(alpha: 0.55),
       transitionDuration: const Duration(milliseconds: 260),
-      pageBuilder: (_, __, ___) => _BadgeUnlockDialog(notification: notification, profile: profile),
-      transitionBuilder: (_, animation, __, child) {
+      pageBuilder: (_, _, _) => _BadgeUnlockDialog(notification: notification, profile: profile),
+      transitionBuilder: (_, animation, _, child) {
         final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutBack);
         return FadeTransition(
           opacity: animation,

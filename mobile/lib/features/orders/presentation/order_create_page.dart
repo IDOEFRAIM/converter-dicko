@@ -226,19 +226,21 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
         style: AppTypography.caption,
       );
     }
-    return Column(
-      children: controller.suppliers
-          .map(
-            (supplier) => RadioListTile<String>(
-              contentPadding: EdgeInsets.zero,
-              value: supplier.id,
-              groupValue: controller.selectedSupplierId,
-              onChanged: (value) => controller.selectSupplier(value!),
-              title: Text(supplier.displayName, style: AppTypography.bodyStrong),
-              subtitle: Text('${supplier.type.label} · ${supplier.maskedAccountNumber}'),
-            ),
-          )
-          .toList(growable: false),
+    return RadioGroup<String>(
+      groupValue: controller.selectedSupplierId,
+      onChanged: (value) => controller.selectSupplier(value!),
+      child: Column(
+        children: controller.suppliers
+            .map(
+              (supplier) => RadioListTile<String>(
+                contentPadding: EdgeInsets.zero,
+                value: supplier.id,
+                title: Text(supplier.displayName, style: AppTypography.bodyStrong),
+                subtitle: Text('${supplier.type.label} · ${supplier.maskedAccountNumber}'),
+              ),
+            )
+            .toList(growable: false),
+      ),
     );
   }
 

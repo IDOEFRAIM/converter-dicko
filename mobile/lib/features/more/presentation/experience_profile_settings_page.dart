@@ -29,7 +29,7 @@ class ExperienceProfileSettingsPage extends StatefulWidget {
 }
 
 class _ExperienceProfileSettingsPageState extends State<ExperienceProfileSettingsPage> {
-  late ExperienceProfile _initial = context.read<AuthSession>().experienceProfile;
+  late final ExperienceProfile _initial = context.read<AuthSession>().experienceProfile;
   late ExperienceProfile _selected = _initial;
   bool _saving = false;
   String? _errorMessage;
