@@ -47,7 +47,8 @@ class MemoryBookStore {
     final dest = '${dir.path}/$orderId.jpg';
     await File(sourcePath).copy(dest);
 
-    final map = await readAll()..[orderId] = dest;
+    final map = await readAll();
+    map[orderId] = dest;
     await _storage.write(key: _key, value: jsonEncode(map));
     return dest;
   }
