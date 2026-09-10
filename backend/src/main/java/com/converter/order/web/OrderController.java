@@ -11,6 +11,8 @@ import com.converter.order.dto.OrderFeasibilityResponse;
 import com.converter.order.dto.OrderHistoryResponse;
 import com.converter.order.dto.OrderSummaryResponse;
 import com.converter.order.dto.OrderTrackingResponse;
+import com.converter.order.proforma.model.ProformaDocument;
+import com.converter.order.proforma.service.OrderProformaService;
 import com.converter.order.receipt.model.ReceiptDocument;
 import com.converter.order.receipt.service.OrderReceiptService;
 import com.converter.order.service.OrderHistoryService;
@@ -63,15 +65,17 @@ public class OrderController {
     private final OrderService orderService;
     private final OrderTrackingService orderTrackingService;
     private final OrderReceiptService orderReceiptService;
+    private final OrderProformaService orderProformaService;
     private final OrderHistoryService orderHistoryService;
     private final IdempotencyGuard idempotencyGuard;
 
     public OrderController(OrderService orderService, OrderTrackingService orderTrackingService,
-                           OrderReceiptService orderReceiptService, OrderHistoryService orderHistoryService,
-                           IdempotencyGuard idempotencyGuard) {
+                           OrderReceiptService orderReceiptService, OrderProformaService orderProformaService,
+                           OrderHistoryService orderHistoryService, IdempotencyGuard idempotencyGuard) {
         this.orderService = orderService;
         this.orderTrackingService = orderTrackingService;
         this.orderReceiptService = orderReceiptService;
+        this.orderProformaService = orderProformaService;
         this.orderHistoryService = orderHistoryService;
         this.idempotencyGuard = idempotencyGuard;
     }
@@ -170,6 +174,25 @@ public class OrderController {
             @PathVariable UUID id,
             @AuthenticatedUser CurrentUser currentUser) {
         ReceiptDocument document = orderReceiptService.generate(id, currentUser.getId());
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename(document.fileName(), StandardCharsets.UTF_8)
+                .build();
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .header("X-Content-Type-Options", "nosniff")
+                .body(document.content());
+    }
+
+    @GetMapping("/{id}/proforma")
+    @Operation(summary = "Facture proforma PDF d'un paiement fournisseur",
+            description = "Disponible quel que soit le statut de l'ordre (une proforma s'emet avant paiement), "
+                    + "mais uniquement pour un ordre vers un fournisseur enregistre. Piece descriptive sans "
+                    + "valeur d'acquittement -- aucun recalcul, aucune mutation.")
+    public ResponseEntity<byte[]> proforma(
+            @PathVariable UUID id,
+            @AuthenticatedUser CurrentUser currentUser) {
+        ProformaDocument document = orderProformaService.generate(id, currentUser.getId());
         ContentDisposition disposition = ContentDisposition.attachment()
                 .filename(document.fileName(), StandardCharsets.UTF_8)
                 .build();

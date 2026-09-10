@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/auth/auth_session.dart';
+import '../../../core/storage/memory_book_store.dart';
 import '../../../core/storage/pro_objective_store.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -43,6 +46,7 @@ class MyGainsPage extends StatelessWidget {
       create: (context) => MyGainsController(
         achievementApi: context.read<AchievementApi>(),
         orderApi: context.read<OrderApi>(),
+        memoryBook: context.read<MemoryBookStore>(),
       )..load(),
       child: const _MyGainsView(),
     );
@@ -80,8 +84,8 @@ class _MyGainsView extends StatelessWidget {
 
   String _historyTitle(ExperienceProfile profile) => switch (profile) {
         ExperienceProfile.pro => 'HISTORIQUE',
-        ExperienceProfile.studentMale => 'LIVRE DES GAINS',
-        ExperienceProfile.studentFemale => 'CARNET DE ROUTE',
+        ExperienceProfile.studentMale => 'REGISTRE DES OPERATIONS',
+        ExperienceProfile.studentFemale => 'REGISTRE DES OPERATIONS',
       };
 }
 
@@ -108,9 +112,7 @@ class _SummaryHero extends StatelessWidget {
       return _ProConsole(controller: controller);
     }
 
-    final subtitle = profile == ExperienceProfile.studentMale
-        ? 'Chaque transfert termine te rapproche du prochain rang.'
-        : 'Chaque transfert termine ecrit une nouvelle page de ton carnet.';
+    const subtitle = 'Chaque operation terminee te rapproche du palier suivant.';
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
@@ -124,7 +126,7 @@ class _SummaryHero extends StatelessWidget {
             Column(
               children: [
                 Text(
-                  summary.hasBadge ? 'TON RANG' : 'AUCUN RANG ENCORE',
+                  summary.hasBadge ? 'TON PALIER' : 'AUCUN PALIER ENCORE',
                   style: AppTypography.eyebrow.copyWith(color: AppColors.keyline),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -153,7 +155,7 @@ class _SummaryHero extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  summary.badgeLabel ?? 'A toi de jouer',
+                  summary.badgeLabel ?? 'Pas encore de palier',
                   textAlign: TextAlign.center,
                   style: AppTypography.metricMedium.copyWith(color: AppColors.onLacquer),
                 ),
@@ -166,7 +168,7 @@ class _SummaryHero extends StatelessWidget {
                 if (summary.nextBadgeLabel != null) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Text(
-                    'Encore ${summary.transfersUntilNextBadge} transfert(s) pour devenir ${summary.nextBadgeLabel}',
+                    'Encore ${summary.transfersUntilNextBadge} operation(s) pour le palier ${summary.nextBadgeLabel}',
                     textAlign: TextAlign.center,
                     style: AppTypography.caption.copyWith(color: AppColors.keyline, fontWeight: FontWeight.w800),
                   ),
@@ -174,7 +176,7 @@ class _SummaryHero extends StatelessWidget {
                 if (summary.poolsSucceededCount > 0) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Text(
-                    '${summary.poolsSucceededCount} Ruee(s) collective(s) remportee(s)',
+                    '${summary.poolsSucceededCount} Ruee(s) collective(s) reussie(s)',
                     textAlign: TextAlign.center,
                     style: AppTypography.caption.copyWith(color: AppColors.onLacquer, fontWeight: FontWeight.w700),
                   ),
@@ -569,15 +571,20 @@ class _HistorySection extends StatelessWidget {
       return Column(children: entries.map((entry) => _HistoryTile(entry: entry)).toList(growable: false));
     }
 
-    // "Livre des Gains"/"Carnet de route" (STUDENT_MALE/FEMALE) : chaque
-    // transfert termine devient une "page" numerotee — la plus recente porte
-    // le numero le plus eleve (derniere page ecrite), jamais un renversement
-    // de l'ordre reel deja renvoye par le backend (entries[0] = le plus recent).
+    // "Registre des operations" (profils non-PRO) : chaque transfert termine
+    // devient une operation numerotee — la plus recente porte le numero le plus
+    // eleve (derniere ecrite au registre), jamais un renversement de l'ordre
+    // reel deja renvoye par le backend (entries[0] = le plus recent).
     final total = entries.length;
     return Column(
       children: [
         for (var i = 0; i < entries.length; i++)
-          _AlbumPageTile(entry: entries[i], pageNumber: total - i, profile: profile),
+          _AlbumPageTile(
+            entry: entries[i],
+            pageNumber: total - i,
+            profile: profile,
+            selfiePath: controller.memories[entries[i].id],
+          ),
       ],
     );
   }
@@ -624,27 +631,53 @@ class _HistoryTile extends StatelessWidget {
   }
 }
 
-/// "Page" illustree du Livre des Gains/Carnet de route (mission
-/// "differenciation marketing" : "Album illustre, chronologie avec photos et
-/// montants" / "Carnet de route illustre avec citations et emotions") —
-/// aucune veritable photo/illustration (aucun asset graphique fourni), la
-/// mise en recit vient du degrade de marque, d'une icone symbolique et d'une
-/// legende courte ; le montant/la reference/la date restent des donnees
-/// reelles inchangees, jamais une invention.
+/// Une entree du "Registre des operations" : chaque transfert termine, numerote,
+/// avec l'accent de marque du profil. Aucun asset graphique — la presentation
+/// vient du degrade, d'une icone sobre et d'une legende courte ; le montant, la
+/// reference et la date restent des donnees reelles inchangees.
 class _AlbumPageTile extends StatelessWidget {
   final OrderHistoryEntry entry;
   final int pageNumber;
   final ExperienceProfile profile;
 
-  const _AlbumPageTile({required this.entry, required this.pageNumber, required this.profile});
+  /// Chemin local du selfie souvenir de cette operation, s'il existe (#5).
+  final String? selfiePath;
+
+  const _AlbumPageTile({
+    required this.entry,
+    required this.pageNumber,
+    required this.profile,
+    this.selfiePath,
+  });
 
   @override
   Widget build(BuildContext context) {
     final gradient = ExperiencePalette.gradientFor(profile);
-    final icon = profile == ExperienceProfile.studentMale ? Icons.military_tech_outlined : Icons.favorite_outline;
-    final caption = profile == ExperienceProfile.studentMale
-        ? 'Un nouveau trophee ajoute a ta legende.'
-        : 'Une nouvelle page de ton carnet de route.';
+    const icon = Icons.receipt_long_outlined;
+    const caption = 'Une operation de plus a ton registre.';
+
+    final Widget leading = selfiePath != null
+        ? ClipRRect(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            child: Container(
+              width: 44,
+              height: 52,
+              decoration: BoxDecoration(border: Border.all(color: AppColors.keyline.withValues(alpha: 0.6))),
+              child: Image.file(
+                File(selfiePath!),
+                fit: BoxFit.cover,
+                cacheWidth: 120,
+                errorBuilder: (_, _, _) =>
+                    const ColoredBox(color: AppColors.ivoryDim, child: Icon(Icons.image_outlined, size: 18)),
+              ),
+            ),
+          )
+        : Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(gradient: gradient.gradient, shape: BoxShape.circle),
+            child: Icon(icon, color: gradient.foreground, size: 20),
+          );
 
     return Pressable(
       onTap: () => context.push('/activity/orders/${entry.id}'),
@@ -655,18 +688,13 @@ class _AlbumPageTile extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(gradient: gradient.gradient, shape: BoxShape.circle),
-              child: Icon(icon, color: gradient.foreground, size: 20),
-            ),
+            leading,
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('PAGE $pageNumber', style: AppTypography.eyebrow),
+                  Text('OPERATION $pageNumber', style: AppTypography.eyebrow),
                   const SizedBox(height: 2),
                   Text(
                     Money(entry.amountXof, AppCurrency.xof).formattedWithCurrency(),

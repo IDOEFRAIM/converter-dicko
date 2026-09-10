@@ -6,14 +6,16 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_motion.dart';
 import '../../shared/models/current_user.dart';
 
-/// Sceau de rang grave (langage de design "Le Comptoir", voir
+/// Sceau de palier grave (langage de design "Le Comptoir", voir
 /// docs/MOBILE_DESIGN_LANGUAGE.md) : un medaillon `CustomPainter` — anneaux
-/// graves, motif propre au profil, initiale du rang au centre, filet d'or.
+/// graves, motif propre au profil, initiale du palier au centre, filet d'or.
 /// Jamais un autocollant colore.
 ///
-/// - PRO : guilloche sobre (le serieux EST sa gamification).
-/// - STUDENT_MALE ("Epopee") : etoile a huit branches.
-/// - STUDENT_FEMALE ("Histoire") : rayons fins + laurier.
+/// Le motif ne fait que distinguer l'habillage du profil (aucune connotation
+/// de jeu) :
+/// - PRO : guilloche sobre.
+/// - STUDENT_MALE : rosace a huit pointes.
+/// - STUDENT_FEMALE : rayons fins + arcs de laurier.
 /// - [locked] : grave en creux, desature, tirets — palier pas encore atteint.
 class RankSeal extends StatelessWidget {
   final ExperienceProfile profile;

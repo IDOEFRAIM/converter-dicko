@@ -5,12 +5,14 @@ import '../core/auth/auth_session.dart';
 import '../core/config/app_config.dart';
 import '../core/network/api_client.dart';
 import '../core/storage/celebrated_badges_store.dart';
+import '../core/storage/memory_book_store.dart';
 import '../core/theme/app_theme.dart';
 import '../features/achievements/application/badge_celebration_controller.dart';
 import '../features/achievements/data/achievement_api.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/business/data/business_api.dart';
 import '../features/home/application/home_controller.dart';
+import '../features/kyc/data/kyc_api.dart';
 import '../features/notifications/data/notification_api.dart';
 import '../features/orders/data/order_api.dart';
 import '../features/payment/data/payment_api.dart';
@@ -60,7 +62,9 @@ class ConverterApp extends StatelessWidget {
         Provider<PreferredRateApi>(create: (context) => PreferredRateApi(context.read<ApiClient>())),
         Provider<AchievementApi>(create: (context) => AchievementApi(context.read<ApiClient>())),
         Provider<PoolApi>(create: (context) => PoolApi(context.read<ApiClient>())),
+        Provider<KycApi>(create: (context) => KycApi(context.read<ApiClient>())),
         Provider<CelebratedBadgesStore>(create: (_) => const CelebratedBadgesStore()),
+        Provider<MemoryBookStore>(create: (_) => const MemoryBookStore()),
         ChangeNotifierProvider<HomeController>(
           create: (context) => HomeController(
             rateHistoryApi: context.read<RateHistoryApi>(),
@@ -99,10 +103,10 @@ class _RouterHostState extends State<_RouterHost> {
 
   @override
   Widget build(BuildContext context) {
-    // watch (pas read) : le theme doit se rafraichir immediatement quand le
-    // client change son habillage (voir AuthRepository.updateExperienceProfile),
-    // sans jamais reconstruire le routeur lui-meme (voir le commentaire de
-    // classe sur la perte de pile de navigation).
+    // watch (pas read) : le theme prend l'habillage du profil des que
+    // l'utilisateur est charge (le profil est fixe a l'inscription et n'est
+    // plus modifiable), sans jamais reconstruire le routeur lui-meme (voir le
+    // commentaire de classe sur la perte de pile de navigation).
     final experienceProfile = context.watch<AuthSession>().experienceProfile;
     return MaterialApp.router(
       title: 'Converter',

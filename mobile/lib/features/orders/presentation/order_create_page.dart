@@ -298,12 +298,11 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
   }
 }
 
-/// Traitement visuel distinct pour `KYC_VERIFICATION_REQUIRED` : aucune
-/// verification d'identite en libre-service n'existe cote backend (voir
+/// Traitement visuel distinct pour `KYC_VERIFICATION_REQUIRED` (voir
 /// `OrderCreateController.isKycBlocked`) -- un simple "reessayez" en rouge
-/// serait trompeur, le client a besoin d'une action concrete (reduire le
-/// montant ou contacter le support), jamais un ecran qui suggere qu'un
-/// nouveau tap suffirait (mission section 38).
+/// serait trompeur : le client a besoin d'une action concrete (verifier son
+/// identite via `/more/kyc`, ou reduire le montant sous le seuil), jamais un
+/// ecran qui suggere qu'un nouveau tap suffirait (mission section 38).
 class _KycBlockedNotice extends StatelessWidget {
   final String message;
 
@@ -331,8 +330,15 @@ class _KycBlockedNotice extends StatelessWidget {
           Text(message, style: AppTypography.body.copyWith(color: AppColors.warning)),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Reduisez le montant en dessous du seuil, ou contactez le support pour faire verifier votre identite.',
+            'Verifiez votre identite (quelques minutes, trois photos) ou reduisez le montant sous le seuil.',
             style: AppTypography.caption.copyWith(color: AppColors.warning),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          OutlinedButton.icon(
+            onPressed: () => context.push('/more/kyc'),
+            icon: const Icon(Icons.verified_user_outlined, size: 18),
+            label: const Text("Verifier mon identite"),
+            style: OutlinedButton.styleFrom(foregroundColor: AppColors.warning),
           ),
         ],
       ),

@@ -39,13 +39,23 @@ public enum SettingKey {
     KYC_REQUIRED_THRESHOLD_XOF(SettingType.DECIMAL),
 
     /**
-     * Points de marge retires (jamais en dessous de zero) sur LE PROCHAIN devis d'un participant
-     * d'une Ruee reussie (mission "differenciation marketing", Lot 3) — jamais applique
-     * retroactivement a l'ordre qui a rempli l'objectif (immutabilite du pricing deja fige, voir
-     * {@code QuoteService}). Snapshot sur chaque {@code Pool} a sa creation : une modification
-     * ulterieure de ce reglage n'affecte jamais une Ruee deja en cours.
+     * Part de <b>base</b> de la reduction de marge d'une Ruee reussie (points de marge retires,
+     * jamais sous zero, sur LE PROCHAIN devis de chaque participant). La reduction finale y ajoute
+     * un bonus par participant ({@link #POOL_REWARD_PER_PARTICIPANT_PCT}) et par volume echange
+     * ({@link #POOL_REWARD_PER_MILLION_XOF_PCT}), bornee par {@link #POOL_REWARD_MAX_PCT}
+     * (remarque produit #4). Jamais applique retroactivement a l'ordre qui a rempli l'objectif
+     * (immutabilite du pricing fige, voir {@code QuoteService}).
      */
-    POOL_REWARD_MARGIN_REDUCTION_PERCENTAGE(SettingType.DECIMAL);
+    POOL_REWARD_MARGIN_REDUCTION_PERCENTAGE(SettingType.DECIMAL),
+
+    /** Points de marge ajoutes a la recompense de Ruee par participant au-dela du premier (#4). */
+    POOL_REWARD_PER_PARTICIPANT_PCT(SettingType.DECIMAL),
+
+    /** Points de marge ajoutes par tranche pleine de 1 000 000 XOF echanges par le groupe (#4). */
+    POOL_REWARD_PER_MILLION_XOF_PCT(SettingType.DECIMAL),
+
+    /** Plafond de la reduction de marge accordee par une Ruee, tous bonus cumules (#4). */
+    POOL_REWARD_MAX_PCT(SettingType.DECIMAL);
 
     private final SettingType type;
 

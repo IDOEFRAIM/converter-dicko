@@ -31,6 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
@@ -225,14 +226,54 @@ public class PoolService {
 
     private void grantRewardToAllParticipants(Pool pool, Instant now) {
         List<PoolParticipant> allParticipants = participantRepository.findByPoolIdOrderByJoinedAtAsc(pool.getId());
+        // Recompense figee ICI, sur l'etat FINAL du groupe (nombre de participants + volume
+        // reellement echange) — pas la part de base snapshotee a la creation (remarque #4).
+        BigDecimal reward = currentReward(pool, allParticipants.size());
         for (PoolParticipant participant : allParticipants) {
-            participant.grantReward(pool.getRewardMarginReductionPercentage(), now);
+            participant.grantReward(reward, now);
             participantRepository.save(participant);
         }
         notifyParticipants(pool.getId(), null, NotificationType.POOL_SUCCEEDED,
                 "Objectif atteint !",
                 "Votre Ruee a atteint son objectif de " + pool.getTargetAmountXof() + " XOF. Vous beneficiez de -"
-                        + pool.getRewardMarginReductionPercentage() + " points de marge sur votre prochain transfert.");
+                        + reward + " points de marge sur votre prochain transfert.");
+    }
+
+    /**
+     * Reduction de marge (points) accordee par une Ruee, fonction du nombre de participants et du
+     * volume echange par le groupe (remarque produit #4). Pure et sans dependance, testee
+     * unitairement dans {@code PoolServiceRewardTest} :
+     *
+     * <pre>
+     *   reduction = base
+     *             + perParticipant * max(0, participants - 1)
+     *             + perMillion     * floor(groupVolumeXof / 1 000 000)
+     *   bornee a [0, max], arrondie a 3 decimales.
+     * </pre>
+     *
+     * La {@code base} est la part snapshotee sur le {@code Pool} a sa creation (une modification
+     * ulterieure du reglage n'affecte jamais une Ruee en cours) ; seuls les coefficients de bonus
+     * sont lus en direct.
+     */
+    static BigDecimal computeReward(BigDecimal base, BigDecimal perParticipant, BigDecimal perMillion,
+                                    BigDecimal max, int participantCount, BigDecimal groupVolumeXof) {
+        BigDecimal safeVolume = groupVolumeXof == null ? BigDecimal.ZERO : groupVolumeXof.max(BigDecimal.ZERO);
+        long extraParticipants = Math.max(0L, participantCount - 1L);
+        BigDecimal millions = safeVolume.divide(BigDecimal.valueOf(1_000_000L), 0, RoundingMode.DOWN);
+        BigDecimal reduction = base
+                .add(perParticipant.multiply(BigDecimal.valueOf(extraParticipants)))
+                .add(perMillion.multiply(millions));
+        return reduction.max(BigDecimal.ZERO).min(max).setScale(3, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal currentReward(Pool pool, int participantCount) {
+        return computeReward(
+                pool.getRewardMarginReductionPercentage(),
+                settingsService.getDecimal(SettingKey.POOL_REWARD_PER_PARTICIPANT_PCT),
+                settingsService.getDecimal(SettingKey.POOL_REWARD_PER_MILLION_XOF_PCT),
+                settingsService.getDecimal(SettingKey.POOL_REWARD_MAX_PCT),
+                participantCount,
+                pool.getCurrentAmountXof());
     }
 
     /** Pilote par {@code PoolScheduler} -- une transaction par pool, verrou pris a l'interieur. */
@@ -308,10 +349,19 @@ public class PoolService {
     private PoolResponse toResponse(Pool pool, UUID viewerId, int participantCount) {
         boolean viewerIsParticipant = viewerId != null
                 && participantRepository.findByPoolIdAndUserId(pool.getId(), viewerId).isPresent();
+
+        BigDecimal base = pool.getRewardMarginReductionPercentage();
+        BigDecimal perParticipant = settingsService.getDecimal(SettingKey.POOL_REWARD_PER_PARTICIPANT_PCT);
+        BigDecimal perMillion = settingsService.getDecimal(SettingKey.POOL_REWARD_PER_MILLION_XOF_PCT);
+        BigDecimal max = settingsService.getDecimal(SettingKey.POOL_REWARD_MAX_PCT);
+        BigDecimal reward = computeReward(base, perParticipant, perMillion, max, participantCount,
+                pool.getCurrentAmountXof());
+
         return new PoolResponse(
                 pool.getId(), pool.getCode(), pool.getCreatorId(), pool.getCurrencyPair(),
                 pool.getTargetAmountXof(), pool.getCurrentAmountXof(), pool.getStatus(), participantCount,
-                pool.getRewardMarginReductionPercentage(), pool.getCreatedAt(), pool.getExpiresAt(),
+                reward, base, perParticipant, perMillion, max,
+                pool.getCreatedAt(), pool.getExpiresAt(),
                 pool.getSucceededAt(), pool.getExpiredAt(), pool.getCancelledAt(),
                 viewerIsParticipant, pool.getCreatorId().equals(viewerId));
     }

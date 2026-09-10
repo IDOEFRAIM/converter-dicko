@@ -76,9 +76,9 @@ class MorePage extends StatelessWidget {
             onTap: () => context.push('/more/business'),
           ),
           _MoreTile(
-            icon: Icons.palette_outlined,
-            label: 'Habillage',
-            onTap: () => context.push('/more/experience-profile'),
+            icon: Icons.verified_user_outlined,
+            label: "Verification d'identite",
+            onTap: () => context.push('/more/kyc'),
           ),
           const Divider(),
           _MoreTile(

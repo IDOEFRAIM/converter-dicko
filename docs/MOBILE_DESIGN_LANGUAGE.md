@@ -71,10 +71,14 @@ ombres douces basses plutôt que le seul filet.
 
 ## 3. Gamification — sérieuse, jamais gadget
 
-Interdits : confettis cartoon, mascotte, sons stridents, « niveau supérieur ! » clignotant.
+Interdits : confettis cartoon, mascotte, sons stridents, « niveau supérieur ! » clignotant,
+**et tout lexique de jeu** (guerrier, trophée, légende…). Le vocabulaire est celui du
+métier : une **échelle unique** de paliers `Cambiste → Courtier → Négociant → Maison de
+change` (backend `AchievementService.CHANGER_TIERS`), un « Registre des opérations ».
 
-- **Rangs = sceaux gravés** (medaillon `CustomPainter`, un motif par profil d'expérience) —
-  pas un autocollant coloré.
+- **Paliers = sceaux gravés** (medaillon `CustomPainter`, un motif par profil d'expérience) —
+  pas un autocollant coloré. Le profil d'expérience est **fixé à l'inscription et non
+  modifiable** ensuite (pas d'écran « Habillage »).
 - **XP = méridien** : un arc qui se remplit *le long de la courbe du corridor*.
 - **Transferts terminés = tampons** dans un passeport / carnet (déjà amorcé dans
   « Mes gains », on pousse la métaphore).
@@ -159,3 +163,57 @@ notification culpabilisante, pas de dark pattern à la fermeture de compte.
   `_ParticipantTile` repassés en laque / papier + `Monogram` ; touche cohérente sur
   `my_pools_page` (filet de progression or). Le tuilage profil-dégradé de la carte cède
   la place à la laque : l'instrument prime sur l'habillage.
+
+---
+
+## 6. Corrections produit (2026-09)
+
+Retours utilisateur post-refonte, traités hors « lots » :
+
+- **#1 — Habillage non modifiable** (fait) : le profil d'expérience est fixé à
+  l'inscription (`register_page`) et n'est **plus modifiable** ensuite. Écran « Habillage »,
+  route `/more/experience-profile`, `AuthRepository.updateExperienceProfile` et
+  `AuthSession.updateCurrentUser` supprimés. Backend `PATCH /auth/me/experience-profile`
+  conservé mais plus appelé.
+- **#2 — Vocabulaire du métier, pas du jeu** (fait) : une **échelle unique** de paliers
+  `Cambiste → Courtier → Négociant → Maison de change` (backend `AchievementService.CHANGER_TIERS`,
+  remplace les deux listes genrées « guerrier / éclaireuse »). Copie mobile dé-ludifiée :
+  « Registre des opérations » (ex-Livre des Gains / Carnet de route), « OPÉRATION N »
+  (ex-PAGE N), « palier » (ex-« rang »), icône badge `workspace_premium` (ex-`military_tech`).
+- **#4 — Rabais de Ruée progressif** (fait) : la réduction de marge n'est plus un
+  pourcentage fixe. `rabais = base + PAR_PARTICIPANT·(N−1) + PAR_MILLION·⌊volume/1M⌋`,
+  borné `[0, MAX]` (backend `PoolService.computeReward`, coefficients en `system_settings`
+  via `V31`, testé par `PoolServiceRewardTest`). `PoolResponse` expose la valeur vivante +
+  les 4 termes ; le détail de Ruée affiche « Rabais actuel −X pts » + la formule en clair
+  (« grandit avec le groupe : base … + …/participant + …/million XOF »).
+- **#3 — Facture proforma fournisseur** (fait) : nouveau paquet backend
+  `com.converter.order.proforma` (miroir de `order.receipt`, même garantie « aucun
+  recalcul ») + endpoint `GET /api/v1/orders/{id}/proforma`. Disponible **quel que soit le
+  statut** (une proforma s'émet avant paiement) mais **uniquement pour un ordre vers un
+  fournisseur enregistré** (`supplierId != null` = signal du parcours « payer un
+  fournisseur »). PDF PDFBox « FACTURE PROFORMA » : émetteur, acheteur (raison sociale /
+  immatriculation / adresse depuis `BusinessProfile` si présent), référence, détail
+  chiffré, bénéficiaire masqué, mention « sans valeur d'acquittement ». Mobile :
+  `OrderApi.downloadProforma`, carte « laque + or » sur `order_detail` quand
+  `supplierId != null`. Pas de refonte en deux tunnels séparés — la bascule est portée par
+  la présence d'un fournisseur.
+- **#5 — Selfie souvenir → livre mémoire** (fait) : après un transfert **terminé**, une carte
+  « Souvenir » sur `order_detail` propose un **selfie caméra** (`image_picker`,
+  `CameraDevice.front`). Stockage **100 % local** : `MemoryBookStore` (index JSON dans
+  `flutter_secure_storage` + fichiers dans `<documents>/memories/`), **rien envoyé au
+  backend**. Le « filtre » est un cadre appliqué à l'**affichage** (`MemoryFrame` : double
+  filet d'or + bandeau gravé date · montant), jamais composité dans le fichier. Le
+  « Registre des opérations » (`my_gains`) affiche la vignette à la place de la pastille
+  quand un souvenir existe. iOS : `NSCameraUsageDescription` ajouté ; Android : rien à
+  déclarer (capture par intent).
+- **#6 — KYC en libre-service** (fait) : nouveau module backend `com.converter.kyc` +
+  table `kyc_submissions` (`V32`). L'utilisateur téléverse une pièce (recto + verso sauf
+  passeport) + un selfie ; **revue manuelle interne** par un administrateur — pas de
+  prestataire tiers. `POST/GET /api/v1/kyc/submissions` (user), `GET/POST
+  /api/admin/kyc/submissions[/{id}/approve|reject|files/{kind}]` (admin, `ROLE_ADMIN`).
+  L'approbation délègue à `UserService.verifyKyc` → `users.kyc_verified` reste l'**unique**
+  gate consommé par `OrderService` (jamais deux logiques). Fichiers via `FileValidator` +
+  `FileStorageService` (dossier `kyc`), jamais en base. Mobile : feature `kyc/` (stepper
+  type de pièce → 3 photos caméra → envoi → statut PENDING/APPROVED/REJECTED avec motif),
+  route `/more/kyc`, tuile « Vérification d'identité », et le blocage
+  `KYC_VERIFICATION_REQUIRED` de la création d'ordre pointe désormais vers ce parcours.

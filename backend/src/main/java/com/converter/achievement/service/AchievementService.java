@@ -33,9 +33,10 @@ import java.util.UUID;
  * complet suivi d'une somme cote Java).
  *
  * <p><b>PRO ne recoit jamais de badge</b> (mission : "Uniquement un compteur d'economies
- * mensuelles" pour ce profil, aucune gamification) — voir {@link #toResponse}. Seuls les profils
- * STUDENT_MALE/STUDENT_FEMALE progressent a travers des paliers, avec un vocabulaire de badges
- * distinct par profil (mission section "LES 3 INTERFACES").
+ * mensuelles" pour ce profil, aucune gamification) — voir {@link #toResponse}. Les autres profils
+ * progressent a travers une <b>echelle unique</b> ({@link #CHANGER_TIERS}), au vocabulaire du
+ * metier du change (Cambiste -> Courtier -> Negociant -> Maison de change), jamais un lexique
+ * de jeu.
  *
  * <p>Contrairement a {@code BusinessPaymentReportService}, cet endpoint n'est jamais reserve a un
  * sous-ensemble d'utilisateurs (pas de 404 conditionnel) : tout compte authentifie a des gains,
@@ -55,16 +56,14 @@ public class AchievementService {
      * {@code pool_participants} deja persistees, jamais un compteur XP mutable a part. */
     private static final long XP_PER_SUCCEEDED_POOL = 250;
 
-    private static final List<BadgeTier> STUDENT_MALE_TIERS = List.of(
-            new BadgeTier(1, "GUERRIER", "Guerrier"),
-            new BadgeTier(5, "BATISSEUR", "Batisseur"),
-            new BadgeTier(15, "COMMANDANT", "Commandant"),
-            new BadgeTier(30, "LEGENDE", "Legende"));
-
-    private static final List<BadgeTier> STUDENT_FEMALE_TIERS = List.of(
-            new BadgeTier(1, "ECLAIREUSE", "Eclaireuse"),
-            new BadgeTier(5, "PROTECTRICE", "Protectrice"),
-            new BadgeTier(15, "AMBASSADRICE", "Ambassadrice"));
+    /** Echelle unique de paliers pour les profils non-PRO — vocabulaire du metier du change,
+     * jamais un lexique de jeu (guerrier, legende...). {@code threshold} = nombre minimal
+     * d'ordres COMPLETED pour atteindre le palier. */
+    private static final List<BadgeTier> CHANGER_TIERS = List.of(
+            new BadgeTier(1, "CAMBISTE", "Cambiste"),
+            new BadgeTier(5, "COURTIER", "Courtier"),
+            new BadgeTier(15, "NEGOCIANT", "Negociant"),
+            new BadgeTier(30, "MAISON_DE_CHANGE", "Maison de change"));
 
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
@@ -169,18 +168,16 @@ public class AchievementService {
     /**
      * Pure, sans dependance (testee unitairement dans {@code AchievementServiceTest}, sans
      * contexte Spring ni base) : {@code PRO} n'a jamais de badge (mission : compteur sobre
-     * uniquement) ; les autres profils progressent a travers leur propre vocabulaire de paliers.
+     * uniquement) ; tout autre profil progresse a travers la meme echelle {@link #CHANGER_TIERS}.
      */
     static BadgeProgress resolveBadgeProgress(ExperienceProfile profile, long completedCount) {
         if (profile == ExperienceProfile.PRO) {
             return new BadgeProgress(null, null, null, null, null, null);
         }
 
-        List<BadgeTier> tiers = profile == ExperienceProfile.STUDENT_MALE ? STUDENT_MALE_TIERS : STUDENT_FEMALE_TIERS;
-
         BadgeTier current = null;
         BadgeTier next = null;
-        for (BadgeTier tier : tiers) {
+        for (BadgeTier tier : CHANGER_TIERS) {
             if (completedCount >= tier.threshold()) {
                 current = tier;
             } else if (next == null) {

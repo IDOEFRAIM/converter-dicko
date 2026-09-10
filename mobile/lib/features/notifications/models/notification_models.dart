@@ -71,7 +71,7 @@ enum NotificationKind {
         NotificationKind.rateAlertTriggered => Icons.notifications_active_outlined,
         NotificationKind.poolSucceeded => Icons.celebration_outlined,
         NotificationKind.poolExpired => Icons.hourglass_disabled_outlined,
-        NotificationKind.badgeUnlocked => Icons.military_tech_outlined,
+        NotificationKind.badgeUnlocked => Icons.workspace_premium_outlined,
         NotificationKind.unknown => Icons.notifications_outlined,
       };
 }

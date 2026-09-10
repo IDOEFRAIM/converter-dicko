@@ -91,6 +91,8 @@ public enum AuditAction {
     // ---- Verification d'identite (KYC) ----
     USER_KYC_VERIFIED,
     USER_KYC_REVOKED,
+    KYC_SUBMITTED,
+    KYC_REJECTED,
 
     // ---- Ruee collective (mission "differenciation marketing", Lot 3) ----
     POOL_CREATED,

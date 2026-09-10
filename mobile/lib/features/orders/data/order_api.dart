@@ -60,4 +60,10 @@ class OrderApi {
   Future<BinaryDownload> downloadReceipt(String id) {
     return _client.downloadBytes('/v1/orders/$id/receipt');
   }
+
+  /// Facture proforma PDF (remarque produit #3) — disponible quel que soit le
+  /// statut, uniquement pour un ordre vers un fournisseur enregistre.
+  Future<BinaryDownload> downloadProforma(String id) {
+    return _client.downloadBytes('/v1/orders/$id/proforma');
+  }
 }

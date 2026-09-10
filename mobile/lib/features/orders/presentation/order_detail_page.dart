@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/storage/memory_book_store.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_surfaces.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/money.dart';
+import '../../../shared/utils/date_formatting.dart';
 import '../../../shared/utils/file_share.dart';
 import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/corridor.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/grain.dart';
 import '../../../shared/widgets/loading_view.dart';
+import '../../../shared/widgets/memory_frame.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../../shared/widgets/transfer_ticket.dart';
 import '../application/order_detail_controller.dart';
@@ -30,7 +33,11 @@ class OrderDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => OrderDetailController(orderApi: context.read<OrderApi>(), orderId: orderId)..load(),
+      create: (context) => OrderDetailController(
+        orderApi: context.read<OrderApi>(),
+        memoryBook: context.read<MemoryBookStore>(),
+        orderId: orderId,
+      )..load(),
       child: const _OrderDetailView(),
     );
   }
@@ -79,6 +86,28 @@ class _OrderDetailView extends StatelessWidget {
     }
   }
 
+  Future<void> _downloadProforma(BuildContext context, OrderDetailController controller) async {
+    final download = await controller.downloadProforma();
+    if (download == null) {
+      if (controller.errorMessage != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(controller.errorMessage!)));
+      }
+      return;
+    }
+    final reference = controller.order?.reference ?? 'transfert';
+    try {
+      await saveAndShareBytes(bytes: download.bytes, fileName: 'proforma-$reference.pdf');
+    } catch (_) {
+      // Meme discipline que le justificatif : le telechargement reseau a reussi,
+      // seule l'ecriture disque / la feuille de partage native a echoue.
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Impossible d'ouvrir ou de partager la proforma. Reessayez.")),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<OrderDetailController>();
@@ -110,8 +139,16 @@ class _OrderDetailView extends StatelessWidget {
                   const SizedBox(height: AppSpacing.lg),
                   _buildAmountFlow(order),
                   const SizedBox(height: AppSpacing.lg),
+                  if (order.supplierId != null) ...[
+                    _buildProformaPanel(context, controller),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
                   if (order.status == OrderStatus.awaitingPayment) _buildAwaitingPaymentActions(context, controller),
-                  if (order.status == OrderStatus.completed) _buildReceiptPanel(context, controller),
+                  if (order.status == OrderStatus.completed) ...[
+                    _buildReceiptPanel(context, controller),
+                    const SizedBox(height: AppSpacing.lg),
+                    _buildMemoryPanel(context, controller, order),
+                  ],
                   const SizedBox(height: AppSpacing.md),
                   _buildTrackingLink(context, order),
                   const SizedBox(height: AppSpacing.lg),
@@ -239,6 +276,122 @@ class _OrderDetailView extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Facture proforma (remarque produit #3) : parcours "payer un fournisseur".
+  /// Piece descriptive emise avant paiement, sans valeur d'acquittement — meme
+  /// presentation "laque + or" que le recu.
+  Widget _buildProformaPanel(BuildContext context, OrderDetailController controller) {
+    final busy = controller.downloadingProforma;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: AppSurfaces.lacquer(),
+        child: Stack(
+          children: [
+            const Positioned.fill(child: LedgerGrain(opacity: 0.06)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.description_outlined, color: AppColors.keyline, size: 18),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text('FACTURE PROFORMA', style: AppTypography.eyebrow.copyWith(color: AppColors.keyline)),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Piece descriptive pour votre banque ou le dedouanement — sans valeur d\'acquittement.',
+                  style: AppTypography.body.copyWith(color: AppColors.onLacquerMuted),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.keyline,
+                      foregroundColor: AppColors.lacquer,
+                    ),
+                    onPressed: busy ? null : () => _downloadProforma(context, controller),
+                    icon: busy
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.lacquer),
+                          )
+                        : const Icon(Icons.download_outlined, size: 18),
+                    label: Text(busy ? 'Preparation...' : 'Telecharger la proforma (PDF)'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Livre memoire (remarque produit #5) : un selfie souvenir apres un
+  /// transfert termine, stocke **uniquement sur cet appareil**.
+  Widget _buildMemoryPanel(BuildContext context, OrderDetailController controller, OrderDetail order) {
+    final path = controller.selfiePath;
+    if (path != null) {
+      return _panel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('SOUVENIR', style: AppTypography.eyebrow),
+            const SizedBox(height: AppSpacing.sm),
+            MemoryFrame(
+              imagePath: path,
+              dateLabel: DateFormatting.dayOnly(order.completedAt ?? order.createdAt),
+              amountLabel: Money(order.amountXof, AppCurrency.xof).formattedWithCurrency(),
+              height: 200,
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: controller.removeSelfie,
+                child: const Text('Retirer', style: TextStyle(color: AppColors.negative)),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return _panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.photo_camera_outlined, color: Theme.of(context).colorScheme.primary, size: 18),
+              const SizedBox(width: AppSpacing.xs),
+              Text('SOUVENIR', style: AppTypography.eyebrow),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Immortalisez ce transfert. La photo reste sur cet appareil et alimente votre livre memoire.',
+            style: AppTypography.body.copyWith(color: AppColors.inkMuted),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: controller.capturingSelfie ? null : controller.captureSelfie,
+              icon: controller.capturingSelfie
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.photo_camera_outlined, size: 18),
+              label: Text(controller.capturingSelfie ? 'Ouverture...' : 'Prendre un selfie souvenir'),
+            ),
+          ),
+        ],
       ),
     );
   }

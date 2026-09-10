@@ -28,16 +28,16 @@ class AchievementServiceTest {
 
     @ParameterizedTest
     @CsvSource({
-            "0,,Guerrier,1",
-            "1,GUERRIER,Batisseur,4",
-            "4,GUERRIER,Batisseur,1",
-            "5,BATISSEUR,Commandant,10",
-            "14,BATISSEUR,Commandant,1",
-            "15,COMMANDANT,Legende,15",
-            "29,COMMANDANT,Legende,1",
+            "0,,Cambiste,1",
+            "1,CAMBISTE,Courtier,4",
+            "4,CAMBISTE,Courtier,1",
+            "5,COURTIER,Negociant,10",
+            "14,COURTIER,Negociant,1",
+            "15,NEGOCIANT,Maison de change,15",
+            "29,NEGOCIANT,Maison de change,1",
     })
-    void studentMale_progressesThroughTiers(long count, String expectedCode, String expectedNextLabel,
-                                            long expectedTransfersUntilNext) {
+    void nonPro_progressesThroughTheChangerLadder(long count, String expectedCode, String expectedNextLabel,
+                                                  long expectedTransfersUntilNext) {
         var progress = AchievementService.resolveBadgeProgress(ExperienceProfile.STUDENT_MALE, count);
         assertThat(progress.code()).isEqualTo(expectedCode);
         assertThat(progress.nextLabel()).isEqualTo(expectedNextLabel);
@@ -45,30 +45,27 @@ class AchievementServiceTest {
     }
 
     @Test
-    void studentMale_atMaxTier_hasNoNextBadge() {
+    void nonPro_atMaxTier_hasNoNextBadge() {
         var progress = AchievementService.resolveBadgeProgress(ExperienceProfile.STUDENT_MALE, 30);
-        assertThat(progress.code()).isEqualTo("LEGENDE");
-        assertThat(progress.label()).isEqualTo("Legende");
+        assertThat(progress.code()).isEqualTo("MAISON_DE_CHANGE");
+        assertThat(progress.label()).isEqualTo("Maison de change");
         assertThat(progress.nextLabel()).isNull();
         assertThat(progress.transfersUntilNext()).isNull();
 
-        // Au-dela du seuil maximal, le palier reste LEGENDE -- jamais un palier "hors catalogue".
+        // Au-dela du seuil maximal, le palier reste le dernier -- jamais un palier "hors catalogue".
         var farBeyond = AchievementService.resolveBadgeProgress(ExperienceProfile.STUDENT_MALE, 500);
-        assertThat(farBeyond.code()).isEqualTo("LEGENDE");
+        assertThat(farBeyond.code()).isEqualTo("MAISON_DE_CHANGE");
     }
 
-    @ParameterizedTest
-    @CsvSource({
-            "0,,Eclaireuse,1",
-            "1,ECLAIREUSE,Protectrice,4",
-            "5,PROTECTRICE,Ambassadrice,10",
-            "15,AMBASSADRICE,,",
-    })
-    void studentFemale_progressesThroughItsOwnDistinctTiers(long count, String expectedCode, String expectedNextLabel,
-                                                             Long expectedTransfersUntilNext) {
-        var progress = AchievementService.resolveBadgeProgress(ExperienceProfile.STUDENT_FEMALE, count);
-        assertThat(progress.code()).isEqualTo(expectedCode);
-        assertThat(progress.nextLabel()).isEqualTo(expectedNextLabel);
-        assertThat(progress.transfersUntilNext()).isEqualTo(expectedTransfersUntilNext);
+    @Test
+    void everyNonProProfileSharesTheExactSameLadder() {
+        for (long count : new long[] {0, 1, 7, 20, 40}) {
+            var male = AchievementService.resolveBadgeProgress(ExperienceProfile.STUDENT_MALE, count);
+            var female = AchievementService.resolveBadgeProgress(ExperienceProfile.STUDENT_FEMALE, count);
+            assertThat(female.code()).isEqualTo(male.code());
+            assertThat(female.label()).isEqualTo(male.label());
+            assertThat(female.nextLabel()).isEqualTo(male.nextLabel());
+            assertThat(female.transfersUntilNext()).isEqualTo(male.transfersUntilNext());
+        }
     }
 }

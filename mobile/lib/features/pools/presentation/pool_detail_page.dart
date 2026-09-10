@@ -164,9 +164,20 @@ class _ThermometerCard extends StatelessWidget {
                   const SizedBox(height: AppSpacing.xs),
                   Center(
                     child: Text(
-                      'Recompense a l\'objectif : -${pool.rewardMarginReductionPercentage} pts de marge',
+                      'Rabais actuel : -${_fmtPct(pool.rewardMarginReductionPercentage)} pts de marge',
                       textAlign: TextAlign.center,
                       style: AppTypography.caption.copyWith(color: AppColors.keyline, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Center(
+                    child: Text(
+                      'Il grandit avec le groupe : base ${_fmtPct(pool.rewardBasePercentage)} '
+                      '+ ${_fmtPct(pool.rewardPerParticipantPercentage)} par participant '
+                      '+ ${_fmtPct(pool.rewardPerMillionXofPercentage)} par million XOF echange '
+                      '(plafond ${_fmtPct(pool.rewardMaxPercentage)}).',
+                      textAlign: TextAlign.center,
+                      style: AppTypography.caption.copyWith(color: AppColors.onLacquerMuted),
                     ),
                   ),
                 ],
@@ -237,7 +248,7 @@ class _SuccessBanner extends StatelessWidget {
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Text(
-                    'Objectif atteint ! -${pool.rewardMarginReductionPercentage} points de marge sur '
+                    'Objectif atteint ! -${_fmtPct(pool.rewardMarginReductionPercentage)} points de marge sur '
                     'ton prochain transfert.',
                     style: AppTypography.body.copyWith(color: AppColors.onLacquer),
                   ),
@@ -355,4 +366,11 @@ class _Actions extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Nettoie une chaine de pourcentage renvoyee par le backend ("0.500" -> "0.5",
+/// "1.000" -> "1") — purement cosmetique, aucune arithmetique.
+String _fmtPct(String raw) {
+  if (!raw.contains('.')) return raw;
+  return raw.replaceFirst(RegExp(r'\.?0+$'), '');
 }

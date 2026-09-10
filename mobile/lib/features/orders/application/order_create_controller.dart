@@ -48,11 +48,10 @@ class OrderCreateController extends ChangeNotifier {
   String? errorCode;
 
   /// `KYC_VERIFICATION_REQUIRED` (voir `OrderService.assertKycVerifiedIfRequired`
-  /// backend) merite un traitement visuel distinct d'une erreur generique :
-  /// aucune verification d'identite en libre-service n'existe cote backend
-  /// (uniquement un drapeau pose par un administrateur), donc le seul recours
-  /// possible pour le client est de reduire le montant ou de contacter le
-  /// support -- jamais un simple "reessayez".
+  /// backend) merite un traitement visuel distinct d'une erreur generique : le
+  /// recours est concret — verifier son identite en libre-service (`/more/kyc`,
+  /// remarque produit #6) ou reduire le montant sous le seuil, jamais un simple
+  /// "reessayez".
   bool get isKycBlocked => errorCode == 'KYC_VERIFICATION_REQUIRED';
 
   Future<void> load() async {

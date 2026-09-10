@@ -325,8 +325,8 @@ class _AchievementsCard extends StatelessWidget {
     );
   }
 
-  /// STUDENT_* : bande "laque" — sceau du rang, XP qui grimpe, distance au
-  /// prochain rang.
+  /// STUDENT_* : bande "laque" — sceau du palier, XP qui grimpe, distance au
+  /// palier suivant.
   Widget _studentStrip(BuildContext context, AchievementSummary summary) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
@@ -343,7 +343,7 @@ class _AchievementsCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    summary.badgeLabel ?? 'AUCUN RANG ENCORE',
+                    summary.badgeLabel ?? 'AUCUN PALIER ENCORE',
                     style: AppTypography.eyebrow.copyWith(color: AppColors.keyline),
                   ),
                   const SizedBox(height: 2),
@@ -355,7 +355,7 @@ class _AchievementsCard extends StatelessWidget {
                   if (summary.nextBadgeLabel != null) ...[
                     const SizedBox(height: 2),
                     Text(
-                      'Encore ${summary.transfersUntilNextBadge} pour ${summary.nextBadgeLabel}',
+                      'Encore ${summary.transfersUntilNextBadge} pour le palier ${summary.nextBadgeLabel}',
                       style: AppTypography.caption.copyWith(color: AppColors.onLacquerMuted),
                     ),
                   ],

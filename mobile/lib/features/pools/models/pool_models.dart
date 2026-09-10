@@ -45,7 +45,19 @@ class Pool {
   final String currentAmountXof;
   final PoolStatus status;
   final int participantCount;
+
+  /// Rabais de marge **calcule a l'instant present** (fonction du nombre de
+  /// participants et du volume deja echange, remarque produit #4). Pour une
+  /// Ruee reussie, c'est la valeur reellement accordee.
   final String rewardMarginReductionPercentage;
+
+  /// Termes de la formule, pour l'expliquer a l'ecran :
+  /// `rabais = base + parParticipant*(N-1) + parMillion*floor(volume/1M)`, borne a `[0, max]`.
+  final String rewardBasePercentage;
+  final String rewardPerParticipantPercentage;
+  final String rewardPerMillionXofPercentage;
+  final String rewardMaxPercentage;
+
   final DateTime createdAt;
   final DateTime expiresAt;
   final DateTime? succeededAt;
@@ -64,6 +76,10 @@ class Pool {
     required this.status,
     required this.participantCount,
     required this.rewardMarginReductionPercentage,
+    required this.rewardBasePercentage,
+    required this.rewardPerParticipantPercentage,
+    required this.rewardPerMillionXofPercentage,
+    required this.rewardMaxPercentage,
     required this.createdAt,
     required this.expiresAt,
     required this.succeededAt,
@@ -95,6 +111,10 @@ class Pool {
       status: PoolStatus.fromCode(json['status'] as String?),
       participantCount: json['participantCount'] as int? ?? 0,
       rewardMarginReductionPercentage: decimalStringFromJson(json['rewardMarginReductionPercentage']),
+      rewardBasePercentage: decimalStringFromJson(json['rewardBasePercentage']),
+      rewardPerParticipantPercentage: decimalStringFromJson(json['rewardPerParticipantPercentage']),
+      rewardPerMillionXofPercentage: decimalStringFromJson(json['rewardPerMillionXofPercentage']),
+      rewardMaxPercentage: decimalStringFromJson(json['rewardMaxPercentage']),
       createdAt: DateTime.parse(json['createdAt'] as String),
       expiresAt: DateTime.parse(json['expiresAt'] as String),
       succeededAt: json['succeededAt'] == null ? null : DateTime.parse(json['succeededAt'] as String),

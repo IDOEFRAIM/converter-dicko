@@ -61,11 +61,6 @@ class AuthSession extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateCurrentUser(CurrentUser user) {
-    _currentUser = user;
-    notifyListeners();
-  }
-
   /// Deconnexion explicite ou reaction a un 401 — purge tout, y compris le
   /// stockage securise.
   Future<void> clear() async {

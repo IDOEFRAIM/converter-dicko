@@ -28,6 +28,8 @@
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Utilisee pour joindre une preuve de paiement (photo) a un transfert.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Utilisee pour prendre un selfie souvenir apres un transfert termine, ajoute a votre livre memoire (stocke uniquement sur cet appareil).</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

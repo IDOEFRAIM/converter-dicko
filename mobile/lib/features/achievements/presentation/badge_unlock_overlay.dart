@@ -109,8 +109,8 @@ class _BadgeUnlockDialog extends StatelessWidget {
 
   const _BadgeUnlockDialog({required this.notification, required this.profile});
 
-  /// L'initiale du rang, extraite du message deja pret du backend
-  /// ("... tu es maintenant Guerrier !") — pour graver la lettre au centre du
+  /// L'initiale du palier, extraite du message deja pret du backend
+  /// ("... tu es maintenant Cambiste !") — pour graver la lettre au centre du
   /// sceau. Nul si le format evolue : le sceau reste lisible sans lettre.
   String? get _rankInitial {
     final match = RegExp(r'maintenant\s+([^\s!.,]+)').firstMatch(notification.message);
