@@ -170,11 +170,13 @@ notification culpabilisante, pas de dark pattern à la fermeture de compte.
 
 Retours utilisateur post-refonte, traités hors « lots » :
 
-- **#1 — Habillage non modifiable** (fait) : le profil d'expérience est fixé à
-  l'inscription (`register_page`) et n'est **plus modifiable** ensuite. Écran « Habillage »,
-  route `/more/experience-profile`, `AuthRepository.updateExperienceProfile` et
-  `AuthSession.updateCurrentUser` supprimés. Backend `PATCH /auth/me/experience-profile`
-  conservé mais plus appelé.
+- **#1 — Profil défini par l'identité, non modifiable** (fait) : à l'inscription, plus de
+  « choisis ton habillage ». `ProfileIdentityPicker` pose **deux questions** — usage (mon
+  activité pro → `PRO` / mes besoins personnels ou mes études → étudiant) puis civilité
+  (Mme → `STUDENT_FEMALE` / M. → `STUDENT_MALE`) — et **dérive** le profil. Aucun écran ne
+  permet de le changer ensuite : écran « Habillage », route `/more/experience-profile`,
+  `AuthRepository.updateExperienceProfile` et `AuthSession.updateCurrentUser` supprimés
+  (backend `PATCH /auth/me/experience-profile` conservé mais plus appelé).
 - **#2 — Vocabulaire du métier, pas du jeu** (fait) : une **échelle unique** de paliers
   `Cambiste → Courtier → Négociant → Maison de change` (backend `AchievementService.CHANGER_TIERS`,
   remplace les deux listes genrées « guerrier / éclaireuse »). Copie mobile dé-ludifiée :
@@ -196,10 +198,14 @@ Retours utilisateur post-refonte, traités hors « lots » :
   fournisseur enregistré** (`supplierId != null` = signal du parcours « payer un
   fournisseur »). PDF PDFBox « FACTURE PROFORMA » : émetteur, acheteur (raison sociale /
   immatriculation / adresse depuis `BusinessProfile` si présent), référence, détail
-  chiffré, bénéficiaire masqué, mention « sans valeur d'acquittement ». Mobile :
-  `OrderApi.downloadProforma`, carte « laque + or » sur `order_detail` quand
-  `supplierId != null`. Pas de refonte en deux tunnels séparés — la bascule est portée par
-  la présence d'un fournisseur.
+  chiffré, bénéficiaire masqué, mention « sans valeur d'acquittement ».
+  **Bascule à deux entrées** : un ordre est un *paiement fournisseur* si `supplierId != null`
+  **ou** si `montant ≥ SUPPLIER_PAYMENT_THRESHOLD_XOF` (nouveau réglage, défaut 2 000 000,
+  `V33`, `is_public`). En dessous : simple *échange personnel*. `OrderDetailResponse`
+  expose `proformaAvailable` ; `OrderProformaService` refait la règle. Mobile :
+  `OrderApi.downloadProforma`, carte « laque + or » **« PAIEMENT FOURNISSEUR · FACTURE
+  PROFORMA — générée automatiquement »** sur `order_detail` quand `proformaAvailable`.
+  Le pricing (taux/marge/frais) reste identique de part et d'autre du seuil.
 - **#5 — Selfie souvenir → livre mémoire** (fait) : après un transfert **terminé**, une carte
   « Souvenir » sur `order_detail` propose un **selfie caméra** (`image_picker`,
   `CameraDevice.front`). Stockage **100 % local** : `MemoryBookStore` (index JSON dans

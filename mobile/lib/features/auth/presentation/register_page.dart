@@ -154,15 +154,15 @@ class _RegisterPageState extends State<RegisterPage> {
                   validator: Validators.password,
                 ),
                 const SizedBox(height: AppSpacing.xl),
-                Text('CHOISIS TON HABILLAGE', style: AppTypography.eyebrow),
+                Text('QUI ETES-VOUS ?', style: AppTypography.eyebrow),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Purement esthetique — meme taux, memes frais pour tout le monde. Modifiable plus tard dans "Plus".',
+                  'Cela adapte l\'interface a votre usage. Les taux et les frais sont identiques pour '
+                  'tout le monde. Ce reglage est fixe a l\'inscription.',
                   style: AppTypography.caption,
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                ExperienceProfilePicker(
-                  selected: _experienceProfile,
+                ProfileIdentityPicker(
                   onChanged: (profile) => setState(() => _experienceProfile = profile),
                 ),
                 const SizedBox(height: AppSpacing.xl),

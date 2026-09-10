@@ -39,6 +39,14 @@ public enum SettingKey {
     KYC_REQUIRED_THRESHOLD_XOF(SettingType.DECIMAL),
 
     /**
+     * Montant XOF (inclus) a partir duquel un ordre est traite comme un <b>paiement fournisseur</b>
+     * (remarque produit #3) : facture proforma disponible, meme sans fournisseur enregistre. En
+     * dessous, c'est un simple echange personnel. Purement une bascule d'affichage/service — ne
+     * change jamais le pricing.
+     */
+    SUPPLIER_PAYMENT_THRESHOLD_XOF(SettingType.DECIMAL),
+
+    /**
      * Part de <b>base</b> de la reduction de marge d'une Ruee reussie (points de marge retires,
      * jamais sous zero, sur LE PROCHAIN devis de chaque participant). La reduction finale y ajoute
      * un bonus par participant ({@link #POOL_REWARD_PER_PARTICIPANT_PCT}) et par volume echange

@@ -14,11 +14,14 @@ import com.converter.order.repository.BeneficiaryRepository;
 import com.converter.order.repository.OrderRepository;
 import com.converter.rate.provider.RateProvider;
 import com.converter.security.OwnershipService;
+import com.converter.settings.domain.SettingKey;
+import com.converter.settings.service.SettingsService;
 import com.converter.user.domain.User;
 import com.converter.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
@@ -41,6 +44,7 @@ public class OrderProformaService {
     private final BeneficiaryRepository beneficiaryRepository;
     private final UserRepository userRepository;
     private final BusinessProfileRepository businessProfileRepository;
+    private final SettingsService settingsService;
     private final OwnershipService ownershipService;
     private final ProformaPdfGenerator pdfGenerator;
 
@@ -48,12 +52,14 @@ public class OrderProformaService {
                                 BeneficiaryRepository beneficiaryRepository,
                                 UserRepository userRepository,
                                 BusinessProfileRepository businessProfileRepository,
+                                SettingsService settingsService,
                                 OwnershipService ownershipService,
                                 ProformaPdfGenerator pdfGenerator) {
         this.orderRepository = orderRepository;
         this.beneficiaryRepository = beneficiaryRepository;
         this.userRepository = userRepository;
         this.businessProfileRepository = businessProfileRepository;
+        this.settingsService = settingsService;
         this.ownershipService = ownershipService;
         this.pdfGenerator = pdfGenerator;
     }
@@ -64,9 +70,14 @@ public class OrderProformaService {
         ownershipService.assertOwnedBy(order.getUserId(), userId, ErrorCode.ORDER_NOT_FOUND,
                 "Ordre introuvable : " + orderId);
 
-        if (order.getSupplierId() == null) {
+        // Paiement fournisseur = fournisseur enregistre OU montant au-dessus du seuil (#3).
+        BigDecimal threshold = settingsService.getDecimal(SettingKey.SUPPLIER_PAYMENT_THRESHOLD_XOF);
+        boolean isSupplierPayment = order.getSupplierId() != null
+                || order.getAmountXof().compareTo(threshold) >= 0;
+        if (!isSupplierPayment) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR,
-                    "La facture proforma n'est disponible que pour le paiement d'un fournisseur enregistre.");
+                    "La facture proforma n'est disponible que pour un paiement fournisseur "
+                            + "(fournisseur enregistre ou montant a partir de " + threshold.toPlainString() + " XOF).");
         }
 
         User customer = userRepository.findById(order.getUserId()).orElseThrow(() -> notFound(orderId));

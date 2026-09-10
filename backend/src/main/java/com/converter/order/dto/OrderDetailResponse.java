@@ -38,6 +38,10 @@ public record OrderDetailResponse(
         UUID supplierId,
 
         Purpose purpose,
-        String purposeDetails
+        String purposeDetails,
+
+        @Schema(description = "Vrai si cet ordre est un paiement fournisseur (fournisseur enregistre "
+                + "ou montant >= SUPPLIER_PAYMENT_THRESHOLD_XOF) : une facture proforma est disponible.")
+        boolean proformaAvailable
 ) {
 }

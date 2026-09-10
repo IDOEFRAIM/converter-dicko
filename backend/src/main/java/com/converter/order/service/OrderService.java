@@ -481,8 +481,13 @@ public class OrderService {
         return toDetail(order, beneficiary, history);
     }
 
-    private static OrderDetailResponse toDetail(Order order, Beneficiary beneficiary,
-                                                List<OrderStatusHistoryResponse> history) {
+    private OrderDetailResponse toDetail(Order order, Beneficiary beneficiary,
+                                        List<OrderStatusHistoryResponse> history) {
+        // Paiement fournisseur (remarque produit #3) : fournisseur enregistre OU montant au-dessus
+        // du seuil. Purement une bascule d'affichage/service — jamais le pricing.
+        boolean proformaAvailable = order.getSupplierId() != null
+                || order.getAmountXof().compareTo(
+                        settingsService.getDecimal(SettingKey.SUPPLIER_PAYMENT_THRESHOLD_XOF)) >= 0;
         return new OrderDetailResponse(
                 order.getId(), order.getReference(), order.getQuoteId(), order.getStatus(),
                 order.getAmountXof(), order.getAmountCny(), order.getCustomerRate(), order.getFeeXof(),
@@ -492,7 +497,8 @@ public class OrderService {
                         beneficiary.getIdentifier(), beneficiary.getBankName(), beneficiary.getBankBranch()),
                 history, order.getCreatedAt(), order.getUpdatedAt(), order.getPaymentDeadlineAt(),
                 order.getCompletedAt(), order.getCancelledAt(),
-                order.getSupplierId(), order.getPurpose(), order.getPurposeDetails());
+                order.getSupplierId(), order.getPurpose(), order.getPurposeDetails(),
+                proformaAvailable);
     }
 
     private static OrderSummaryResponse toSummary(Order order) {

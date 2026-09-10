@@ -206,6 +206,10 @@ class OrderDetail {
   final Purpose? purpose;
   final String? purposeDetails;
 
+  /// Vrai si cet ordre est un **paiement fournisseur** (fournisseur enregistre
+  /// ou montant >= seuil) : une facture proforma est disponible (remarque #3).
+  final bool proformaAvailable;
+
   const OrderDetail({
     required this.id,
     required this.reference,
@@ -229,6 +233,7 @@ class OrderDetail {
     required this.supplierId,
     required this.purpose,
     required this.purposeDetails,
+    required this.proformaAvailable,
   });
 
   factory OrderDetail.fromJson(Map<String, dynamic> json) {
@@ -257,6 +262,7 @@ class OrderDetail {
       supplierId: json['supplierId'] as String?,
       purpose: Purpose.fromCode(json['purpose'] as String?),
       purposeDetails: json['purposeDetails'] as String?,
+      proformaAvailable: json['proformaAvailable'] as bool? ?? false,
     );
   }
 }

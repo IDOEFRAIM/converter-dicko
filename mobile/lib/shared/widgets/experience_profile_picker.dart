@@ -1,110 +1,119 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/theme/experience_theme.dart';
 import '../models/current_user.dart';
 
-/// Selection de l'habillage marketing (PRO / Mode Epopee / Mode Histoire) —
-/// reutilise a l'inscription et dans "Plus" pour en changer plus tard. Purement
-/// cosmetique : ne montre jamais de difference de taux/frais entre les choix.
-class ExperienceProfilePicker extends StatelessWidget {
-  final ExperienceProfile selected;
+/// Determine le profil d'experience **a partir de qui est l'utilisateur**
+/// (remarque produit #1) — ce n'est jamais un choix d'habillage esthetique.
+/// Deux questions : l'usage (activite pro vs perso / etudes), puis la civilite
+/// pour le profil perso. Le profil pilote ensuite les couleurs de l'interface,
+/// mais l'utilisateur ne "choisit pas un theme".
+///
+/// Fixe une fois pour toutes a l'inscription : il n'existe plus aucun ecran
+/// pour le modifier ensuite.
+class ProfileIdentityPicker extends StatefulWidget {
   final ValueChanged<ExperienceProfile> onChanged;
 
-  const ExperienceProfilePicker({super.key, required this.selected, required this.onChanged});
+  const ProfileIdentityPicker({super.key, required this.onChanged});
 
-  static const _options = [
-    (
-      profile: ExperienceProfile.pro,
-      title: 'PRO',
-      description: 'Sobre et efficace — pour gerer son business.',
-      icon: Icons.business_center_outlined,
-    ),
-    (
-      profile: ExperienceProfile.studentMale,
-      title: 'Mode Epopee',
-      description: 'Defis, badges, esprit de competition.',
-      icon: Icons.local_fire_department_outlined,
-    ),
-    (
-      profile: ExperienceProfile.studentFemale,
-      title: 'Mode Histoire',
-      description: 'Emotion, partage, esthetique douce.',
-      icon: Icons.auto_awesome_outlined,
-    ),
-  ];
+  @override
+  State<ProfileIdentityPicker> createState() => _ProfileIdentityPickerState();
+}
+
+enum _Usage { professional, personal }
+
+enum _Civility { madame, monsieur }
+
+class _ProfileIdentityPickerState extends State<ProfileIdentityPicker> {
+  _Usage? _usage;
+  _Civility? _civility;
+
+  void _emit() {
+    if (_usage == _Usage.professional) {
+      widget.onChanged(ExperienceProfile.pro);
+    } else if (_usage == _Usage.personal && _civility == _Civility.madame) {
+      widget.onChanged(ExperienceProfile.studentFemale);
+    } else if (_usage == _Usage.personal && _civility == _Civility.monsieur) {
+      widget.onChanged(ExperienceProfile.studentMale);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: _options
-          .map(
-            (option) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: _OptionCard(
-                title: option.title,
-                description: option.description,
-                icon: option.icon,
-                color: ExperiencePalette.primaryFor(option.profile),
-                selected: option.profile == selected,
-                onTap: () => onChanged(option.profile),
-              ),
-            ),
-          )
-          .toList(growable: false),
+      children: [
+        Text('Vous utiliserez Converter surtout pour…', style: AppTypography.bodyStrong),
+        const SizedBox(height: AppSpacing.sm),
+        _choice(
+          label: 'Mon activite (commerce, import, entreprise)',
+          selected: _usage == _Usage.professional,
+          onTap: () => setState(() {
+            _usage = _Usage.professional;
+            _civility = null;
+            _emit();
+          }),
+        ),
+        _choice(
+          label: 'Mes besoins personnels ou mes etudes',
+          selected: _usage == _Usage.personal,
+          onTap: () => setState(() {
+            _usage = _Usage.personal;
+            _emit();
+          }),
+        ),
+        if (_usage == _Usage.personal) ...[
+          const SizedBox(height: AppSpacing.md),
+          Text('Civilite', style: AppTypography.bodyStrong),
+          const SizedBox(height: AppSpacing.sm),
+          _choice(
+            label: 'Madame',
+            selected: _civility == _Civility.madame,
+            onTap: () => setState(() {
+              _civility = _Civility.madame;
+              _emit();
+            }),
+          ),
+          _choice(
+            label: 'Monsieur',
+            selected: _civility == _Civility.monsieur,
+            onTap: () => setState(() {
+              _civility = _Civility.monsieur;
+              _emit();
+            }),
+          ),
+        ],
+      ],
     );
   }
-}
 
-class _OptionCard extends StatelessWidget {
-  final String title;
-  final String description;
-  final IconData icon;
-  final Color color;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _OptionCard({
-    required this.title,
-    required this.description,
-    required this.icon,
-    required this.color,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          border: Border.all(color: selected ? color : const Color(0xFFE6E9F0), width: selected ? 2 : 1),
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          color: selected ? color.withValues(alpha: 0.06) : Colors.white,
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: color),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: AppTypography.bodyStrong.copyWith(color: color)),
-                  Text(description, style: AppTypography.caption),
-                ],
+  Widget _choice({required String label, required bool selected, required VoidCallback onTap}) {
+    final accent = Theme.of(context).colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            border: Border.all(color: selected ? accent : AppColors.outline, width: selected ? 1.6 : 1),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                color: selected ? accent : AppColors.inkFaint,
+                size: 20,
               ),
-            ),
-            Icon(
-              selected ? Icons.check_circle : Icons.circle_outlined,
-              color: selected ? color : const Color(0xFF9AA0AB),
-            ),
-          ],
+              const SizedBox(width: AppSpacing.md),
+              Expanded(child: Text(label, style: AppTypography.body)),
+            ],
+          ),
         ),
       ),
     );

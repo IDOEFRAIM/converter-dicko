@@ -139,7 +139,7 @@ class _OrderDetailView extends StatelessWidget {
                   const SizedBox(height: AppSpacing.lg),
                   _buildAmountFlow(order),
                   const SizedBox(height: AppSpacing.lg),
-                  if (order.supplierId != null) ...[
+                  if (order.proformaAvailable) ...[
                     _buildProformaPanel(context, controller),
                     const SizedBox(height: AppSpacing.lg),
                   ],
@@ -301,12 +301,14 @@ class _OrderDetailView extends StatelessWidget {
                   children: [
                     const Icon(Icons.description_outlined, color: AppColors.keyline, size: 18),
                     const SizedBox(width: AppSpacing.xs),
-                    Text('FACTURE PROFORMA', style: AppTypography.eyebrow.copyWith(color: AppColors.keyline)),
+                    Text('PAIEMENT FOURNISSEUR · FACTURE PROFORMA',
+                        style: AppTypography.eyebrow.copyWith(color: AppColors.keyline)),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Piece descriptive pour votre banque ou le dedouanement — sans valeur d\'acquittement.',
+                  'Ce transfert releve du service fournisseur. Facture proforma generee automatiquement — '
+                  'piece descriptive pour votre banque ou le dedouanement, sans valeur d\'acquittement.',
                   style: AppTypography.body.copyWith(color: AppColors.onLacquerMuted),
                 ),
                 const SizedBox(height: AppSpacing.md),
