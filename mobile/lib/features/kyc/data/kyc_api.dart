@@ -25,11 +25,22 @@ class KycApi {
   }) async {
     final form = FormData.fromMap({
       'documentType': documentType.code,
-      'front': await MultipartFile.fromFile(frontPath, filename: 'front.jpg'),
-      if (backPath != null) 'back': await MultipartFile.fromFile(backPath, filename: 'back.jpg'),
-      'selfie': await MultipartFile.fromFile(selfiePath, filename: 'selfie.jpg'),
+      'front': await MultipartFile.fromFile(frontPath, filename: _fileName(frontPath, 'front')),
+      if (backPath != null)
+        'back': await MultipartFile.fromFile(backPath, filename: _fileName(backPath, 'back')),
+      'selfie': await MultipartFile.fromFile(selfiePath, filename: _fileName(selfiePath, 'selfie')),
     });
     final body = await _client.postMultipart('/v1/kyc/submissions', form);
     return KycSubmission.fromJson(body['data'] as Map<String, dynamic>);
+  }
+
+  /// Conserve l'extension REELLE du fichier choisi : dio en deduit le
+  /// `Content-Type`, que le backend confronte aux magic bytes. Un `.jpg` force
+  /// sur un PNG ferait echouer la validation (`InvalidFileException`).
+  static String _fileName(String path, String prefix) {
+    final slash = path.lastIndexOf(RegExp(r'[/\\]'));
+    final dot = path.lastIndexOf('.');
+    final ext = dot > slash && dot >= 0 ? path.substring(dot).toLowerCase() : '.jpg';
+    return '$prefix$ext';
   }
 }

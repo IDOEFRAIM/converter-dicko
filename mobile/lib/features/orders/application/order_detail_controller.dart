@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/errors/api_exception.dart';
@@ -66,8 +67,15 @@ class OrderDetailController extends ChangeNotifier {
       if (shot != null) {
         selfiePath = await _memoryBook.put(orderId, shot.path);
       }
+    } on PlatformException catch (error) {
+      errorMessage = switch (error.code) {
+        'camera_access_denied' =>
+          "Acces refuse. Autorisez l'appareil photo dans les reglages du telephone.",
+        'no_available_camera' => 'Aucun appareil photo disponible sur ce telephone.',
+        _ => "Impossible d'ouvrir l'appareil photo. Reessayez.",
+      };
     } catch (_) {
-      errorMessage = "Impossible de prendre ou d'enregistrer le selfie. Reessayez.";
+      errorMessage = "Impossible d'enregistrer le selfie. Reessayez.";
     }
     capturingSelfie = false;
     notifyListeners();

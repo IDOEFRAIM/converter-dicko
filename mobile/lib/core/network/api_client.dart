@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
@@ -101,7 +102,39 @@ class ApiClient {
       final contentType = response.headers.value('content-type') ?? 'application/octet-stream';
       return BinaryDownload(bytes: response.data ?? const [], contentType: contentType);
     } on DioException catch (error) {
+      // Un telechargement demande `responseType: bytes` : le corps d'erreur JSON
+      // ({code, message}) arrive donc en octets et `_toApiException` ne saurait
+      // pas le lire — on le decode ici pour remonter le VRAI message serveur.
+      final status = error.response?.statusCode ?? -1;
+      final decoded = _tryDecodeErrorBody(error.response?.data);
+      if (decoded != null && decoded['code'] != null) {
+        // Erreur metier structuree du backend (ex. "La facture proforma n'est
+        // disponible que pour un paiement fournisseur...", "Ordre introuvable...").
+        throw ApiException.fromResponseBody(status, decoded);
+      }
+      if (status == 404) {
+        // 404 sans code metier = l'URL n'a aucun handler : l'endpoint n'existe
+        // pas sur le serveur actuel (backend a redeployer).
+        throw const ApiException(
+          message: "Ce service n'est pas disponible sur le serveur actuel. "
+              'Le backend doit etre mis a jour.',
+          statusCode: 404,
+        );
+      }
       throw _toApiException(error);
+    }
+  }
+
+  static Map<String, dynamic>? _tryDecodeErrorBody(Object? data) {
+    if (data == null) return null;
+    if (data is Map<String, dynamic>) return data;
+    try {
+      final raw = data is List<int> ? utf8.decode(data) : (data is String ? data : null);
+      if (raw == null || raw.isEmpty) return null;
+      final parsed = jsonDecode(raw);
+      return parsed is Map<String, dynamic> ? parsed : null;
+    } catch (_) {
+      return null;
     }
   }
 
@@ -120,7 +153,18 @@ class ApiClient {
         return ApiException.unexpected();
       case DioExceptionType.badResponse:
         final statusCode = error.response?.statusCode ?? -1;
-        return ApiException.fromResponseBody(statusCode, error.response?.data);
+        final body = error.response?.data;
+        final map = _tryDecodeErrorBody(body);
+        if (statusCode == 404 && (map == null || map['code'] == null)) {
+          // 404 sans code metier = aucun handler pour cette URL : l'endpoint
+          // n'existe pas sur le serveur actuel (backend a redeployer).
+          return const ApiException(
+            message: "Ce service n'est pas disponible sur le serveur actuel. "
+                'Le backend doit etre mis a jour.',
+            statusCode: 404,
+          );
+        }
+        return ApiException.fromResponseBody(statusCode, body);
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:

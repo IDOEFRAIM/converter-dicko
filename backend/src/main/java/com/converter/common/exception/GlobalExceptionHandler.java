@@ -171,8 +171,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorResponse> handleNoResource(NoResourceFoundException ex,
                                                           HttpServletRequest request) {
+        // Aucun handler pour cette URL : le plus souvent une methode/route absente parce que
+        // le serveur n'est pas a jour. On nomme le chemin pour lever l'ambiguite avec un
+        // "vraie ressource introuvable" (ORDER_NOT_FOUND & co, qui portent leur propre message).
         return build(ErrorCode.RESOURCE_NOT_FOUND,
-                "Ressource introuvable.", request, null);
+                "Aucune ressource a cette adresse : " + request.getMethod() + " " + request.getRequestURI()
+                        + " — verifiez que le serveur est a jour.",
+                request, null);
     }
 
     @ExceptionHandler(Exception.class)

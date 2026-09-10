@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -30,6 +31,32 @@ class KycPage extends StatelessWidget {
 
 class _KycView extends StatelessWidget {
   const _KycView();
+
+  Future<void> _pickSource(BuildContext context, KycController controller, String slot) async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Appareil photo'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choisir dans la galerie'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source != null) {
+      await controller.capture(slot, source);
+    }
+  }
 
   Future<void> _submit(BuildContext context, KycController controller) async {
     final ok = await controller.submit();
@@ -171,20 +198,20 @@ class _KycView extends StatelessWidget {
         label: 'Recto de la piece',
         hint: 'Lisible, sans reflet, dans le cadre',
         path: controller.frontPath,
-        onTap: () => controller.capture('front'),
+        onTap: () => _pickSource(context, controller, 'front'),
       ),
       if (controller.documentType.needsBack)
         _CaptureTile(
           label: 'Verso de la piece',
           hint: 'Lisible, sans reflet',
           path: controller.backPath,
-          onTap: () => controller.capture('back'),
+          onTap: () => _pickSource(context, controller, 'back'),
         ),
       _CaptureTile(
         label: 'Selfie',
         hint: 'Visage bien visible, sans lunettes de soleil',
         path: controller.selfiePath,
-        onTap: () => controller.capture('selfie'),
+        onTap: () => _pickSource(context, controller, 'selfie'),
       ),
       if (controller.errorMessage != null) ...[
         const SizedBox(height: AppSpacing.sm),

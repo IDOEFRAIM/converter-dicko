@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/errors/api_exception.dart';
@@ -43,12 +44,14 @@ class KycController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// [slot] : `'front'`, `'back'` ou `'selfie'`. Best-effort : annulation ou
-  /// echec ne laissent jamais un tap muet.
-  Future<void> capture(String slot) async {
+  /// [slot] : `'front'`, `'back'` ou `'selfie'`. [source] : appareil photo ou
+  /// galerie (choisi par l'utilisateur). Best-effort : annulation ou echec ne
+  /// laissent jamais un tap muet, et le message dit *pourquoi* (permission,
+  /// pas de camera...).
+  Future<void> capture(String slot, ImageSource source) async {
     try {
       final XFile? shot = await _picker.pickImage(
-        source: ImageSource.camera,
+        source: source,
         preferredCameraDevice: slot == 'selfie' ? CameraDevice.front : CameraDevice.rear,
         imageQuality: 80,
       );
@@ -63,8 +66,17 @@ class KycController extends ChangeNotifier {
       }
       errorMessage = null;
       notifyListeners();
+    } on PlatformException catch (error) {
+      errorMessage = switch (error.code) {
+        'camera_access_denied' || 'photo_access_denied' =>
+          "Acces refuse. Autorisez l'appareil photo ou les photos dans les reglages du telephone.",
+        'no_available_camera' => 'Aucun appareil photo disponible sur ce telephone.',
+        'already_active' => 'Un choix de photo est deja en cours. Patientez un instant.',
+        _ => 'Impossible d\'ouvrir ${source == ImageSource.camera ? "l'appareil photo" : "la galerie"}. Reessayez.',
+      };
+      notifyListeners();
     } catch (_) {
-      errorMessage = 'Impossible de prendre la photo. Reessayez.';
+      errorMessage = 'Impossible de recuperer la photo. Reessayez.';
       notifyListeners();
     }
   }
