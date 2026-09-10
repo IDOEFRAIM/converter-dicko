@@ -59,6 +59,16 @@ public class FileValidator {
         return detected;
     }
 
+    /**
+     * Type MIME deduit des seules signatures binaires (magic bytes), ou {@code null}
+     * si aucune ne correspond. Ne valide rien, ne leve pas : sert a re-etiqueter un
+     * fichier deja stocke au moment de le servir (ex. pieces KYC), pour qu'un
+     * navigateur puisse l'afficher plutot que de le traiter comme un binaire opaque.
+     */
+    public String sniffContentType(byte[] header) {
+        return detectContentType(header);
+    }
+
     private String detectContentType(byte[] content) {
         if (startsWith(content, JPEG_MAGIC)) {
             return "image/jpeg";

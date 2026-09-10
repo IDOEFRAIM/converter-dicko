@@ -3,6 +3,7 @@ package com.converter.kyc.web;
 import com.converter.common.api.ApiResponse;
 import com.converter.common.api.PageResponse;
 import com.converter.kyc.dto.KycAdminSubmissionResponse;
+import com.converter.kyc.dto.KycFileDownload;
 import com.converter.kyc.dto.RejectKycRequest;
 import com.converter.kyc.service.KycService;
 import com.converter.security.AuthenticatedUser;
@@ -77,13 +78,14 @@ public class AdminKycController {
     @GetMapping("/submissions/{id}/files/{kind}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Recuperer un fichier d'un dossier KYC",
-            description = "kind : front | back | selfie. Flux binaire brut, jamais mis en cache.")
+            description = "kind : front | back | selfie. Type MIME reel (image / PDF), jamais mis en cache, "
+                    + "jamais sniffe au-dela de ce type.")
     public ResponseEntity<Resource> file(@PathVariable UUID id, @PathVariable String kind) {
-        Resource resource = kycService.loadFile(id, kind);
+        KycFileDownload download = kycService.loadFile(id, kind);
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(MediaType.parseMediaType(download.contentType()))
                 .header("X-Content-Type-Options", "nosniff")
                 .header("Cache-Control", "no-store")
-                .body(resource);
+                .body(download.resource());
     }
 }

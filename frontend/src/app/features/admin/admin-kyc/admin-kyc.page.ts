@@ -69,7 +69,17 @@ export class AdminKycPage implements OnInit {
   viewFile(submission: KycAdminSubmission, kind: KycFileKind): void {
     const tab = openPendingTab();
     this.adminKycService.downloadFile(submission.id, kind).subscribe({
-      next: (blob) => resolveBlobTab(tab, blob, `kyc-${kind}-${submission.userFullName}`),
+      next: (blob) => {
+        const ext =
+          blob.type === 'application/pdf'
+            ? 'pdf'
+            : blob.type === 'image/png'
+              ? 'png'
+              : blob.type === 'image/webp'
+                ? 'webp'
+                : 'jpg';
+        resolveBlobTab(tab, blob, `kyc-${kind}-${submission.id}.${ext}`);
+      },
       error: (error) => {
         tab?.close();
         this.notification.error(extractErrorMessage(error));

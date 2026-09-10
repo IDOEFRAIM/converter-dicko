@@ -10,6 +10,7 @@ import com.converter.kyc.domain.KycDocumentType;
 import com.converter.kyc.domain.KycSubmission;
 import com.converter.kyc.domain.KycSubmissionStatus;
 import com.converter.kyc.dto.KycAdminSubmissionResponse;
+import com.converter.kyc.dto.KycFileDownload;
 import com.converter.kyc.dto.KycFileUpload;
 import com.converter.kyc.dto.KycSubmissionResponse;
 import com.converter.kyc.repository.KycSubmissionRepository;
@@ -22,9 +23,12 @@ import com.converter.user.service.UserService;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.Clock;
 import java.util.Map;
 import java.util.Optional;
@@ -152,7 +156,7 @@ public class KycService {
     }
 
     @Transactional(readOnly = true)
-    public Resource loadFile(UUID submissionId, String kind) {
+    public KycFileDownload loadFile(UUID submissionId, String kind) {
         KycSubmission submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> notFound(submissionId));
         String key = switch (kind) {
@@ -164,7 +168,23 @@ public class KycService {
         if (key == null) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "Fichier KYC introuvable.");
         }
-        return fileStorageService.load(key);
+        Resource resource = fileStorageService.load(key);
+        return new KycFileDownload(resource, probeContentType(resource));
+    }
+
+    /**
+     * Type MIME reel de la piece, relu depuis ses premiers octets a chaque acces —
+     * il n'est pas persiste (le contenu ne transite jamais par la base). A defaut de
+     * signature reconnue, on retombe sur {@code application/octet-stream}.
+     */
+    private String probeContentType(Resource resource) {
+        try (InputStream in = resource.getInputStream()) {
+            byte[] header = in.readNBytes(16);
+            String sniffed = fileValidator.sniffContentType(header);
+            return sniffed != null ? sniffed : MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        } catch (IOException e) {
+            return MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        }
     }
 
     private KycSubmission requirePending(UUID submissionId) {
