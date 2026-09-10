@@ -44,7 +44,9 @@ export class AdminKycPage implements OnInit {
   readonly processingId = signal<string | null>(null);
   readonly displayedColumns = ['user', 'documentType', 'submittedAt', 'files', 'actions'];
 
-  readonly documentLabel = KYC_DOCUMENT_TYPE_LABELS;
+  documentLabel(submission: KycAdminSubmission): string {
+    return KYC_DOCUMENT_TYPE_LABELS[submission.documentType] ?? submission.documentType;
+  }
 
   ngOnInit(): void {
     this.load();
