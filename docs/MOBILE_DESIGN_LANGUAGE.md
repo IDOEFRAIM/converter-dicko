@@ -183,9 +183,12 @@ Retours utilisateur post-refonte, traités hors « lots » :
 - **#4 — Rabais de Ruée progressif** (fait) : la réduction de marge n'est plus un
   pourcentage fixe. `rabais = base + PAR_PARTICIPANT·(N−1) + PAR_MILLION·⌊volume/1M⌋`,
   borné `[0, MAX]` (backend `PoolService.computeReward`, coefficients en `system_settings`
-  via `V31`, testé par `PoolServiceRewardTest`). `PoolResponse` expose la valeur vivante +
-  les 4 termes ; le détail de Ruée affiche « Rabais actuel −X pts » + la formule en clair
-  (« grandit avec le groupe : base … + …/participant + …/million XOF »).
+  via `V31`, testé par `PoolServiceRewardTest`). `PoolResponse` expose la valeur vivante **et
+  le détail ligne à ligne** (`rewardParticipantBonusPercentage` = points dus au NOMBRE de
+  participants, `rewardVolumeBonusPercentage` = points dus au VOLUME total échangé —
+  `PoolService.computeRewardBreakdown`). Le détail de Ruée affiche un encart **« Rabais du
+  taux — comment il se calcule »** : part de base / « N participants → −X pts » / « volume
+  échangé → −Y pts » / total plafonné. Aucun calcul côté client.
 - **#3 — Facture proforma fournisseur** (fait) : nouveau paquet backend
   `com.converter.order.proforma` (miroir de `order.receipt`, même garantie « aucun
   recalcul ») + endpoint `GET /api/v1/orders/{id}/proforma`. Disponible **quel que soit le
@@ -204,8 +207,9 @@ Retours utilisateur post-refonte, traités hors « lots » :
   backend**. Le « filtre » est un cadre appliqué à l'**affichage** (`MemoryFrame` : double
   filet d'or + bandeau gravé date · montant), jamais composité dans le fichier. Le
   « Registre des opérations » (`my_gains`) affiche la vignette à la place de la pastille
-  quand un souvenir existe. iOS : `NSCameraUsageDescription` ajouté ; Android : rien à
-  déclarer (capture par intent).
+  quand un souvenir existe, **et une galerie horizontale « Livre mémoire »** (`_MemoryBookStrip`)
+  s'affiche en tête de « Mes gains » dès le premier souvenir. iOS : `NSCameraUsageDescription`
+  ajouté ; Android : rien à déclarer (capture par intent).
 - **#6 — KYC en libre-service** (fait) : nouveau module backend `com.converter.kyc` +
   table `kyc_submissions` (`V32`). L'utilisateur téléverse une pièce (recto + verso sauf
   passeport) + un selfie ; **revue manuelle interne** par un administrateur — pas de

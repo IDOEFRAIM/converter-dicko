@@ -21,6 +21,7 @@ import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/grain.dart';
 import '../../../shared/widgets/loading_view.dart';
+import '../../../shared/widgets/memory_frame.dart';
 import '../../../shared/widgets/objective_dial.dart';
 import '../../../shared/widgets/pressable.dart';
 import '../../../shared/widgets/rank_seal.dart';
@@ -72,6 +73,7 @@ class _MyGainsView extends StatelessWidget {
             children: [
               _SummaryHero(controller: controller, profile: profile),
               const SizedBox(height: AppSpacing.xl),
+              _MemoryBookStrip(controller: controller),
               Text(_historyTitle(profile), style: AppTypography.eyebrow),
               const SizedBox(height: AppSpacing.sm),
               _HistorySection(controller: controller, profile: profile),
@@ -87,6 +89,61 @@ class _MyGainsView extends StatelessWidget {
         ExperienceProfile.studentMale => 'REGISTRE DES OPERATIONS',
         ExperienceProfile.studentFemale => 'REGISTRE DES OPERATIONS',
       };
+}
+
+/// « Livre mémoire » (remarque produit #5) : la galerie horizontale des selfies
+/// souvenirs pris apres les transferts termines. Vide (rien affiche) tant
+/// qu'aucun souvenir n'existe. Les images restent 100 % locales.
+class _MemoryBookStrip extends StatelessWidget {
+  final MyGainsController controller;
+
+  const _MemoryBookStrip({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final memories = controller.memories;
+    if (memories.isEmpty) return const SizedBox.shrink();
+
+    final entries = controller.completedTransfers
+        .where((entry) => memories.containsKey(entry.id))
+        .toList(growable: false);
+    if (entries.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.auto_stories_outlined, size: 16, color: AppColors.inkMuted),
+            const SizedBox(width: AppSpacing.xs),
+            Text('LIVRE MEMOIRE', style: AppTypography.eyebrow),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        SizedBox(
+          height: 132,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.zero,
+            itemCount: entries.length,
+            separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.sm),
+            itemBuilder: (context, index) {
+              final entry = entries[index];
+              return MemoryFrame(
+                imagePath: memories[entry.id]!,
+                dateLabel: DateFormatting.dayOnly(entry.createdAt),
+                amountLabel: Money(entry.amountXof, AppCurrency.xof).formatted(),
+                width: 100,
+                height: 132,
+                compact: true,
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+      ],
+    );
+  }
 }
 
 class _SummaryHero extends StatelessWidget {

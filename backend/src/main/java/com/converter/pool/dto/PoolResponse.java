@@ -28,6 +28,10 @@ public record PoolResponse(
         int participantCount,
         BigDecimal rewardMarginReductionPercentage,
         BigDecimal rewardBasePercentage,
+        /** Points venant du NOMBRE de participants : perParticipant * (participants - 1). */
+        BigDecimal rewardParticipantBonusPercentage,
+        /** Points venant du VOLUME echange par le groupe : perMillion * floor(volume / 1M). */
+        BigDecimal rewardVolumeBonusPercentage,
         BigDecimal rewardPerParticipantPercentage,
         BigDecimal rewardPerMillionXofPercentage,
         BigDecimal rewardMaxPercentage,

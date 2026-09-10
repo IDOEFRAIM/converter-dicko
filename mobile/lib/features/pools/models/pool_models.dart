@@ -52,8 +52,15 @@ class Pool {
   final String rewardMarginReductionPercentage;
 
   /// Termes de la formule, pour l'expliquer a l'ecran :
-  /// `rabais = base + parParticipant*(N-1) + parMillion*floor(volume/1M)`, borne a `[0, max]`.
+  /// `rabais = base + bonusParticipants + bonusVolume`, borne a `[0, max]`.
   final String rewardBasePercentage;
+
+  /// Points deja acquis grace au NOMBRE de participants.
+  final String rewardParticipantBonusPercentage;
+
+  /// Points deja acquis grace au VOLUME total echange par le groupe.
+  final String rewardVolumeBonusPercentage;
+
   final String rewardPerParticipantPercentage;
   final String rewardPerMillionXofPercentage;
   final String rewardMaxPercentage;
@@ -77,6 +84,8 @@ class Pool {
     required this.participantCount,
     required this.rewardMarginReductionPercentage,
     required this.rewardBasePercentage,
+    required this.rewardParticipantBonusPercentage,
+    required this.rewardVolumeBonusPercentage,
     required this.rewardPerParticipantPercentage,
     required this.rewardPerMillionXofPercentage,
     required this.rewardMaxPercentage,
@@ -112,6 +121,8 @@ class Pool {
       participantCount: json['participantCount'] as int? ?? 0,
       rewardMarginReductionPercentage: decimalStringFromJson(json['rewardMarginReductionPercentage']),
       rewardBasePercentage: decimalStringFromJson(json['rewardBasePercentage']),
+      rewardParticipantBonusPercentage: decimalStringFromJson(json['rewardParticipantBonusPercentage']),
+      rewardVolumeBonusPercentage: decimalStringFromJson(json['rewardVolumeBonusPercentage']),
       rewardPerParticipantPercentage: decimalStringFromJson(json['rewardPerParticipantPercentage']),
       rewardPerMillionXofPercentage: decimalStringFromJson(json['rewardPerMillionXofPercentage']),
       rewardMaxPercentage: decimalStringFromJson(json['rewardMaxPercentage']),

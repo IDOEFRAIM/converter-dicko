@@ -257,23 +257,46 @@ public class PoolService {
      */
     static BigDecimal computeReward(BigDecimal base, BigDecimal perParticipant, BigDecimal perMillion,
                                     BigDecimal max, int participantCount, BigDecimal groupVolumeXof) {
+        return computeRewardBreakdown(base, perParticipant, perMillion, max, participantCount, groupVolumeXof).total();
+    }
+
+    /**
+     * Detail du rabais, ligne a ligne (remarque produit #4) : part de base, points venant du
+     * NOMBRE de participants, points venant du VOLUME echange, et total borne. Chaque part est
+     * arrondie a 3 decimales ; le total est ensuite borne a {@code [0, max]}.
+     */
+    static RewardBreakdown computeRewardBreakdown(BigDecimal base, BigDecimal perParticipant,
+                                                  BigDecimal perMillion, BigDecimal max,
+                                                  int participantCount, BigDecimal groupVolumeXof) {
         BigDecimal safeVolume = groupVolumeXof == null ? BigDecimal.ZERO : groupVolumeXof.max(BigDecimal.ZERO);
         long extraParticipants = Math.max(0L, participantCount - 1L);
         BigDecimal millions = safeVolume.divide(BigDecimal.valueOf(1_000_000L), 0, RoundingMode.DOWN);
-        BigDecimal reduction = base
-                .add(perParticipant.multiply(BigDecimal.valueOf(extraParticipants)))
-                .add(perMillion.multiply(millions));
-        return reduction.max(BigDecimal.ZERO).min(max).setScale(3, RoundingMode.HALF_UP);
+
+        BigDecimal baseScaled = base.setScale(3, RoundingMode.HALF_UP);
+        BigDecimal participantBonus = perParticipant.multiply(BigDecimal.valueOf(extraParticipants))
+                .setScale(3, RoundingMode.HALF_UP);
+        BigDecimal volumeBonus = perMillion.multiply(millions).setScale(3, RoundingMode.HALF_UP);
+        BigDecimal total = baseScaled.add(participantBonus).add(volumeBonus)
+                .max(BigDecimal.ZERO).min(max).setScale(3, RoundingMode.HALF_UP);
+        return new RewardBreakdown(baseScaled, participantBonus, volumeBonus, total);
     }
 
-    private BigDecimal currentReward(Pool pool, int participantCount) {
-        return computeReward(
+    /** Decomposition du rabais d'une Ruee — jamais persistee, uniquement exposee via {@code PoolResponse}. */
+    record RewardBreakdown(BigDecimal base, BigDecimal participantBonus, BigDecimal volumeBonus, BigDecimal total) {
+    }
+
+    private RewardBreakdown currentRewardBreakdown(Pool pool, int participantCount) {
+        return computeRewardBreakdown(
                 pool.getRewardMarginReductionPercentage(),
                 settingsService.getDecimal(SettingKey.POOL_REWARD_PER_PARTICIPANT_PCT),
                 settingsService.getDecimal(SettingKey.POOL_REWARD_PER_MILLION_XOF_PCT),
                 settingsService.getDecimal(SettingKey.POOL_REWARD_MAX_PCT),
                 participantCount,
                 pool.getCurrentAmountXof());
+    }
+
+    private BigDecimal currentReward(Pool pool, int participantCount) {
+        return currentRewardBreakdown(pool, participantCount).total();
     }
 
     /** Pilote par {@code PoolScheduler} -- une transaction par pool, verrou pris a l'interieur. */
@@ -350,17 +373,17 @@ public class PoolService {
         boolean viewerIsParticipant = viewerId != null
                 && participantRepository.findByPoolIdAndUserId(pool.getId(), viewerId).isPresent();
 
-        BigDecimal base = pool.getRewardMarginReductionPercentage();
         BigDecimal perParticipant = settingsService.getDecimal(SettingKey.POOL_REWARD_PER_PARTICIPANT_PCT);
         BigDecimal perMillion = settingsService.getDecimal(SettingKey.POOL_REWARD_PER_MILLION_XOF_PCT);
         BigDecimal max = settingsService.getDecimal(SettingKey.POOL_REWARD_MAX_PCT);
-        BigDecimal reward = computeReward(base, perParticipant, perMillion, max, participantCount,
-                pool.getCurrentAmountXof());
+        RewardBreakdown breakdown = computeRewardBreakdown(pool.getRewardMarginReductionPercentage(),
+                perParticipant, perMillion, max, participantCount, pool.getCurrentAmountXof());
 
         return new PoolResponse(
                 pool.getId(), pool.getCode(), pool.getCreatorId(), pool.getCurrencyPair(),
                 pool.getTargetAmountXof(), pool.getCurrentAmountXof(), pool.getStatus(), participantCount,
-                reward, base, perParticipant, perMillion, max,
+                breakdown.total(), breakdown.base(), breakdown.participantBonus(), breakdown.volumeBonus(),
+                perParticipant, perMillion, max,
                 pool.getCreatedAt(), pool.getExpiresAt(),
                 pool.getSucceededAt(), pool.getExpiredAt(), pool.getCancelledAt(),
                 viewerIsParticipant, pool.getCreatorId().equals(viewerId));

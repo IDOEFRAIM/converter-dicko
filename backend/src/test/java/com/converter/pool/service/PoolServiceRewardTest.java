@@ -56,4 +56,22 @@ class PoolServiceRewardTest {
                 .isEqualByComparingTo("0.650");
         assertThat(reward(2, "-1")).isEqualByComparingTo("0.650");
     }
+
+    @Test
+    void breakdownSeparatesTheTwoAxes() {
+        // 3 participants, 2 500 000 XOF echanges : 0.5 base + 2*0.15 + 2*0.10
+        var breakdown = PoolService.computeRewardBreakdown(BASE, PER_PARTICIPANT, PER_MILLION, MAX, 3,
+                new BigDecimal("2500000"));
+        assertThat(breakdown.base()).isEqualByComparingTo("0.500");
+        assertThat(breakdown.participantBonus()).isEqualByComparingTo("0.300"); // nombre de personnes
+        assertThat(breakdown.volumeBonus()).isEqualByComparingTo("0.200");      // somme echangee
+        assertThat(breakdown.total()).isEqualByComparingTo("1.000");
+    }
+
+    @Test
+    void breakdownTotalStaysCapped() {
+        var breakdown = PoolService.computeRewardBreakdown(BASE, PER_PARTICIPANT, PER_MILLION, MAX, 50,
+                new BigDecimal("100000000"));
+        assertThat(breakdown.total()).isEqualByComparingTo("2.000");
+    }
 }

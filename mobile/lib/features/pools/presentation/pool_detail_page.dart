@@ -160,27 +160,8 @@ class _ThermometerCard extends StatelessWidget {
                     succeeded: succeeded,
                   ),
                 ),
-                if (pool.isActive) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  Center(
-                    child: Text(
-                      'Rabais actuel : -${_fmtPct(pool.rewardMarginReductionPercentage)} pts de marge',
-                      textAlign: TextAlign.center,
-                      style: AppTypography.caption.copyWith(color: AppColors.keyline, fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Center(
-                    child: Text(
-                      'Il grandit avec le groupe : base ${_fmtPct(pool.rewardBasePercentage)} '
-                      '+ ${_fmtPct(pool.rewardPerParticipantPercentage)} par participant '
-                      '+ ${_fmtPct(pool.rewardPerMillionXofPercentage)} par million XOF echange '
-                      '(plafond ${_fmtPct(pool.rewardMaxPercentage)}).',
-                      textAlign: TextAlign.center,
-                      style: AppTypography.caption.copyWith(color: AppColors.onLacquerMuted),
-                    ),
-                  ),
-                ],
+                const SizedBox(height: AppSpacing.md),
+                _RewardBreakdown(pool: pool),
                 const SizedBox(height: AppSpacing.md),
                 Divider(color: AppColors.onLacquer.withValues(alpha: 0.12), height: 1),
                 const SizedBox(height: AppSpacing.md),
@@ -373,4 +354,86 @@ class _Actions extends StatelessWidget {
 String _fmtPct(String raw) {
   if (!raw.contains('.')) return raw;
   return raw.replaceFirst(RegExp(r'\.?0+$'), '');
+}
+
+/// Decompose le rabais du taux (remarque produit #4) : part de base, points
+/// gagnes par le NOMBRE de participants, points gagnes par le VOLUME total
+/// echange par le groupe, et le total (plafonne). Toutes les valeurs viennent
+/// du backend — aucun calcul cote client.
+class _RewardBreakdown extends StatelessWidget {
+  final Pool pool;
+
+  const _RewardBreakdown({required this.pool});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.onLacquer.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        border: Border.all(color: AppColors.keyline.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('RABAIS DU TAUX — COMMENT IL SE CALCULE',
+              style: AppTypography.eyebrow.copyWith(color: AppColors.keyline)),
+          const SizedBox(height: AppSpacing.sm),
+          _line('Part de base', pool.rewardBasePercentage),
+          _line(
+            '${pool.participantCount} participant(s) dans le groupe',
+            pool.rewardParticipantBonusPercentage,
+            sub: '+${_fmtPct(pool.rewardPerParticipantPercentage)} pt par personne au-dela du premier',
+          ),
+          _line(
+            'Volume echange par le groupe',
+            pool.rewardVolumeBonusPercentage,
+            sub: '${Money(pool.currentAmountXof, AppCurrency.xof).formattedWithCurrency()} '
+                '· +${_fmtPct(pool.rewardPerMillionXofPercentage)} pt par million',
+          ),
+          Divider(color: AppColors.onLacquer.withValues(alpha: 0.15), height: AppSpacing.md),
+          _line('Rabais actuel', pool.rewardMarginReductionPercentage, strong: true),
+          const SizedBox(height: 2),
+          Text('Plafond : -${_fmtPct(pool.rewardMaxPercentage)} pts de marge',
+              style: AppTypography.caption.copyWith(color: AppColors.onLacquerMuted)),
+        ],
+      ),
+    );
+  }
+
+  Widget _line(String label, String points, {String? sub, bool strong = false}) {
+    final value = _fmtPct(points);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: (strong ? AppTypography.bodyStrong : AppTypography.body)
+                      .copyWith(color: AppColors.onLacquer),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                value == '0' ? '—' : '-$value pt${value == '1' ? '' : 's'}',
+                style: (strong ? AppTypography.figureMedium : AppTypography.figureSmall).copyWith(
+                  color: strong ? AppColors.keyline : AppColors.onLacquer,
+                  fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          if (sub != null)
+            Text(sub, style: AppTypography.caption.copyWith(color: AppColors.onLacquerMuted)),
+        ],
+      ),
+    );
+  }
 }
