@@ -60,6 +60,12 @@ dependencies:
   # (section 28 : preparer une UX de partage/ouverture reelle).
   share_plus: ^13.3.0
 
+  # Ouvrir un fichier telecharge dans le lecteur systeme (recu / proforma PDF) :
+  # un vrai "telechargement" qui affiche le document, pas la feuille de partage
+  # (qui suggere WhatsApp/contacts et prete a confusion avec l'invitation aux
+  # ruees). Repli sur share_plus seulement si aucun lecteur n'est installe.
+  open_filex: ^4.5.0
+
   # Repertoire temporaire ecrivable pour materialiser les octets telecharges
   # avant de les partager (share_plus a besoin d'un chemin de fichier reel).
   path_provider: ^2.1.5

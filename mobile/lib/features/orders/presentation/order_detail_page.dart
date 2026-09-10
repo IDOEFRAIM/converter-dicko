@@ -70,17 +70,16 @@ class _OrderDetailView extends StatelessWidget {
     }
     final reference = controller.order?.reference ?? 'transfert';
     try {
-      await saveAndShareBytes(bytes: download.bytes, fileName: 'justificatif-$reference.pdf');
+      await saveAndOpenBytes(bytes: download.bytes, fileName: 'justificatif-$reference.pdf');
     } catch (error) {
-      // Ecriture disque ou feuille de partage native (permission refusee,
-      // plugin non enregistre...) peuvent echouer sans jamais lever
-      // d'ApiException -- le telechargement reseau avait pourtant reussi, ne
-      // jamais laisser ce cas paraitre comme un simple "rien ne s'est passe"
-      // (mission section 38, meme defaut que celui deja corrige sur l'upload
-      // de preuve de paiement).
+      // Ecriture disque ou ouverture systeme (aucun lecteur, permission
+      // refusee...) peuvent echouer sans jamais lever d'ApiException -- le
+      // telechargement reseau avait pourtant reussi, ne jamais laisser ce cas
+      // paraitre comme un simple "rien ne s'est passe" (mission section 38,
+      // meme defaut que celui deja corrige sur l'upload de preuve de paiement).
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Impossible d'ouvrir ou de partager le justificatif. Reessayez.")),
+          const SnackBar(content: Text("Impossible d'ouvrir le justificatif. Reessayez.")),
         );
       }
     }
@@ -96,13 +95,13 @@ class _OrderDetailView extends StatelessWidget {
     }
     final reference = controller.order?.reference ?? 'transfert';
     try {
-      await saveAndShareBytes(bytes: download.bytes, fileName: 'proforma-$reference.pdf');
+      await saveAndOpenBytes(bytes: download.bytes, fileName: 'proforma-$reference.pdf');
     } catch (_) {
       // Meme discipline que le justificatif : le telechargement reseau a reussi,
-      // seule l'ecriture disque / la feuille de partage native a echoue.
+      // seule l'ecriture disque / l'ouverture systeme a echoue.
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Impossible d'ouvrir ou de partager la proforma. Reessayez.")),
+          const SnackBar(content: Text("Impossible d'ouvrir la proforma. Reessayez.")),
         );
       }
     }

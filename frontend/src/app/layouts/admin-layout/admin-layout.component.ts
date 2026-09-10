@@ -35,6 +35,7 @@ export class AdminLayoutComponent {
     { path: '/admin/rates', icon: 'currency_exchange', label: 'Taux préférentiel' },
     { path: '/admin/orders', icon: 'receipt_long', label: 'Ordres' },
     { path: '/admin/payments', icon: 'payments', label: 'Paiements' },
+    { path: '/admin/kyc', icon: 'badge', label: "Verif. identite" },
     { path: '/admin/settlements', icon: 'send', label: 'Reglements' },
     { path: '/admin/treasury', icon: 'account_balance', label: 'Tresorerie' },
   ];

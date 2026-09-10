@@ -159,6 +159,11 @@ export const routes: Routes = [
           import('./features/admin/admin-payments/admin-payments.page').then((m) => m.AdminPaymentsPage),
       },
       {
+        path: 'kyc',
+        loadComponent: () =>
+          import('./features/admin/admin-kyc/admin-kyc.page').then((m) => m.AdminKycPage),
+      },
+      {
         path: 'settlements',
         loadComponent: () =>
           import('./features/admin/admin-settlements/admin-settlements.page').then(
