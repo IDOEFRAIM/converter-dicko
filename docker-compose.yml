@@ -1,17 +1,21 @@
 # =====================================================================
-#  Orchestration locale : PostgreSQL + backend.
+#  Orchestration complete : PostgreSQL + backend + frontend.
 #
-#  Le frontend Angular rejoindra ce fichier en Phase 7 (il n'existe pas
-#  encore a ce stade de la Phase 2).
+#  - postgres  : base de donnees (volume nomme, persistant).
+#  - backend   : API Spring Boot (Flyway migre le schema au demarrage).
+#  - frontend  : Angular compile, servi par nginx, qui relaie /api -> backend.
 #
 #  Usage :
-#    cp .env.example .env      # puis renseigner .env si necessaire
-#    docker compose up --build
+#    cp .env.example .env          # puis renseigner .env (obligatoire en prod)
+#    docker compose up -d --build  # ou : scripts/deploy.sh
+#
+#  Runbook complet de mise en production : voir DEPLOY.md a la racine.
 #
 #  Sans aucune variable definie dans .env, le profil `dev` (defaut de
 #  l'application) demarre avec des identifiants de developpement locaux
-#  deja presents dans application-dev.yml — c'est la garantie "demarre
-#  avec une configuration vierge" de la Phase 2.
+#  deja presents dans application-dev.yml. En profil `prod`, les secrets
+#  (JWT_SECRET, DB_PASSWORD, ADMIN_PASSWORD si seed) sont OBLIGATOIRES :
+#  l'application refuse de demarrer sinon.
 # =====================================================================
 
 services:
@@ -86,6 +90,28 @@ services:
       timeout: 5s
       retries: 10
       start_period: 45s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: converter-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        # nginx demarre meme si le backend est lent, mais on attend qu'il
+        # soit sain pour que la premiere requete /api aboutisse.
+        condition: service_healthy
+    # Aucune variable : l'URL de l'API est `/api` (meme origine), relayee
+    # par nginx vers `backend:8080` sur le reseau interne de Compose.
+    ports:
+      - "${FRONTEND_PORT:-4300}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
 volumes:
   converter-postgres-data:

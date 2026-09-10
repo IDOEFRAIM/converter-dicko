@@ -1,0 +1,39 @@
+name: Frontend CI
+
+# Minimal, meme philosophie que backend-ci.yml : install + build de production.
+# Le build Angular en configuration `production` fait deja la verification de
+# types stricte des templates (l'erreur TS7053 qui casse le build en est un
+# exemple). Les tests unitaires (vitest) pourront etre ajoutes ici plus tard.
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build (production)
+        run: npm run build

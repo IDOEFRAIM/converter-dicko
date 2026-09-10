@@ -38,8 +38,11 @@ class QuoteResponseTest {
         }
 
         // Verifie explicitement que seuls les champs commercialement publics attendus sont presents.
+        // poolRewardApplied (Lot 3) est un benefice du client lui-meme (reduction de Ruee collective
+        // appliquee a SON devis), jamais une donnee de cout/marge interne : legitimement expose.
         assertThat(componentNames).containsExactly(
                 "id", "direction", "amountXof", "amountCny", "customerRate",
-                "feeXof", "netAmountXof", "status", "createdAt", "expiresAt");
+                "feeXof", "netAmountXof", "status", "createdAt", "expiresAt",
+                "poolRewardApplied");
     }
 }
