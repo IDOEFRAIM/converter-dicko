@@ -43,6 +43,10 @@ class CurrentUser {
   final DateTime? lastLoginAt;
   final ExperienceProfile experienceProfile;
 
+  /// Identite verifiee (KYC) — requis pour creer un ordre au-dela du seuil
+  /// (remarque produit #6, parcours `/more/kyc`).
+  final bool kycVerified;
+
   const CurrentUser({
     required this.id,
     required this.phone,
@@ -54,6 +58,7 @@ class CurrentUser {
     required this.createdAt,
     required this.lastLoginAt,
     required this.experienceProfile,
+    required this.kycVerified,
   });
 
   bool get isAdmin => roles.contains('ADMIN');
@@ -74,6 +79,7 @@ class CurrentUser {
       createdAt: DateTime.parse(json['createdAt'] as String),
       lastLoginAt: json['lastLoginAt'] == null ? null : DateTime.parse(json['lastLoginAt'] as String),
       experienceProfile: ExperienceProfile.fromCode(json['experienceProfile'] as String?),
+      kycVerified: json['kycVerified'] as bool? ?? false,
     );
   }
 }

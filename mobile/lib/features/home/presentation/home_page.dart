@@ -72,6 +72,10 @@ class _HomePageState extends State<HomePage> {
                 style: AppTypography.titleLarge(Theme.of(context).colorScheme.primary),
               ),
               const SizedBox(height: AppSpacing.lg),
+              if (user != null && !user.kycVerified) ...[
+                _KycBanner(onTap: () => context.push('/more/kyc')),
+                const SizedBox(height: AppSpacing.lg),
+              ],
               const Corridor(level: CorridorLevel.hero),
               const SizedBox(height: AppSpacing.xl),
               _RateHero(state: controller.latestRate, onRetry: controller.loadRate, profile: profile),
@@ -363,6 +367,55 @@ class _AchievementsCard extends StatelessWidget {
               ),
             ),
             const Icon(Icons.chevron_right, color: AppColors.onLacquerMuted),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Rappel discret et actionnable de la verification d'identite (remarque
+/// produit #6) — visible tant que `kycVerified` est faux, disparait des que le
+/// compte est verifie. Renvoie vers le parcours `/more/kyc`.
+class _KycBanner extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _KycBanner({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: AppSurfaces.paper(),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.ochre.withValues(alpha: 0.14),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.verified_user_outlined, color: AppColors.ochre, size: 20),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Verifiez votre identite", style: AppTypography.bodyStrong),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Trois photos, deux minutes — pour transferer sans limite de montant.',
+                    style: AppTypography.caption,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.inkFaint),
           ],
         ),
       ),

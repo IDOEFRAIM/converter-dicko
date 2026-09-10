@@ -49,7 +49,7 @@ class MemoryFrame extends StatelessWidget {
               File(imagePath),
               fit: BoxFit.cover,
               cacheWidth: compact ? 240 : 900,
-              errorBuilder: (_, _, _) => const ColoredBox(
+              errorBuilder: (context, error, stackTrace) => const ColoredBox(
                 color: AppColors.lacquerEdge,
                 child: Center(
                   child: Icon(Icons.image_not_supported_outlined, color: AppColors.onLacquerMuted, size: 24),

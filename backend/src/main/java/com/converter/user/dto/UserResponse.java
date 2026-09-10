@@ -42,6 +42,10 @@ public record UserResponse(
         Instant lastLoginAt,
 
         @Schema(description = "Habillage mobile choisi par le client — pilote uniquement l'interface, jamais le pricing")
-        ExperienceProfile experienceProfile
+        ExperienceProfile experienceProfile,
+
+        @Schema(description = "Identite verifiee (KYC). Requis pour creer un ordre au-dela de "
+                + "KYC_REQUIRED_THRESHOLD_XOF — voir le parcours /api/v1/kyc.")
+        boolean kycVerified
 ) {
 }

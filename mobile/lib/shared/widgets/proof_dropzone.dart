@@ -174,7 +174,7 @@ class _ProofDropzoneState extends State<ProofDropzone> with SingleTickerProvider
                       // Parc Android milieu de gamme : on decode la vignette
                       // reduite plutot que la photo plein format.
                       cacheWidth: 300,
-                      errorBuilder: (_, _, _) => _thumbFallback(),
+                      errorBuilder: (context, error, stackTrace) => _thumbFallback(),
                     )
                   : _thumbFallback(),
             ),

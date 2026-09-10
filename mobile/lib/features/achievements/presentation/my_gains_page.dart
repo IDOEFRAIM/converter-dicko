@@ -667,7 +667,7 @@ class _AlbumPageTile extends StatelessWidget {
                 File(selfiePath!),
                 fit: BoxFit.cover,
                 cacheWidth: 120,
-                errorBuilder: (_, _, _) =>
+                errorBuilder: (context, error, stackTrace) =>
                     const ColoredBox(color: AppColors.ivoryDim, child: Icon(Icons.image_outlined, size: 18)),
               ),
             ),

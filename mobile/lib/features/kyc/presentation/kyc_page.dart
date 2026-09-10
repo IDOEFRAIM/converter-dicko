@@ -160,22 +160,12 @@ class _KycView extends StatelessWidget {
     return [
       Text('VOTRE PIECE', style: AppTypography.eyebrow),
       const SizedBox(height: AppSpacing.xs),
-      RadioGroup<KycDocumentType>(
-        groupValue: controller.documentType,
-        onChanged: (value) {
-          if (value != null) controller.setDocumentType(value);
-        },
-        child: Column(
-          children: [
-            for (final type in KycDocumentType.values)
-              RadioListTile<KycDocumentType>(
-                contentPadding: EdgeInsets.zero,
-                value: type,
-                title: Text(type.label, style: AppTypography.bodyStrong),
-              ),
-          ],
+      for (final type in KycDocumentType.values)
+        _DocTypeOption(
+          type: type,
+          selected: controller.documentType == type,
+          onTap: () => controller.setDocumentType(type),
         ),
-      ),
       const SizedBox(height: AppSpacing.md),
       _CaptureTile(
         label: 'Recto de la piece',
@@ -216,6 +206,45 @@ class _KycView extends StatelessWidget {
   }
 }
 
+class _DocTypeOption extends StatelessWidget {
+  final KycDocumentType type;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _DocTypeOption({required this.type, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = Theme.of(context).colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.paper,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            border: Border.all(color: selected ? accent : AppColors.paperEdge, width: selected ? 1.6 : 1),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                color: selected ? accent : AppColors.inkFaint,
+                size: 20,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(child: Text(type.label, style: AppTypography.bodyStrong)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _CaptureTile extends StatelessWidget {
   final String label;
   final String? hint;
@@ -251,7 +280,7 @@ class _CaptureTile extends StatelessWidget {
                           File(path!),
                           fit: BoxFit.cover,
                           cacheWidth: 160,
-                          errorBuilder: (_, _, _) => const ColoredBox(
+                          errorBuilder: (context, error, stackTrace) => const ColoredBox(
                             color: AppColors.ivoryDim,
                             child: Icon(Icons.image_outlined, color: AppColors.inkMuted),
                           ),
