@@ -29,7 +29,7 @@ import '../../features/suppliers/presentation/pay_again_page.dart';
 import '../../features/suppliers/presentation/supplier_detail_page.dart';
 import '../../features/suppliers/presentation/supplier_form_page.dart';
 import '../../features/suppliers/presentation/supplier_list_page.dart';
-import '../../shared/widgets/coming_soon_page.dart';
+import '../../features/wallet/presentation/wallet_page.dart';
 import 'app_shell.dart';
 
 /// Routeur central — un chemin par feature reelle (mission section 45),
@@ -187,11 +187,7 @@ GoRouter buildAppRouter(AuthSession authSession) {
                   GoRoute(path: 'rates', builder: (context, state) => const RateHistoryPage()),
                   GoRoute(path: 'rate-alerts', builder: (context, state) => const RateAlertsPage()),
                   GoRoute(path: 'preferred-rate', builder: (context, state) => const PreferredRatePage()),
-                  GoRoute(
-                    path: 'wallet',
-                    builder: (context, state) =>
-                        const ComingSoonPage(title: 'Portefeuille', icon: Icons.account_balance_wallet_outlined),
-                  ),
+                  GoRoute(path: 'wallet', builder: (context, state) => const WalletPage()),
                   GoRoute(path: 'notifications', builder: (context, state) => const NotificationsPage()),
                   GoRoute(path: 'business', builder: (context, state) => const BusinessPage()),
                   GoRoute(path: 'kyc', builder: (context, state) => const KycPage()),

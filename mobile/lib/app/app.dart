@@ -22,6 +22,7 @@ import '../features/quote/data/quote_api.dart';
 import '../features/rates/data/rate_history_api.dart';
 import '../features/settings/data/settings_api.dart';
 import '../features/suppliers/data/supplier_api.dart';
+import '../features/wallet/data/wallet_api.dart';
 import 'router/app_router.dart';
 
 /// Racine de l'application : composition des dependances (config -> session
@@ -60,6 +61,7 @@ class ConverterApp extends StatelessWidget {
         Provider<NotificationApi>(create: (context) => NotificationApi(context.read<ApiClient>())),
         Provider<BusinessApi>(create: (context) => BusinessApi(context.read<ApiClient>())),
         Provider<PreferredRateApi>(create: (context) => PreferredRateApi(context.read<ApiClient>())),
+        Provider<WalletApi>(create: (context) => WalletApi(context.read<ApiClient>())),
         Provider<AchievementApi>(create: (context) => AchievementApi(context.read<ApiClient>())),
         Provider<PoolApi>(create: (context) => PoolApi(context.read<ApiClient>())),
         Provider<KycApi>(create: (context) => KycApi(context.read<ApiClient>())),
