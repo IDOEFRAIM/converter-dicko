@@ -1,6 +1,6 @@
-/// Verification d'identite en libre-service (remarque produit #6) — miroir de
-/// `com.converter.kyc`. Revue manuelle interne cote backend : le mobile
-/// soumet un dossier et suit son statut, rien de plus.
+// Verification d'identite en libre-service (remarque produit #6) — miroir de
+// `com.converter.kyc`. Revue manuelle interne cote backend : le mobile
+// soumet un dossier et suit son statut, rien de plus.
 
 enum KycDocumentType {
   nationalId,

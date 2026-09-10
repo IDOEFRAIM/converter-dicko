@@ -7,7 +7,8 @@ plugins {
 
 android {
     namespace = "com.example.mobile"
-    compileSdk = flutter.compileSdkVersion
+    // flutter_secure_storage >= 11 exige compileSdk 37 (message explicite du build Gradle).
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -40,5 +41,7 @@ android {
 }
 
 flutter {
-    source = "app/src"
+    // Racine du projet Flutter, relative a android/app. La valeur "app/src"
+    // faisait resoudre .../android/app/app/src -> "Invalid Flutter source directory".
+    source = "../.."
 }
