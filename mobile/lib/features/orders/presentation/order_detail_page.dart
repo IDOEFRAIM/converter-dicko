@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/experience_theme.dart';
+import '../../../shared/models/current_user.dart';
 import '../../../shared/models/money.dart';
 import '../../../shared/utils/date_formatting.dart';
 import '../../../shared/utils/file_share.dart';
