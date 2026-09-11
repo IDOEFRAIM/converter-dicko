@@ -37,10 +37,7 @@ class _SupplierDetailView extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Desactiver le fournisseur'),
-        content: const Text(
-          'Ce fournisseur ne sera plus proposable pour un nouveau paiement. Vos ordres deja crees avec lui ne '
-          'sont pas affectes. Aucune suppression n\'a lieu.',
-        ),
+        content: const Text('Il ne sera plus propose pour un nouveau paiement. Vos ordres existants ne changent pas.'),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Annuler')),
           TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Desactiver')),
@@ -106,7 +103,7 @@ class _SupplierDetailView extends StatelessWidget {
                         borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                       ),
                       child: Text(
-                        'Ce fournisseur est desactive. Reactivez-le en le modifiant pour l\'utiliser a nouveau.',
+                        'Fournisseur desactive. Modifiez-le pour le reactiver.',
                         style: AppTypography.body.copyWith(color: AppColors.warning),
                       ),
                     ),

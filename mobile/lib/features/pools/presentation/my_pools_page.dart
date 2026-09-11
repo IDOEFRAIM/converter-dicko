@@ -80,7 +80,7 @@ class _MyPoolsView extends StatelessWidget {
       return const EmptyState(
         icon: Icons.groups_outlined,
         title: 'Aucune Ruee',
-        description: 'Lancez une Ruee ou rejoignez celle d\'un ami avec son code.',
+        description: 'Lancez-en une ou rejoignez-en une.',
       );
     }
     return Column(

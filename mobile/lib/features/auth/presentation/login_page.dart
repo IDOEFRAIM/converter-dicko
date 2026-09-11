@@ -132,7 +132,7 @@ class _LoginPageState extends State<LoginPage> {
                 Center(
                   child: TextButton(
                     onPressed: _submitting ? null : () => context.push('/register'),
-                    child: const Text('Pas encore de compte ? Creer un compte'),
+                    child: const Text('Creer un compte'),
                   ),
                 ),
               ],

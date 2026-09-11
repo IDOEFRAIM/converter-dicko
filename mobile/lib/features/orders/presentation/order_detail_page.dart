@@ -247,11 +247,6 @@ class _OrderDetailView extends StatelessWidget {
                   reference != null ? 'Transfert #$reference — termine' : 'Transfert termine',
                   style: AppTypography.figureSmall.copyWith(color: AppColors.onLacquer),
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Recu scelle, opposable a votre fournisseur.',
-                  style: AppTypography.body.copyWith(color: AppColors.onLacquerMuted),
-                ),
                 const SizedBox(height: AppSpacing.md),
                 SizedBox(
                   width: double.infinity,
@@ -268,7 +263,7 @@ class _OrderDetailView extends StatelessWidget {
                             child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.lacquer),
                           )
                         : const Icon(Icons.download_outlined, size: 18),
-                    label: Text(controller.downloadingReceipt ? 'Preparation...' : 'Telecharger le recu PDF'),
+                    label: Text(controller.downloadingReceipt ? 'Preparation...' : 'Telecharger le recu'),
                   ),
                 ),
               ],
@@ -300,14 +295,13 @@ class _OrderDetailView extends StatelessWidget {
                   children: [
                     const Icon(Icons.description_outlined, color: AppColors.keyline, size: 18),
                     const SizedBox(width: AppSpacing.xs),
-                    Text('PAIEMENT FOURNISSEUR · FACTURE PROFORMA',
+                    Text('FACTURE PROFORMA',
                         style: AppTypography.eyebrow.copyWith(color: AppColors.keyline)),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Ce transfert releve du service fournisseur. Facture proforma generee automatiquement — '
-                  'piece descriptive pour votre banque ou le dedouanement, sans valeur d\'acquittement.',
+                  'Generee automatiquement. Pour votre banque ou le dedouanement.',
                   style: AppTypography.body.copyWith(color: AppColors.onLacquerMuted),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -326,7 +320,7 @@ class _OrderDetailView extends StatelessWidget {
                             child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.lacquer),
                           )
                         : const Icon(Icons.download_outlined, size: 18),
-                    label: Text(busy ? 'Preparation...' : 'Telecharger la proforma (PDF)'),
+                    label: Text(busy ? 'Preparation...' : 'Telecharger la proforma'),
                   ),
                 ),
               ],
@@ -378,7 +372,7 @@ class _OrderDetailView extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Immortalisez ce transfert. La photo reste sur cet appareil et alimente votre livre memoire.',
+            'La photo reste sur cet appareil.',
             style: AppTypography.body.copyWith(color: AppColors.inkMuted),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -389,7 +383,7 @@ class _OrderDetailView extends StatelessWidget {
               icon: controller.capturingSelfie
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.photo_camera_outlined, size: 18),
-              label: Text(controller.capturingSelfie ? 'Ouverture...' : 'Prendre un selfie souvenir'),
+              label: Text(controller.capturingSelfie ? 'Ouverture...' : 'Prendre un selfie'),
             ),
           ),
         ],
@@ -524,7 +518,7 @@ class _CancelOrderDialogState extends State<_CancelOrderDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Cette action est definitive et libere la reservation de tresorerie associee.'),
+            const Text('Action definitive.'),
             const SizedBox(height: AppSpacing.md),
             TextFormField(
               controller: _controller,

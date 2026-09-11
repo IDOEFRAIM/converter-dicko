@@ -91,7 +91,7 @@ class _OrderTrackingView extends StatelessWidget {
                   const SizedBox(height: AppSpacing.md),
                   if (controller.lastUpdatedAt != null)
                     Text(
-                      'Derniere mise a jour affichee : ${DateFormatting.dayTime(controller.lastUpdatedAt!.toUtc())}',
+                      'Actualise ${DateFormatting.dayTime(controller.lastUpdatedAt!.toUtc())}',
                       style: AppTypography.caption,
                     ),
                 ],

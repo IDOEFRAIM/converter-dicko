@@ -279,10 +279,7 @@ class _BusinessProfileFormState extends State<_BusinessProfileForm> {
               ),
               if (!isEditing) ...[
                 const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Suivez vos transferts professionnels avec des statistiques dediees.',
-                  style: AppTypography.caption,
-                ),
+                Text('Statistiques dediees a vos transferts pro.', style: AppTypography.caption),
               ],
               const SizedBox(height: AppSpacing.lg),
               TextFormField(

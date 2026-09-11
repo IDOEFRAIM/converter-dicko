@@ -65,8 +65,7 @@ class _RateHistoryView extends StatelessWidget {
               return Center(
                 child: EmptyState(
                   icon: Icons.show_chart,
-                  title: 'Aucun historique disponible',
-                  description: 'Les taux publies apparaitront ici.',
+                  title: 'Aucun historique',
                   action: OutlinedButton.icon(
                     onPressed: controller.load,
                     icon: const Icon(Icons.refresh, size: 18),

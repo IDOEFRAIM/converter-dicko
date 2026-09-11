@@ -97,7 +97,7 @@ class _SupplierListView extends StatelessWidget {
     final suppliers = controller.filteredSuppliers;
     if (suppliers.isEmpty) {
       final (title, icon) = _emptyCopy[controller.filter]!;
-      return EmptyState(icon: icon, title: title, description: 'Creez un fournisseur pour le payer en un instant.');
+      return EmptyState(icon: icon, title: title, description: 'Ajoutez-en un pour payer plus vite.');
     }
     return RefreshIndicator(
       onRefresh: controller.load,

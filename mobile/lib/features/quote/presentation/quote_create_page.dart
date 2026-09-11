@@ -131,7 +131,7 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
       ],
       const SizedBox(height: AppSpacing.xl),
       PrimaryAction(
-        label: 'Obtenir un devis',
+        label: 'Continuer',
         loading: controller.creating,
         onPressed: () => _requestQuote(controller),
       ),
@@ -155,7 +155,7 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
-                  'Reduction Ruee collective appliquee a ce devis !',
+                  'Remise Ruee appliquee',
                   style: AppTypography.body.copyWith(color: AppColors.positive, fontWeight: FontWeight.w600),
                 ),
               ),
@@ -174,8 +174,8 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
         ],
         footnote: Text(
           isExpired
-              ? 'Ce devis a expire. Demandez-en un nouveau.'
-              : 'Devis valable jusqu\'a ${DateFormatting.dayTime(quote.expiresAt)}.',
+              ? 'Devis expire.'
+              : 'Valable jusqu\'a ${DateFormatting.dayTime(quote.expiresAt)}.',
           style: AppTypography.caption.copyWith(color: isExpired ? AppColors.negative : AppColors.inkMuted),
         ),
       ),
@@ -196,7 +196,7 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
       Center(
         child: TextButton(
           onPressed: controller.accepting ? null : controller.reset,
-          child: const Text('Modifier le montant'),
+          child: const Text('Modifier'),
         ),
       ),
     ];

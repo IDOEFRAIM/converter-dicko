@@ -79,7 +79,7 @@ class _RateAlertsViewState extends State<_RateAlertsView> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Annuler l'alerte"),
-        content: Text('Vous ne serez plus notifie lorsque le taux atteindra ${alert.targetRate} XOF.'),
+        content: Text('1 CNY ≤ ${alert.targetRate} XOF'),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Garder')),
           TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text("Annuler l'alerte")),
@@ -119,8 +119,7 @@ class _RateAlertsViewState extends State<_RateAlertsView> {
                   Text('CREER UNE ALERTE', style: AppTypography.eyebrow),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
-                    'Vous serez notifie(e) lorsque le taux client descend a votre cible ou en dessous. '
-                    'Creer une alerte ne declenche aucun paiement.',
+                    'Notification quand le taux atteint votre cible. Aucun paiement declenche.',
                     style: AppTypography.caption,
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -138,7 +137,7 @@ class _RateAlertsViewState extends State<_RateAlertsView> {
                   InkWell(
                     onTap: _pickExpiry,
                     child: InputDecorator(
-                      decoration: const InputDecoration(labelText: 'Expiration (optionnelle)'),
+                      decoration: const InputDecoration(labelText: 'Expiration'),
                       child: Text(_expiresAt == null ? 'Aucune' : DateFormatting.dayOnly(_expiresAt!)),
                     ),
                   ),
@@ -167,11 +166,7 @@ class _RateAlertsViewState extends State<_RateAlertsView> {
       return ErrorState(message: controller.errorMessage!, onRetry: controller.load);
     }
     if (controller.alerts.isEmpty) {
-      return const EmptyState(
-        icon: Icons.notifications_none,
-        title: 'Aucune alerte',
-        description: 'Creez une alerte ci-dessus pour suivre le taux.',
-      );
+      return const EmptyState(icon: Icons.notifications_none, title: 'Aucune alerte');
     }
 
     return Column(

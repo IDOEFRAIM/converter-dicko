@@ -113,7 +113,7 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
                     Money(order.amountXof, AppCurrency.xof).formattedWithCurrency(),
                     style: AppTypography.metricLarge,
                   ),
-                  Text('Reference : #${order.reference}', style: AppTypography.caption),
+                  Text('#${order.reference}', style: AppTypography.caption),
                   const SizedBox(height: AppSpacing.xl),
                   if (controller.payment == null)
                     ..._buildDeclarationStep(controller, methods)
@@ -136,7 +136,7 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _StepLabel(number: 1, label: 'Effectuez le paiement'),
+            const _StepLabel(number: 1, label: 'Payez'),
             const SizedBox(height: AppSpacing.md),
             if (methods.length > 1) ...[
               DropdownButtonFormField<PaymentMethod>(
@@ -150,7 +150,7 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
             TextFormField(
               controller: _referenceController,
               maxLength: 100,
-              decoration: const InputDecoration(labelText: 'Reference de transaction *'),
+              decoration: const InputDecoration(labelText: 'Reference de la transaction *'),
               validator: (value) => Validators.requiredMaxLength(value, 100, label: 'La reference de transaction'),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -158,7 +158,7 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
               controller: _phoneController,
               keyboardType: TextInputType.phone,
               maxLength: 20,
-              decoration: const InputDecoration(labelText: 'Numero du payeur (optionnel)'),
+              decoration: const InputDecoration(labelText: 'Numero du payeur'),
               validator: (value) => Validators.optionalMaxLength(value, 20, label: 'Le numero du payeur'),
             ),
           ],
@@ -177,7 +177,7 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
       ],
       const SizedBox(height: AppSpacing.xl),
       PrimaryAction(
-        label: controller.submitting ? 'Envoi en cours...' : 'Envoyer',
+        label: 'Envoyer',
         loading: controller.submitting,
         onPressed: () => _submit(controller),
       ),
@@ -196,7 +196,7 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
           children: [
             const Icon(Icons.check_circle, color: AppColors.positive, size: 18),
             const SizedBox(width: AppSpacing.sm),
-            const Expanded(child: Text('Paiement declare. Notre equipe va le verifier.')),
+            const Expanded(child: Text('Paiement declare · en verification')),
           ],
         ),
       ),

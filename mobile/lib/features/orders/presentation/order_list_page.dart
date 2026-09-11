@@ -46,11 +46,7 @@ class _OrderListView extends StatelessWidget {
               return ErrorState(message: controller.errorMessage!, onRetry: controller.load);
             }
             if (controller.orders.isEmpty) {
-              return const EmptyState(
-                icon: Icons.receipt_long_outlined,
-                title: 'Aucune operation',
-                description: 'Vos transferts vers la Chine apparaitront ici.',
-              );
+              return const EmptyState(icon: Icons.receipt_long_outlined, title: 'Aucune operation');
             }
             return RefreshIndicator(
               onRefresh: controller.load,

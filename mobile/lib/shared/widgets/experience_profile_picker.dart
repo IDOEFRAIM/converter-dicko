@@ -45,10 +45,10 @@ class _ProfileIdentityPickerState extends State<ProfileIdentityPicker> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Vous utiliserez Converter surtout pour…', style: AppTypography.bodyStrong),
+        Text('Vous utiliserez Converter pour…', style: AppTypography.bodyStrong),
         const SizedBox(height: AppSpacing.sm),
         _choice(
-          label: 'Mon activite (commerce, import, entreprise)',
+          label: 'Mon activite',
           selected: _usage == _Usage.professional,
           onTap: () => setState(() {
             _usage = _Usage.professional;
@@ -57,7 +57,7 @@ class _ProfileIdentityPickerState extends State<ProfileIdentityPicker> {
           }),
         ),
         _choice(
-          label: 'Mes besoins personnels ou mes etudes',
+          label: 'Mes besoins personnels',
           selected: _usage == _Usage.personal,
           onTap: () => setState(() {
             _usage = _Usage.personal;

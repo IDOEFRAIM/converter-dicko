@@ -131,11 +131,7 @@ class _RateHero extends StatelessWidget {
         error: (message) => ErrorState(message: message, onRetry: onRetry),
         data: (entry) {
           if (entry == null) {
-            return const EmptyState(
-              icon: Icons.show_chart,
-              title: 'Aucun taux publie',
-              description: 'Le taux client apparaitra ici des sa premiere publication.',
-            );
+            return const EmptyState(icon: Icons.show_chart, title: 'Aucun taux publie');
           }
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,11 +162,7 @@ class _LastOperationCard extends StatelessWidget {
       error: (message) => ErrorState(message: message, onRetry: onRetry),
       data: (entry) {
         if (entry == null) {
-          return const EmptyState(
-            icon: Icons.receipt_long_outlined,
-            title: 'Aucune operation',
-            description: 'Vos transferts vers la Chine apparaitront ici.',
-          );
+          return const EmptyState(icon: Icons.receipt_long_outlined, title: 'Aucune operation');
         }
         return InkWell(
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
@@ -223,8 +215,8 @@ class _SuppliersPreview extends StatelessWidget {
         if (suppliers.isEmpty) {
           return const EmptyState(
             icon: Icons.storefront_outlined,
-            title: 'Aucun fournisseur enregistre',
-            description: 'Ajoutez un fournisseur pour le payer en quelques secondes la prochaine fois.',
+            title: 'Aucun fournisseur',
+            description: 'Ajoutez-en un pour payer plus vite.',
           );
         }
         return Column(
@@ -317,7 +309,7 @@ class _AchievementsCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 CountUpText(
                   value: summary.completedTransferCount.toDouble(),
-                  formatter: (v) => '${v.round()} transfert(s) termine(s)',
+                  formatter: (v) => '${v.round()} transferts',
                   style: AppTypography.caption,
                 ),
               ],
@@ -347,7 +339,7 @@ class _AchievementsCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    summary.badgeLabel ?? 'AUCUN PALIER ENCORE',
+                    summary.badgeLabel ?? 'AUCUN PALIER',
                     style: AppTypography.eyebrow.copyWith(color: AppColors.keyline),
                   ),
                   const SizedBox(height: 2),
@@ -359,7 +351,7 @@ class _AchievementsCard extends StatelessWidget {
                   if (summary.nextBadgeLabel != null) ...[
                     const SizedBox(height: 2),
                     Text(
-                      'Encore ${summary.transfersUntilNextBadge} pour le palier ${summary.nextBadgeLabel}',
+                      '${summary.transfersUntilNextBadge} avant ${summary.nextBadgeLabel}',
                       style: AppTypography.caption.copyWith(color: AppColors.onLacquerMuted),
                     ),
                   ],
@@ -408,10 +400,7 @@ class _KycBanner extends StatelessWidget {
                 children: [
                   Text("Verifiez votre identite", style: AppTypography.bodyStrong),
                   const SizedBox(height: 2),
-                  Text(
-                    'Trois photos, deux minutes — pour transferer sans limite de montant.',
-                    style: AppTypography.caption,
-                  ),
+                  Text('Trois photos, deux minutes.', style: AppTypography.caption),
                 ],
               ),
             ),

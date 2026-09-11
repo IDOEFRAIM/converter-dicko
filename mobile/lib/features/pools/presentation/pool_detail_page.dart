@@ -59,7 +59,7 @@ class _PoolDetailView extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Annuler la Ruee'),
-        content: const Text('Les participants seront prevenus. Cette action est definitive.'),
+        content: const Text('Action definitive. Les participants seront prevenus.'),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Garder')),
           TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Annuler la Ruee')),
@@ -378,17 +378,17 @@ class _RewardBreakdown extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('RABAIS DU TAUX — COMMENT IL SE CALCULE',
+          Text('RABAIS DU TAUX',
               style: AppTypography.eyebrow.copyWith(color: AppColors.keyline)),
           const SizedBox(height: AppSpacing.sm),
           _line('Part de base', pool.rewardBasePercentage),
           _line(
-            '${pool.participantCount} participant(s) dans le groupe',
+            '${pool.participantCount} participants',
             pool.rewardParticipantBonusPercentage,
-            sub: '+${_fmtPct(pool.rewardPerParticipantPercentage)} pt par personne au-dela du premier',
+            sub: '+${_fmtPct(pool.rewardPerParticipantPercentage)} pt par personne',
           ),
           _line(
-            'Volume echange par le groupe',
+            'Volume du groupe',
             pool.rewardVolumeBonusPercentage,
             sub: '${Money(pool.currentAmountXof, AppCurrency.xof).formattedWithCurrency()} '
                 '· +${_fmtPct(pool.rewardPerMillionXofPercentage)} pt par million',
@@ -396,7 +396,7 @@ class _RewardBreakdown extends StatelessWidget {
           Divider(color: AppColors.onLacquer.withValues(alpha: 0.15), height: AppSpacing.md),
           _line('Rabais actuel', pool.rewardMarginReductionPercentage, strong: true),
           const SizedBox(height: 2),
-          Text('Plafond : -${_fmtPct(pool.rewardMaxPercentage)} pts de marge',
+          Text('Plafond : -${_fmtPct(pool.rewardMaxPercentage)} pts',
               style: AppTypography.caption.copyWith(color: AppColors.onLacquerMuted)),
         ],
       ),

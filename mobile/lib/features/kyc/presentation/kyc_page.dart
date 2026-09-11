@@ -63,7 +63,7 @@ class _KycView extends StatelessWidget {
     if (!context.mounted) return;
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Dossier envoye. Vous serez notifie de la reponse.')),
+        const SnackBar(content: Text('Dossier envoye.')),
       );
     } else if (controller.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(controller.errorMessage!)));
@@ -118,7 +118,7 @@ class _KycView extends StatelessWidget {
                   Text('IDENTITE VERIFIEE',
                       style: AppTypography.eyebrow.copyWith(color: AppColors.keyline)),
                   const SizedBox(height: 2),
-                  Text('Vous pouvez transferer sans limite de seuil.',
+                  Text('Aucune limite de montant.',
                       style: AppTypography.body.copyWith(color: AppColors.onLacquerMuted)),
                 ],
               ),
@@ -142,8 +142,7 @@ class _KycView extends StatelessWidget {
           Text('Soumis le ${DateFormatting.dayTime(submission.submittedAt)}', style: AppTypography.caption),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Notre equipe verifie votre dossier, generalement sous 24 a 48 heures. '
-            'Vous n\'avez rien d\'autre a faire.',
+            'Reponse sous 24 a 48 h. Rien d\'autre a faire.',
             style: AppTypography.body.copyWith(color: AppColors.inkMuted),
           ),
         ],
@@ -176,7 +175,7 @@ class _KycView extends StatelessWidget {
             Text(submission.rejectionReason!, style: AppTypography.body.copyWith(color: AppColors.warning)),
           ],
           const SizedBox(height: AppSpacing.xs),
-          Text('Reprenez les photos ci-dessous et renvoyez.',
+          Text('Reprenez les photos et renvoyez.',
               style: AppTypography.caption.copyWith(color: AppColors.warning)),
         ],
       ),
@@ -196,7 +195,7 @@ class _KycView extends StatelessWidget {
       const SizedBox(height: AppSpacing.md),
       _CaptureTile(
         label: 'Recto de la piece',
-        hint: 'Lisible, sans reflet, dans le cadre',
+        hint: 'Lisible, sans reflet',
         path: controller.frontPath,
         onTap: () => _pickSource(context, controller, 'front'),
       ),
@@ -209,7 +208,7 @@ class _KycView extends StatelessWidget {
         ),
       _CaptureTile(
         label: 'Selfie',
-        hint: 'Visage bien visible, sans lunettes de soleil',
+        hint: 'Visage bien visible',
         path: controller.selfiePath,
         onTap: () => _pickSource(context, controller, 'selfie'),
       ),
@@ -225,8 +224,7 @@ class _KycView extends StatelessWidget {
       ),
       const SizedBox(height: AppSpacing.sm),
       Text(
-        'Vos documents sont transmis de maniere securisee et examines par notre equipe. '
-        'Ils ne servent qu\'a verifier votre identite.',
+        'Transmission securisee. Sert uniquement a verifier votre identite.',
         style: AppTypography.caption,
       ),
     ];
@@ -329,7 +327,7 @@ class _CaptureTile extends StatelessWidget {
                     Text(label, style: AppTypography.bodyStrong),
                     if (hint != null) Text(hint!, style: AppTypography.caption),
                     if (done)
-                      Text('Photo prise · toucher pour refaire',
+                      Text('Toucher pour refaire',
                           style: AppTypography.caption.copyWith(color: AppColors.positive)),
                   ],
                 ),

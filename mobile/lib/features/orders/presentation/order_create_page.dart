@@ -148,7 +148,7 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
                   borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                 ),
                 child: Text(
-                  'La liquidite pourrait etre insuffisante pour ce montant. Vous pouvez tout de meme continuer.',
+                  'Liquidite peut-etre insuffisante. Vous pouvez continuer.',
                   style: AppTypography.body.copyWith(color: AppColors.warning),
                 ),
               ),
@@ -175,11 +175,11 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
                 _buildManualForm(),
             ],
             const SizedBox(height: AppSpacing.xl),
-            Text('MOTIF (OPTIONNEL)', style: AppTypography.eyebrow),
+            Text('MOTIF', style: AppTypography.eyebrow),
             const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<Purpose?>(
               initialValue: _purpose,
-              decoration: const InputDecoration(labelText: 'Motif'),
+              decoration: const InputDecoration(labelText: 'Motif (optionnel)'),
               items: [
                 const DropdownMenuItem<Purpose?>(value: null, child: Text('Non precise')),
                 ...Purpose.options.map((p) => DropdownMenuItem<Purpose?>(value: p, child: Text(p.label))),
@@ -189,7 +189,7 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
             const SizedBox(height: AppSpacing.md),
             TextField(
               controller: _purposeDetailsController,
-              decoration: const InputDecoration(labelText: 'Precisions (optionnel)'),
+              decoration: const InputDecoration(labelText: 'Precisions'),
               maxLength: 500,
             ),
             if (controller.errorMessage != null) ...[
@@ -221,10 +221,7 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
 
   Widget _buildSupplierPicker(OrderCreateController controller) {
     if (controller.suppliers.isEmpty) {
-      return Text(
-        'Aucun fournisseur enregistre. Renseignez un nouveau beneficiaire.',
-        style: AppTypography.caption,
-      );
+      return Text('Aucun fournisseur. Renseignez un nouveau beneficiaire.', style: AppTypography.caption);
     }
     return RadioGroup<String>(
       groupValue: controller.selectedSupplierId,
@@ -262,7 +259,7 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
           TextFormField(
             controller: _fullNameController,
             maxLength: 120,
-            decoration: const InputDecoration(labelText: 'Nom complet du beneficiaire'),
+            decoration: const InputDecoration(labelText: 'Nom du beneficiaire'),
             validator: (v) => Validators.requiredMaxLength(v, 120, label: 'Le nom'),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -323,21 +320,16 @@ class _KycBlockedNotice extends StatelessWidget {
             children: [
               const Icon(Icons.verified_user_outlined, size: 18, color: AppColors.warning),
               const SizedBox(width: AppSpacing.xs),
-              Text('Verification d\'identite requise', style: AppTypography.bodyStrong.copyWith(color: AppColors.warning)),
+              Text('Identite a verifier', style: AppTypography.bodyStrong.copyWith(color: AppColors.warning)),
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(message, style: AppTypography.body.copyWith(color: AppColors.warning)),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'Verifiez votre identite (quelques minutes, trois photos) ou reduisez le montant sous le seuil.',
-            style: AppTypography.caption.copyWith(color: AppColors.warning),
-          ),
           const SizedBox(height: AppSpacing.sm),
           OutlinedButton.icon(
             onPressed: () => context.push('/more/kyc'),
             icon: const Icon(Icons.verified_user_outlined, size: 18),
-            label: const Text("Verifier mon identite"),
+            label: const Text('Verifier mon identite'),
             style: OutlinedButton.styleFrom(foregroundColor: AppColors.warning),
           ),
         ],

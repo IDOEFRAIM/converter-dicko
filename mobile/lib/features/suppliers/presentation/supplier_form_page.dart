@@ -128,7 +128,7 @@ class _SupplierFormPageState extends State<SupplierFormPage> {
                 TextFormField(
                   controller: _displayNameController,
                   maxLength: 120,
-                  decoration: const InputDecoration(labelText: 'Nom affiche'),
+                  decoration: const InputDecoration(labelText: 'Nom affiche *'),
                   validator: (v) => Validators.requiredMaxLength(v, 120, label: 'Le nom affiche'),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -136,7 +136,7 @@ class _SupplierFormPageState extends State<SupplierFormPage> {
                   controller: _accountNumberController,
                   maxLength: 120,
                   decoration: InputDecoration(
-                    labelText: _type == BeneficiaryType.chineseBankAccount ? 'Numero de compte' : 'Identifiant du compte',
+                    labelText: _type == BeneficiaryType.chineseBankAccount ? 'Numero de compte *' : 'Identifiant du compte *',
                   ),
                   validator: (v) => Validators.requiredMaxLength(v, 120, label: 'Ce champ'),
                 ),
@@ -152,7 +152,7 @@ class _SupplierFormPageState extends State<SupplierFormPage> {
                   TextFormField(
                     controller: _bankBranchController,
                     maxLength: 120,
-                    decoration: const InputDecoration(labelText: 'Agence (optionnel)'),
+                    decoration: const InputDecoration(labelText: 'Agence'),
                     validator: (v) => Validators.optionalMaxLength(v, 120, label: "L'agence"),
                   ),
                 ],
@@ -160,7 +160,7 @@ class _SupplierFormPageState extends State<SupplierFormPage> {
                 TextFormField(
                   controller: _phoneController,
                   maxLength: 30,
-                  decoration: const InputDecoration(labelText: 'Telephone (optionnel)'),
+                  decoration: const InputDecoration(labelText: 'Telephone'),
                   keyboardType: TextInputType.phone,
                   validator: (v) => Validators.optionalMaxLength(v, 30, label: 'Le telephone'),
                 ),
@@ -168,7 +168,7 @@ class _SupplierFormPageState extends State<SupplierFormPage> {
                 TextFormField(
                   controller: _emailController,
                   maxLength: 160,
-                  decoration: const InputDecoration(labelText: 'Email (optionnel)'),
+                  decoration: const InputDecoration(labelText: 'Email'),
                   keyboardType: TextInputType.emailAddress,
                   validator: Validators.email,
                 ),
@@ -179,7 +179,7 @@ class _SupplierFormPageState extends State<SupplierFormPage> {
                       child: TextFormField(
                         controller: _cityController,
                         maxLength: 100,
-                        decoration: const InputDecoration(labelText: 'Ville (optionnel)'),
+                        decoration: const InputDecoration(labelText: 'Ville'),
                         validator: (v) => Validators.optionalMaxLength(v, 100, label: 'La ville'),
                       ),
                     ),
@@ -188,7 +188,7 @@ class _SupplierFormPageState extends State<SupplierFormPage> {
                       child: TextFormField(
                         controller: _countryController,
                         maxLength: 100,
-                        decoration: const InputDecoration(labelText: 'Pays (optionnel)'),
+                        decoration: const InputDecoration(labelText: 'Pays'),
                         validator: (v) => Validators.optionalMaxLength(v, 100, label: 'Le pays'),
                       ),
                     ),
@@ -207,7 +207,7 @@ class _SupplierFormPageState extends State<SupplierFormPage> {
                 const SizedBox(height: AppSpacing.md),
                 DropdownButtonFormField<Purpose?>(
                   initialValue: _purpose,
-                  decoration: const InputDecoration(labelText: 'Motif par defaut (optionnel)'),
+                  decoration: const InputDecoration(labelText: 'Motif par defaut'),
                   items: [
                     const DropdownMenuItem<Purpose?>(value: null, child: Text('Non precise')),
                     ...Purpose.options.map((p) => DropdownMenuItem<Purpose?>(value: p, child: Text(p.label))),
@@ -217,7 +217,7 @@ class _SupplierFormPageState extends State<SupplierFormPage> {
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _notesController,
-                  decoration: const InputDecoration(labelText: 'Notes (optionnel)'),
+                  decoration: const InputDecoration(labelText: 'Notes'),
                   maxLines: 3,
                   maxLength: 1000,
                   validator: (v) => Validators.optionalMaxLength(v, 1000, label: 'Les notes'),

@@ -75,8 +75,7 @@ class _PreferredRateViewState extends State<_PreferredRateView> {
       builder: (context) => AlertDialog(
         title: const Text('Annuler la demande'),
         content: Text(
-          'Le montant de ${Money(request.amountXof, AppCurrency.xof).formattedWithCurrency()} immobilise pour '
-          'cette demande sera immediatement restitue a votre solde disponible.',
+          '${Money(request.amountXof, AppCurrency.xof).formattedWithCurrency()} seront restitues a votre solde.',
         ),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Garder')),
@@ -103,7 +102,7 @@ class _PreferredRateViewState extends State<_PreferredRateView> {
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
               Text(
-                'Immobilisez un montant XOF et echangez-le automatiquement des que le taux atteint votre cible.',
+                'Echangez automatiquement des que le taux atteint votre cible.',
                 style: AppTypography.caption,
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -128,7 +127,7 @@ class _PreferredRateViewState extends State<_PreferredRateView> {
                           TextFormField(
                             controller: _amountController,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(labelText: 'Montant a immobiliser', suffixText: 'XOF'),
+                            decoration: const InputDecoration(labelText: 'Montant', suffixText: 'XOF'),
                             validator: Validators.positiveAmount,
                           ),
                           const SizedBox(height: AppSpacing.md),
@@ -174,11 +173,7 @@ class _PreferredRateViewState extends State<_PreferredRateView> {
       return ErrorState(message: controller.errorMessage!, onRetry: controller.load);
     }
     if (controller.requests.isEmpty) {
-      return const EmptyState(
-        icon: Icons.trending_up,
-        title: 'Aucune demande',
-        description: 'Creez une demande ci-dessus pour echanger automatiquement au taux souhaite.',
-      );
+      return const EmptyState(icon: Icons.trending_up, title: 'Aucune demande');
     }
 
     return Column(
@@ -267,8 +262,7 @@ class _PreferredRateCard extends StatelessWidget {
             Text('Taux actuel : 1 CNY = ${request.currentRate} XOF', style: AppTypography.caption),
           ],
           const SizedBox(height: AppSpacing.xs),
-          Text('Expire le ${DateFormatting.dayTime(request.expiresAt)} si le taux n\'est pas atteint.',
-              style: AppTypography.caption),
+          Text('Expire le ${DateFormatting.dayTime(request.expiresAt)}', style: AppTypography.caption),
           const SizedBox(height: AppSpacing.xs),
         ];
       case PreferredRatePhase.exchangeInProgress:
@@ -306,17 +300,12 @@ class _PreferredRateCard extends StatelessWidget {
         ];
       case PreferredRatePhase.expired:
         return [
-          Text(
-            'Objectif de 1 CNY ≥ ${request.targetRate} XOF non atteint avant l\'expiration.',
-            style: AppTypography.caption,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text('Montant restitue a votre solde disponible.', style: AppTypography.caption),
+          Text('Cible non atteinte. Montant restitue.', style: AppTypography.caption),
           const SizedBox(height: AppSpacing.xs),
         ];
       case PreferredRatePhase.cancelled:
         return [
-          Text('Demande annulee. Montant restitue a votre solde disponible.', style: AppTypography.caption),
+          Text('Annulee. Montant restitue.', style: AppTypography.caption),
           const SizedBox(height: AppSpacing.xs),
         ];
       case PreferredRatePhase.unknown:
@@ -329,9 +318,9 @@ class _PreferredRateCard extends StatelessWidget {
       case 'STARTED':
         return 'Echange demarre.';
       case 'PROGRESS_45':
-        return 'Echange en cours (45 minutes ecoulees).';
+        return 'Echange en cours (45 min).';
       case 'PROGRESS_90':
-        return 'Echange en cours (1h30 ecoulees).';
+        return 'Echange en cours (1h30).';
       case 'COMPLETED':
         return 'Echange termine.';
       default:

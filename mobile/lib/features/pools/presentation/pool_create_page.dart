@@ -75,8 +75,7 @@ class _PoolCreatePageState extends State<PoolCreatePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Fixez un objectif de volume et une duree. Invitez vos amis : si l\'objectif est '
-                  'atteint a temps, chaque participant beneficie d\'une reduction sur son prochain transfert.',
+                  'Objectif atteint a temps = reduction pour chaque participant sur son prochain transfert.',
                   style: AppTypography.caption,
                 ),
                 const SizedBox(height: AppSpacing.xl),

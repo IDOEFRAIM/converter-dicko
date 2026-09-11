@@ -169,7 +169,7 @@ class _SummaryHero extends StatelessWidget {
       return _ProConsole(controller: controller);
     }
 
-    const subtitle = 'Chaque operation terminee te rapproche du palier suivant.';
+    const subtitle = 'Chaque operation terminee rapproche du palier suivant.';
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
@@ -225,7 +225,7 @@ class _SummaryHero extends StatelessWidget {
                 if (summary.nextBadgeLabel != null) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Text(
-                    'Encore ${summary.transfersUntilNextBadge} operation(s) pour le palier ${summary.nextBadgeLabel}',
+                    '${summary.transfersUntilNextBadge} avant ${summary.nextBadgeLabel}',
                     textAlign: TextAlign.center,
                     style: AppTypography.caption.copyWith(color: AppColors.keyline, fontWeight: FontWeight.w800),
                   ),
@@ -233,7 +233,7 @@ class _SummaryHero extends StatelessWidget {
                 if (summary.poolsSucceededCount > 0) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Text(
-                    '${summary.poolsSucceededCount} Ruee(s) collective(s) reussie(s)',
+                    '${summary.poolsSucceededCount} Ruees reussies',
                     textAlign: TextAlign.center,
                     style: AppTypography.caption.copyWith(color: AppColors.onLacquer, fontWeight: FontWeight.w700),
                   ),
@@ -570,10 +570,7 @@ class _ObjectiveDialogState extends State<_ObjectiveDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Le volume transfere que vous visez ce mois-ci. Sert uniquement de '
-              "repere sur votre cadran — il n'affecte aucun tarif.",
-            ),
+            const Text('Repere sur votre cadran. N\'affecte aucun tarif.'),
             const SizedBox(height: AppSpacing.md),
             TextFormField(
               controller: _controller,
@@ -617,11 +614,7 @@ class _HistorySection extends StatelessWidget {
     }
     final entries = controller.completedTransfers;
     if (entries.isEmpty) {
-      return const EmptyState(
-        icon: Icons.emoji_events_outlined,
-        title: 'Aucun transfert termine',
-        description: 'Vos transferts termines apparaitront ici.',
-      );
+      return const EmptyState(icon: Icons.emoji_events_outlined, title: 'Aucun transfert termine');
     }
 
     if (profile == ExperienceProfile.pro) {

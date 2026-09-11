@@ -62,10 +62,7 @@ class _PoolJoinPageState extends State<PoolJoinPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Un ami t\'a envoye un code ? Entre-le ici pour rejoindre sa Ruee.',
-                style: AppTypography.caption,
-              ),
+              Text('Entrez le code recu pour rejoindre une Ruee.', style: AppTypography.caption),
               const SizedBox(height: AppSpacing.xl),
               TextField(
                 controller: _codeController,

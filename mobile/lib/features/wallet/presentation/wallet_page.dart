@@ -53,10 +53,7 @@ class _WalletView extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
-              Text(
-                'Votre solde interne en XOF sur la plateforme. Il alimente vos demandes de taux preferentiel.',
-                style: AppTypography.caption,
-              ),
+              Text('Solde interne XOF. Alimente vos demandes de taux preferentiel.', style: AppTypography.caption),
               const SizedBox(height: AppSpacing.lg),
               if (controller.wallet != null) _BalanceCard(wallet: controller.wallet!),
               const SizedBox(height: AppSpacing.xl),
@@ -78,11 +75,7 @@ class _WalletView extends StatelessWidget {
       return ErrorState(message: controller.errorMessage!, onRetry: controller.load);
     }
     if (controller.transactions.isEmpty) {
-      return const EmptyState(
-        icon: Icons.swap_horiz,
-        title: 'Aucun mouvement',
-        description: 'Les depots, reservations et debits apparaitront ici.',
-      );
+      return const EmptyState(icon: Icons.swap_horiz, title: 'Aucun mouvement');
     }
     return Column(
       children: [
@@ -130,7 +123,7 @@ class _BalanceCard extends StatelessWidget {
           if (showReservedHint) ...[
             const SizedBox(height: AppSpacing.md),
             Text(
-              'Le solde reserve est immobilise par vos demandes de taux preferentiel en cours.',
+              'Reserve = immobilise par vos demandes de taux preferentiel.',
               style: AppTypography.caption.copyWith(color: AppColors.onLacquerMuted),
             ),
           ],
@@ -216,11 +209,11 @@ class _TxRow extends StatelessWidget {
     );
   }
 
-  String get _title => engaged ? 'Engage pour un echange en cours' : tx.type.label;
+  String get _title => engaged ? 'Engage pour un echange' : tx.type.label;
 
   String? get _subtitle {
     if (engaged) {
-      return 'Echange declenche, pas encore termine.';
+      return 'Echange en cours.';
     }
     return tx.reason;
   }

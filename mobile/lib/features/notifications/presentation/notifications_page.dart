@@ -45,11 +45,7 @@ class _NotificationsView extends StatelessWidget {
               return ErrorState(message: controller.errorMessage!, onRetry: controller.load);
             }
             if (controller.notifications.isEmpty) {
-              return const EmptyState(
-                icon: Icons.notifications_none,
-                title: 'Aucune notification',
-                description: 'Vous serez notifie ici des evenements importants sur vos transferts.',
-              );
+              return const EmptyState(icon: Icons.notifications_none, title: 'Aucune notification');
             }
             return RefreshIndicator(
               onRefresh: controller.load,

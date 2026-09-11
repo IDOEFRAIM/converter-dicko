@@ -66,7 +66,7 @@ class _RegisterPageState extends State<RegisterPage> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Compte cree avec succes. Connectez-vous.')),
+        const SnackBar(content: Text('Compte cree. Connectez-vous.')),
       );
       context.pop();
     } on ApiException catch (error) {
@@ -145,7 +145,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   onFieldSubmitted: (_) => _submit(),
                   decoration: InputDecoration(
                     labelText: 'Mot de passe',
-                    helperText: 'Entre 8 et 72 caracteres.',
+                    helperText: '8 caracteres minimum',
                     suffixIcon: IconButton(
                       onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                       icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
@@ -157,8 +157,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 Text('QUI ETES-VOUS ?', style: AppTypography.eyebrow),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Cela adapte l\'interface a votre usage. Les taux et les frais sont identiques pour '
-                  'tout le monde. Ce reglage est fixe a l\'inscription.',
+                  'Adapte l\'interface. Memes taux et frais pour tous. Fixe a l\'inscription.',
                   style: AppTypography.caption,
                 ),
                 const SizedBox(height: AppSpacing.sm),
