@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/auth/auth_session.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/experience_theme.dart';
 import '../../../shared/models/money.dart';
 import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/error_state.dart';
+import '../../../shared/widgets/icon_badge.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/primary_action.dart';
 import '../../../shared/widgets/proof_dropzone.dart';
@@ -85,6 +88,8 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<PaymentSubmitController>();
+    final profile = context.watch<AuthSession>().experienceProfile;
+    final sendAccent = ExperiencePalette.accentFor(profile, AccentRole.send);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Paiement du transfert')),
@@ -107,7 +112,18 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('A PAYER', style: AppTypography.eyebrow),
+                  Row(
+                    children: [
+                      IconBadge(
+                        icon: Icons.payments_outlined,
+                        color: sendAccent.color,
+                        background: sendAccent.surface,
+                        size: 32,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text('A PAYER', style: AppTypography.eyebrow),
+                    ],
+                  ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     Money(order.amountXof, AppCurrency.xof).formattedWithCurrency(),

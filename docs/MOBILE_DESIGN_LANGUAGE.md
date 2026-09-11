@@ -289,3 +289,9 @@ Retours utilisateur post-refonte, traités hors « lots » :
   directement (verifie par recherche). "Verification d'identite" (ochre) et
   "Notifications" (`Theme.primary`) restent hors de ces 4 roles : ce sont des
   reperes deja universels/deja adaptatifs, pas des concepts a decliner.
+- **Paiement (`payment_submit`)** : pastille "envoyer" (meme role/couleur que
+  devis/beneficiaire) a cote de "A PAYER" — le fil visuel du parcours de
+  paiement est desormais continu de bout en bout (accueil -> devis ->
+  beneficiaire -> paiement). Les cercles numerotes "1"/"2" des etapes
+  restaient deja profil-adaptatifs (`Theme.of(context).colorScheme.primary`),
+  aucun changement necessaire la.
