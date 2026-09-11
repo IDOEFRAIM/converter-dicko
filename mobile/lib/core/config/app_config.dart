@@ -18,23 +18,36 @@ class AppConfig {
   final AppEnvironment environment;
   final String apiBaseUrl;
 
-  const AppConfig._({required this.environment, required this.apiBaseUrl});
+  /// Client ID Web OAuth 2.0 Google — le MEME que `GOOGLE_OAUTH_CLIENT_ID`
+  /// cote backend (voir `GoogleAuthProperties`), attendu par le SDK Google
+  /// Sign-In comme "Server Client ID" (c'est ce qui permet d'obtenir un ID
+  /// token verifiable par le serveur, pas seulement un access token local).
+  /// Vide par defaut : [googleSignInAvailable] vaut alors `false` et l'UI
+  /// masque le bouton "Continuer avec Google" plutot que d'exposer une
+  /// fonctionnalite non configuree qui echouerait au premier tap.
+  final String googleServerClientId;
+
+  const AppConfig._({required this.environment, required this.apiBaseUrl, required this.googleServerClientId});
 
   /// Construit la configuration active a partir de `--dart-define` :
   /// ```
   /// flutter run --dart-define=APP_ENV=dev
-  /// flutter run --dart-define=APP_ENV=production --dart-define=API_BASE_URL=https://api.example.com
+  /// flutter run --dart-define=APP_ENV=production --dart-define=API_BASE_URL=https://api.example.com \
+  ///   --dart-define=GOOGLE_SERVER_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
   /// ```
   /// Sans definition explicite, retombe sur DEV avec le tunnel ngrok temporaire.
   factory AppConfig.fromDefine() {
     const envName = String.fromEnvironment('APP_ENV', defaultValue: 'dev');
     const overrideUrl = String.fromEnvironment('API_BASE_URL');
+    const googleServerClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
     final environment = AppEnvironment.fromName(envName);
 
-    if (overrideUrl.isNotEmpty) {
-      return AppConfig._(environment: environment, apiBaseUrl: overrideUrl);
-    }
-    return AppConfig._(environment: environment, apiBaseUrl: _defaultBaseUrlFor(environment));
+    final apiBaseUrl = overrideUrl.isNotEmpty ? overrideUrl : _defaultBaseUrlFor(environment);
+    return AppConfig._(
+      environment: environment,
+      apiBaseUrl: apiBaseUrl,
+      googleServerClientId: googleServerClientId,
+    );
   }
 
   static String _defaultBaseUrlFor(AppEnvironment environment) {
@@ -53,4 +66,6 @@ class AppConfig {
   }
 
   bool get isProduction => environment == AppEnvironment.production;
+
+  bool get googleSignInAvailable => googleServerClientId.isNotEmpty;
 }

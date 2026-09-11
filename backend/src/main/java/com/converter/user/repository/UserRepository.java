@@ -20,6 +20,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByEmail(String email);
 
+    Optional<User> findByGoogleSubject(String googleSubject);
+
     /**
      * Recherche paginee de l'espace d'administration.
      *

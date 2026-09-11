@@ -74,6 +74,15 @@ dependencies:
   # aucune API Flutter SDK ne le permet sans plugin (mission section 26).
   image_picker: ^1.1.2
 
+  # Connexion "Continuer avec Google" (retour client : "c'est plus simple") —
+  # ouvre le selecteur de compte natif et renvoie un jeton d'identite (ID
+  # token), verifie cote backend par GoogleTokenVerifierService. Le SDK exige
+  # une configuration native par plateforme (Client ID Android avec SHA-1
+  # enregistre, GIDClientID + schema d'URL dans Info.plist iOS) : voir
+  # DEPLOY.md. Sans configuration, GoogleAuthClient reste invoque mais
+  # AppConfig.googleSignInAvailable vaut false et le bouton ne s'affiche pas.
+  google_sign_in: ^6.2.2
+
   # Generation de PDF cote client (mission "differenciation marketing" : le
   # "Rapport d'activite" du profil PRO) — pur Dart, aucune dependance native
   # supplementaire au-dela de ce package.

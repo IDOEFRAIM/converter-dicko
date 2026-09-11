@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/config/app_config.dart';
 import '../../../core/errors/api_exception.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/utils/validators.dart';
+import '../../../shared/widgets/google_sign_in_button.dart';
 import '../../../shared/widgets/primary_action.dart';
+import '../application/google_sign_in_flow.dart';
 import '../data/auth_repository.dart';
+import '../data/google_auth_client.dart';
 import '../models/auth_models.dart';
 
 class LoginPage extends StatefulWidget {
@@ -27,6 +31,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
 
   bool _submitting = false;
+  bool _googleSubmitting = false;
   String? _errorMessage;
   bool _obscurePassword = true;
 
@@ -62,6 +67,35 @@ class _LoginPageState extends State<LoginPage> {
     } finally {
       if (mounted) {
         setState(() => _submitting = false);
+      }
+    }
+  }
+
+  Future<void> _continueWithGoogle() async {
+    if (_googleSubmitting) return;
+    setState(() {
+      _googleSubmitting = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final result = await runGoogleSignIn(
+        googleAuthClient: context.read<GoogleAuthClient>(),
+        authRepository: context.read<AuthRepository>(),
+      );
+      // GoogleSignInCancelled / GoogleSignInLoggedIn : rien a faire ici --
+      // la session est deja ouverte par AuthRepository.googleSignIn dans le
+      // second cas, redirection geree par le routeur (meme principe que
+      // _submit()).
+      if (result is GoogleSignInNeedsPhone && mounted) {
+        context.push('/complete-google-signup', extra: result);
+      }
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() => _errorMessage = error.message);
+    } finally {
+      if (mounted) {
+        setState(() => _googleSubmitting = false);
       }
     }
   }
@@ -128,6 +162,24 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: AppSpacing.xxl),
                 PrimaryAction(label: 'Se connecter', onPressed: _submit, loading: _submitting),
+                if (context.read<AppConfig>().googleSignInAvailable) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                        child: Text('OU', style: AppTypography.caption),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  GoogleSignInButton(
+                    onPressed: _submitting ? null : _continueWithGoogle,
+                    loading: _googleSubmitting,
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.xl),
                 Center(
                   child: TextButton(

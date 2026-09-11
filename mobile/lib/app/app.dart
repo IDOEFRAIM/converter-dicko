@@ -10,6 +10,7 @@ import '../core/theme/app_theme.dart';
 import '../features/achievements/application/badge_celebration_controller.dart';
 import '../features/achievements/data/achievement_api.dart';
 import '../features/auth/data/auth_repository.dart';
+import '../features/auth/data/google_auth_client.dart';
 import '../features/business/data/business_api.dart';
 import '../features/home/application/home_controller.dart';
 import '../features/kyc/data/kyc_api.dart';
@@ -51,6 +52,9 @@ class ConverterApp extends StatelessWidget {
         ),
         Provider<AuthRepository>(
           create: (context) => AuthRepository(client: context.read<ApiClient>(), session: context.read<AuthSession>()),
+        ),
+        Provider<GoogleAuthClient>(
+          create: (context) => GoogleAuthClient(serverClientId: context.read<AppConfig>().googleServerClientId),
         ),
         Provider<RateHistoryApi>(create: (context) => RateHistoryApi(context.read<ApiClient>())),
         Provider<OrderApi>(create: (context) => OrderApi(context.read<ApiClient>())),

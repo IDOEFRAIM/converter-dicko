@@ -89,7 +89,8 @@ public enum ErrorCode {
     // ---------------------------------------------------------- 503
     EXCHANGE_RATE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, Category.BUSINESS_ERROR),
     RATE_SOURCE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, Category.BUSINESS_ERROR),
-    COST_RATE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, Category.BUSINESS_ERROR);
+    COST_RATE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, Category.BUSINESS_ERROR),
+    GOOGLE_SIGNIN_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, Category.BUSINESS_ERROR);
 
     private final HttpStatus status;
     private final String category;

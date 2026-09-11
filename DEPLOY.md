@@ -40,6 +40,27 @@ refuse de démarrer sinon) :
 Le frontend appelle l'API en **même origine** (`/api`) : nginx relaie `/api/*`
 vers le conteneur `backend`. Aucun `API_BASE_URL` à configurer côté web.
 
+**Connexion Google (mobile) — facultative.** Sans `GOOGLE_OAUTH_CLIENT_ID`,
+`POST /api/auth/google[/complete]` répond `503` proprement (l'app mobile masque
+alors le bouton) : ça ne bloque **jamais** le reste du déploiement. Pour
+l'activer :
+
+1. [Google Cloud Console](https://console.cloud.google.com/) → *API et
+   services* → *Identifiants* → *Créer des identifiants* → *ID client OAuth*.
+2. Créer un client **Web application** : c'est son Client ID qu'on met dans
+   `GOOGLE_OAUTH_CLIENT_ID` (backend) **et** dans
+   `--dart-define=GOOGLE_SERVER_CLIENT_ID=...` (mobile, § 5) — le même des
+   deux côtés, c'est ce qui permet au backend de vérifier le jeton émis pour
+   le mobile.
+3. Créer un client **Android** : nécessite le nom de package réel de l'app
+   (`applicationId` dans `mobile/android/app/build.gradle.kts` — actuellement
+   `com.example.mobile`, un placeholder à changer avant publication) et son
+   empreinte SHA-1 (`cd mobile/android && ./gradlew signingReport`).
+4. Créer un client **iOS** : renseigner son Client ID et son schéma d'URL
+   inversé dans `mobile/ios/Runner/Info.plist` (`GIDClientID` /
+   `CFBundleURLSchemes`, marqués `CHANGE_ME` dans le dépôt — impossible à
+   vérifier sans Xcode/Mac, à faire sur une machine qui en dispose).
+
 ---
 
 ## 3. Déploiement
@@ -106,16 +127,22 @@ Non conteneurisable : livrable = un APK / IPA.
 
 ```bash
 cd mobile
-flutter pub get     # requis : open_filex a été ajouté aux dépendances
+flutter pub get     # requis : open_filex + google_sign_in ont ete ajoutes aux dependances
 flutter build apk --release \
   --dart-define=APP_ENV=production \
-  --dart-define=API_BASE_URL=https://api.mondomaine.com
+  --dart-define=API_BASE_URL=https://api.mondomaine.com \
+  --dart-define=GOOGLE_SERVER_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
 ```
 
 `API_BASE_URL` est l'**origine seule** (schéma + hôte), sans `/api` — `ApiClient`
 l'ajoute. Sans ce define, la valeur de production est volontairement invalide
 (`https://CHANGE_ME.production.invalid`) pour ne jamais pointer par erreur vers un
 mauvais backend. iOS : `flutter build ipa` avec les mêmes `--dart-define`.
+
+`GOOGLE_SERVER_CLIENT_ID` est **facultatif** : omis, `AppConfig.googleSignInAvailable`
+vaut `false` et le bouton "Continuer avec Google" ne s'affiche pas (pas d'écran
+mort). Voir §2 pour la création des Client ID Google (Web/Android/iOS) — le
+Web Client ID est le même ici et côté backend (`GOOGLE_OAUTH_CLIENT_ID`).
 
 `CORS_ALLOWED_ORIGINS` (backend) n'a pas à lister l'app mobile : une app native
 n'est pas soumise à la politique CORS du navigateur.
@@ -154,6 +181,6 @@ gère l'entrée, ou les lier à `127.0.0.1`.
 
 | Tier | Build | Tests |
 |---|---|---|
-| backend | `./mvnw package` ✅ · image Docker ✅ | 203 tests unitaires ✅ · ITs Testcontainers (CI) |
+| backend | `./mvnw package` ✅ · image Docker ✅ | 210 tests unitaires ✅ · ITs Testcontainers (CI) |
 | frontend | `npm run build` ✅ · image Docker ✅ | — |
 | mobile | non compilable dans cet environnement (revue manuelle) | — |

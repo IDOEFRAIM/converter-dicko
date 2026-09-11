@@ -84,7 +84,8 @@ public class SecurityConfig {
                         // l'echec se produirait alors plus loin, dans
                         // CurrentUserArgumentResolver, sous la forme d'une
                         // erreur 500 au lieu d'un 401 propre.
-                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login",
+                                "/api/auth/google", "/api/auth/google/complete").permitAll()
                         .requestMatchers("/api/settings/public").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/health/**").permitAll()

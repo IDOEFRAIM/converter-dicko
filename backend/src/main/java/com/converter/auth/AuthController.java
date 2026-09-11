@@ -1,6 +1,9 @@
 package com.converter.auth;
 
 import com.converter.auth.dto.AuthResponse;
+import com.converter.auth.dto.CompleteGoogleSignUpRequest;
+import com.converter.auth.dto.GoogleSignInRequest;
+import com.converter.auth.dto.GoogleSignInResponse;
 import com.converter.auth.dto.LoginRequest;
 import com.converter.auth.dto.RegisterRequest;
 import com.converter.auth.dto.UpdateExperienceProfileRequest;
@@ -49,6 +52,28 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(ApiResponse.of(response, "Connexion reussie."));
+    }
+
+    @PostMapping("/google")
+    @Operation(summary = "Se connecter avec Google",
+            description = "Verifie le jeton d'identite Google transmis par le SDK mobile. "
+                    + "Si aucun compte n'y est deja associe (accountExists=false), le mobile doit "
+                    + "collecter le numero de telephone puis appeler /auth/google/complete avec le "
+                    + "MEME jeton -- Google ne transmet jamais de numero de telephone.")
+    public ResponseEntity<ApiResponse<GoogleSignInResponse>> google(@Valid @RequestBody GoogleSignInRequest request) {
+        GoogleSignInResponse response = authService.googleSignIn(request);
+        return ResponseEntity.ok(ApiResponse.of(response));
+    }
+
+    @PostMapping("/google/complete")
+    @Operation(summary = "Finaliser un compte cree via Google",
+            description = "A appeler uniquement apres un /auth/google ayant renvoye accountExists=false. "
+                    + "Cree le compte (sans mot de passe) avec le numero de telephone fourni.")
+    public ResponseEntity<ApiResponse<AuthResponse>> completeGoogleSignUp(
+            @Valid @RequestBody CompleteGoogleSignUpRequest request) {
+        AuthResponse response = authService.completeGoogleSignUp(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.of(response, "Compte cree avec succes."));
     }
 
     @GetMapping("/me")

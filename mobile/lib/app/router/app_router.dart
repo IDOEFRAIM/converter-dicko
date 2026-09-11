@@ -2,6 +2,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_session.dart';
 import '../../features/achievements/presentation/my_gains_page.dart';
+import '../../features/auth/application/google_sign_in_flow.dart';
+import '../../features/auth/presentation/complete_google_signup_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
 import '../../features/auth/presentation/splash_page.dart';
@@ -52,7 +54,13 @@ GoRouter buildAppRouter(AuthSession authSession) {
     redirect: (context, state) {
       final location = state.matchedLocation;
       final onSplash = location == SplashPage.routePath;
-      final onAuthPages = location == LoginPage.routePath || location == RegisterPage.routePath;
+      // /complete-google-signup fait partie des pages "non authentifie" :
+      // on y arrive APRES verification Google mais AVANT l'ouverture de la
+      // session Converter (voir CompleteGoogleSignupPage) -- sans cette
+      // entree, la garde ci-dessous renverrait aussitot vers /login.
+      final onAuthPages = location == LoginPage.routePath
+          || location == RegisterPage.routePath
+          || location == '/complete-google-signup';
 
       if (!authSession.initialized) {
         return onSplash ? null : SplashPage.routePath;
@@ -77,6 +85,10 @@ GoRouter buildAppRouter(AuthSession authSession) {
         path: RegisterPage.routePath,
         name: RegisterPage.routeName,
         builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: '/complete-google-signup',
+        builder: (context, state) => CompleteGoogleSignupPage(args: state.extra as GoogleSignInNeedsPhone),
       ),
 
       // ---- Coquille a onglets : TOUT le reste vit ici, la barre du bas ----

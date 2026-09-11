@@ -30,6 +30,33 @@
 	<string>Utilisee pour joindre une preuve de paiement (photo) a un transfert.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Utilisee pour prendre un selfie souvenir apres un transfert termine, ajoute a votre livre memoire (stocke uniquement sur cet appareil).</string>
+	<!--
+	  Connexion "Continuer avec Google" (google_sign_in) : CHANGE_ME sur les
+	  deux lignes ci-dessous avant tout build iOS reel. Aucune verification
+	  possible dans cet environnement (ni Xcode ni Mac) : valeurs
+	  volontairement invalides pour ne jamais construire silencieusement avec
+	  un Client ID errone.
+
+	  1. GIDClientID : le Client ID OAuth de type "iOS" (PAS le Client ID Web
+	     utilise cote backend/GOOGLE_SERVER_CLIENT_ID) : Google Cloud Console >
+	     API et services > Identifiants > Creer des identifiants > ID client
+	     OAuth > type "iOS", avec le Bundle ID de ce projet.
+	  2. CFBundleURLSchemes : l'ID client iOS ecrit a l'ENVERS (ex. Client ID
+	     "1234-abcd.apps.googleusercontent.com" -> schema
+	     "com.googleusercontent.apps.1234-abcd") : c'est ainsi que Google
+	     redirige vers l'app apres le choix du compte.
+	-->
+	<key>GIDClientID</key>
+	<string>CHANGE_ME.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.CHANGE_ME</string>
+			</array>
+		</dict>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

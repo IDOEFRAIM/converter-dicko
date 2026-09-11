@@ -35,8 +35,22 @@ public class User extends AuditableEntity {
     @Column(name = "phone", nullable = false, length = 20, unique = true)
     private String phone;
 
-    @Column(name = "password_hash", nullable = false, length = 100)
+    /**
+     * Nullable depuis {@code V34} : un compte cree via Google Sign-In n'en a
+     * jamais (voir {@link #googleSubject}). {@code ck_users_has_auth_method}
+     * garantit en base qu'au moins l'un des deux est toujours present.
+     */
+    @Column(name = "password_hash", length = 100)
     private String passwordHash;
+
+    /**
+     * Identifiant stable ("sub") du compte Google associe, deja verifie par
+     * {@code GoogleTokenVerifierService} avant toute ecriture ici — jamais
+     * pose a partir d'une valeur non authentifiee. {@code null} pour un
+     * compte phone+mot de passe classique.
+     */
+    @Column(name = "google_subject", length = 255, unique = true)
+    private String googleSubject;
 
     @Column(name = "first_name", nullable = false, length = 80)
     private String firstName;
@@ -104,6 +118,20 @@ public class User extends AuditableEntity {
         this.firstName = firstName;
         this.lastName = lastName;
         this.status = UserStatus.ACTIVE;
+    }
+
+    /**
+     * Compte cree via Google Sign-In : jamais de mot de passe, le numero de
+     * telephone est fourni separement par l'utilisateur (voir
+     * {@code AuthService#completeGoogleSignUp}) puisque Google ne le
+     * transmet pas.
+     */
+    public static User googleSignUp(String phone, String googleSubject, String email,
+                                    String firstName, String lastName) {
+        User user = new User(phone, null, firstName, lastName);
+        user.googleSubject = googleSubject;
+        user.email = email;
+        return user;
     }
 
     // -----------------------------------------------------------------
@@ -182,6 +210,10 @@ public class User extends AuditableEntity {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public String getGoogleSubject() {
+        return googleSubject;
     }
 
     public String getFirstName() {

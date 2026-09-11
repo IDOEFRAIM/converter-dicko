@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/config/app_config.dart';
 import '../../../core/errors/api_exception.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -10,34 +8,35 @@ import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/current_user.dart';
 import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/experience_profile_picker.dart';
-import '../../../shared/widgets/google_sign_in_button.dart';
 import '../../../shared/widgets/primary_action.dart';
 import '../application/google_sign_in_flow.dart';
 import '../data/auth_repository.dart';
-import '../data/google_auth_client.dart';
 import '../models/auth_models.dart';
 
-class RegisterPage extends StatefulWidget {
-  static const routeName = 'register';
-  static const routePath = '/register';
+/// Deuxieme et derniere etape de "Continuer avec Google" quand aucun compte
+/// n'est encore associe (voir [GoogleSignInNeedsPhone]) : Google ne
+/// transmet jamais de numero de telephone, obligatoire sur cette
+/// plateforme (KYC, recherche admin, unicite) — voir
+/// `CompleteGoogleSignUpRequest` backend. Prenom/nom sont pre-remplis par
+/// Google mais restent modifiables (certains comptes Google ne les
+/// exposent pas).
+class CompleteGoogleSignupPage extends StatefulWidget {
+  final GoogleSignInNeedsPhone args;
 
-  const RegisterPage({super.key});
+  const CompleteGoogleSignupPage({super.key, required this.args});
 
   @override
-  State<RegisterPage> createState() => _RegisterPageState();
+  State<CompleteGoogleSignupPage> createState() => _CompleteGoogleSignupPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _CompleteGoogleSignupPageState extends State<CompleteGoogleSignupPage> {
   final _formKey = GlobalKey<FormState>();
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
+  late final _firstNameController = TextEditingController(text: widget.args.suggestedFirstName ?? '');
+  late final _lastNameController = TextEditingController(text: widget.args.suggestedLastName ?? '');
   final _phoneController = TextEditingController();
-  final _passwordController = TextEditingController();
 
   bool _submitting = false;
-  bool _googleSubmitting = false;
   String? _errorMessage;
-  bool _obscurePassword = true;
   ExperienceProfile _experienceProfile = ExperienceProfile.pro;
 
   @override
@@ -45,7 +44,6 @@ class _RegisterPageState extends State<RegisterPage> {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _phoneController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -60,20 +58,17 @@ class _RegisterPageState extends State<RegisterPage> {
 
     final authRepository = context.read<AuthRepository>();
     try {
-      await authRepository.register(
-        RegisterRequest(
+      await authRepository.completeGoogleSignUp(
+        CompleteGoogleSignUpRequest(
+          idToken: widget.args.idToken,
           phone: Validators.normalizePhone(_phoneController.text.trim()),
-          password: _passwordController.text,
           firstName: _firstNameController.text.trim(),
           lastName: _lastNameController.text.trim(),
           experienceProfile: _experienceProfile,
         ),
       );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Compte cree. Connectez-vous.')),
-      );
-      context.pop();
+      // Session ouverte par AuthRepository -> redirection vers l'accueil geree
+      // par le routeur (meme principe que login/googleSignIn).
     } on ApiException catch (error) {
       if (!mounted) return;
       setState(() => _errorMessage = error.message);
@@ -84,37 +79,10 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  Future<void> _continueWithGoogle() async {
-    if (_googleSubmitting) return;
-    setState(() {
-      _googleSubmitting = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final result = await runGoogleSignIn(
-        googleAuthClient: context.read<GoogleAuthClient>(),
-        authRepository: context.read<AuthRepository>(),
-      );
-      // GoogleSignInCancelled / GoogleSignInLoggedIn : rien a faire ici, voir
-      // la meme note dans login_page.dart.
-      if (result is GoogleSignInNeedsPhone && mounted) {
-        context.push('/complete-google-signup', extra: result);
-      }
-    } on ApiException catch (error) {
-      if (!mounted) return;
-      setState(() => _errorMessage = error.message);
-    } finally {
-      if (mounted) {
-        setState(() => _googleSubmitting = false);
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Creer un compte')),
+      appBar: AppBar(title: const Text('Votre numero')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.xl),
@@ -124,6 +92,18 @@ class _RegisterPageState extends State<RegisterPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  widget.args.email != null
+                      ? 'Compte Google : ${widget.args.email}'
+                      : 'Compte Google verifie.',
+                  style: AppTypography.caption,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Un numero de telephone est necessaire pour finaliser votre compte.',
+                  style: AppTypography.caption,
+                ),
+                const SizedBox(height: AppSpacing.lg),
                 if (_errorMessage != null) ...[
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.md),
@@ -132,24 +112,6 @@ class _RegisterPageState extends State<RegisterPage> {
                       borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                     ),
                     child: Text(_errorMessage!, style: AppTypography.body.copyWith(color: AppColors.negative)),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                ],
-                if (context.read<AppConfig>().googleSignInAvailable) ...[
-                  GoogleSignInButton(
-                    onPressed: _submitting ? null : _continueWithGoogle,
-                    loading: _googleSubmitting,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Row(
-                    children: [
-                      const Expanded(child: Divider()),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                        child: Text('OU', style: AppTypography.caption),
-                      ),
-                      const Expanded(child: Divider()),
-                    ],
                   ),
                   const SizedBox(height: AppSpacing.lg),
                 ],
@@ -180,28 +142,12 @@ class _RegisterPageState extends State<RegisterPage> {
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
-                  textInputAction: TextInputAction.next,
+                  textInputAction: TextInputAction.done,
                   decoration: const InputDecoration(
                     labelText: 'Numero de telephone',
                     hintText: '+2250700000000',
                   ),
                   validator: Validators.phoneE164,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _submit(),
-                  decoration: InputDecoration(
-                    labelText: 'Mot de passe',
-                    helperText: '8 caracteres minimum',
-                    suffixIcon: IconButton(
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                      icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                    ),
-                  ),
-                  validator: Validators.password,
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 Text('QUI ETES-VOUS ?', style: AppTypography.eyebrow),

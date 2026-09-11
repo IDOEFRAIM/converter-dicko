@@ -32,8 +32,8 @@ import java.util.regex.Pattern;
  *       compteur d'une IP est remis a zero des qu'une connexion reussit
  *       (protege contre le bourrage d'identifiants, pas contre le
  *       volume d'un utilisateur legitime).</li>
- *   <li>Inscription et endpoints d'ecriture authentifies (devis, ordre,
- *       soumission de paiement) — limite de <b>volume</b> par fenetre
+ *   <li>Inscription (classique et Google), et endpoints d'ecriture authentifies
+ *       (devis, ordre, soumission de paiement) — limite de <b>volume</b> par fenetre
  *       glissante, jamais remise a zero par un succes : une IP qui
  *       reussirait 1000 creations de devis legitimes en un instant reste
  *       aussi suspecte qu'une IP qui en ferait echouer 1000.</li>
@@ -50,6 +50,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(RateLimitFilter.class);
     private static final String LOGIN_PATH = "/api/auth/login";
     private static final String REGISTER_PATH = "/api/auth/register";
+    private static final String GOOGLE_SIGNIN_PATH = "/api/auth/google";
+    private static final String GOOGLE_COMPLETE_PATH = "/api/auth/google/complete";
     private static final String QUOTE_CREATE_PATH = "/api/v1/quotes";
     private static final String ORDER_CREATE_PATH = "/api/v1/orders";
     private static final Pattern PAYMENT_SUBMIT_PATH = Pattern.compile("^/api/v1/orders/[^/]+/payments$");
@@ -160,7 +162,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String uri = request.getRequestURI();
         return QUOTE_CREATE_PATH.equals(uri)
                 || ORDER_CREATE_PATH.equals(uri)
-                || PAYMENT_SUBMIT_PATH.matcher(uri).matches();
+                || PAYMENT_SUBMIT_PATH.matcher(uri).matches()
+                || GOOGLE_SIGNIN_PATH.equals(uri)
+                || GOOGLE_COMPLETE_PATH.equals(uri);
     }
 
     private boolean isPost(HttpServletRequest request) {

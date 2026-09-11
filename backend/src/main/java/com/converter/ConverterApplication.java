@@ -3,6 +3,7 @@ package com.converter;
 import com.converter.config.props.AbuseProtectionProperties;
 import com.converter.config.props.AdminSeedProperties;
 import com.converter.config.props.CorsProperties;
+import com.converter.config.props.GoogleAuthProperties;
 import com.converter.config.props.JwtProperties;
 import com.converter.config.props.LoginProtectionProperties;
 import com.converter.config.props.StorageProperties;
@@ -21,7 +22,8 @@ import java.util.TimeZone;
         AdminSeedProperties.class,
         LoginProtectionProperties.class,
         AbuseProtectionProperties.class,
-        StorageProperties.class
+        StorageProperties.class,
+        GoogleAuthProperties.class
 })
 public class ConverterApplication {
 

@@ -29,6 +29,27 @@ class AuthRepository {
     await _client.post('/auth/register', data: request.toJson());
   }
 
+  /// Premiere etape de "Continuer avec Google" : [idToken] vient du SDK
+  /// natif (voir `GoogleAuthClient`), jamais construit ici. Si un compte est
+  /// deja associe, la session est ouverte immediatement (meme effet que
+  /// [login]) ; sinon l'ecran appelant doit collecter le numero de telephone
+  /// et appeler [completeGoogleSignUp] avec le MEME jeton.
+  Future<GoogleSignInResult> googleSignIn(String idToken) async {
+    final body = await _client.post('/auth/google', data: {'idToken': idToken});
+    final result = GoogleSignInResult.fromJson(body['data'] as Map<String, dynamic>);
+    if (result.accountExists && result.auth != null) {
+      await _session.setSession(token: result.auth!.accessToken, user: result.auth!.user);
+    }
+    return result;
+  }
+
+  Future<CurrentUser> completeGoogleSignUp(CompleteGoogleSignUpRequest request) async {
+    final body = await _client.post('/auth/google/complete', data: request.toJson());
+    final result = AuthResult.fromJson(body['data'] as Map<String, dynamic>);
+    await _session.setSession(token: result.accessToken, user: result.user);
+    return result.user;
+  }
+
   /// Restaure la session a partir d'un jeton deja persiste (lancement de
   /// l'app). En cas d'echec (jeton expire/invalide), purge la session locale.
   Future<CurrentUser?> restoreSession() async {
