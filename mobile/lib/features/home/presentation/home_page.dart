@@ -18,7 +18,7 @@ import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/pressable.dart';
-import '../../../shared/widgets/primary_action.dart';
+import '../../../shared/widgets/quick_actions_row.dart';
 import '../../../shared/widgets/rank_seal.dart';
 import '../../../shared/widgets/rate_display.dart';
 import '../../../shared/widgets/section_header.dart';
@@ -30,10 +30,11 @@ import '../../suppliers/models/supplier_models.dart';
 import '../application/home_controller.dart';
 
 /// Ecran le plus important de l'app (mission section 18) : communique
-/// immediatement 🇧🇫 -> 🇨🇳, le taux du moment, puis l'action principale
-/// (payer un fournisseur), puis un rappel de la derniere operation et des
-/// fournisseurs enregistres. Uniquement des donnees reelles de l'API —
-/// aucune valeur fictive (section 37).
+/// immediatement 🇧🇫 -> 🇨🇳, le taux du moment, puis les raccourcis
+/// d'action ([QuickActionsRow] — retour client : icones plutot que texte),
+/// puis un rappel de la derniere operation et des fournisseurs enregistres.
+/// Uniquement des donnees reelles de l'API — aucune valeur fictive
+/// (section 37).
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -78,13 +79,40 @@ class _HomePageState extends State<HomePage> {
               ],
               const Corridor(level: CorridorLevel.hero),
               const SizedBox(height: AppSpacing.xl),
-              _RateHero(state: controller.latestRate, onRetry: controller.loadRate, profile: profile),
-              const SizedBox(height: AppSpacing.lg),
-              PrimaryAction(
-                label: ExperienceCopy.payCta(profile),
-                icon: Icons.send_outlined,
-                onPressed: () => context.go('/pay'),
+              QuickActionsRow(
+                actions: [
+                  QuickAction(
+                    icon: Icons.send_outlined,
+                    label: 'Payer',
+                    background: AppColors.shortcutOrangeSurface,
+                    foreground: AppColors.shortcutOrange,
+                    onTap: () => context.go('/pay'),
+                  ),
+                  QuickAction(
+                    icon: Icons.groups_outlined,
+                    label: 'Ruee',
+                    background: AppColors.shortcutVioletSurface,
+                    foreground: AppColors.shortcutViolet,
+                    onTap: () => context.push('/pay/pools'),
+                  ),
+                  QuickAction(
+                    icon: Icons.trending_up,
+                    label: 'Taux pref.',
+                    background: AppColors.signalSurfaceSoft,
+                    foreground: AppColors.signal,
+                    onTap: () => context.push('/more/preferred-rate'),
+                  ),
+                  QuickAction(
+                    icon: Icons.account_balance_wallet_outlined,
+                    label: 'Portefeuille',
+                    background: AppColors.keylineSurfaceSoft,
+                    foreground: AppColors.keyline,
+                    onTap: () => context.push('/more/wallet'),
+                  ),
+                ],
               ),
+              const SizedBox(height: AppSpacing.xl),
+              _RateHero(state: controller.latestRate, onRetry: controller.loadRate, profile: profile),
               const SizedBox(height: AppSpacing.xl),
               _AchievementsCard(state: controller.achievements, profile: authSession.experienceProfile),
               const SizedBox(height: AppSpacing.xxl),
@@ -136,7 +164,31 @@ class _RateHero extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(ExperienceCopy.homeRateEyebrow(profile), style: AppTypography.eyebrow),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      ExperienceCopy.homeRateEyebrow(profile),
+                      style: AppTypography.eyebrow,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  FilledButton(
+                    onPressed: () => context.go('/pay'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.shortcutOrange,
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 6),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: const StadiumBorder(),
+                    ),
+                    child: const Text('Convertir'),
+                  ),
+                ],
+              ),
               const SizedBox(height: AppSpacing.xs),
               RateDisplay(customerRate: entry.customerRate, large: true, color: Theme.of(context).colorScheme.primary),
               const SizedBox(height: AppSpacing.xs),

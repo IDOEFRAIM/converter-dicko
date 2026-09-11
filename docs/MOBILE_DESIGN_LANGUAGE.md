@@ -227,3 +227,16 @@ Retours utilisateur post-refonte, traités hors « lots » :
   type de pièce → 3 photos caméra → envoi → statut PENDING/APPROVED/REJECTED avec motif),
   route `/more/kyc`, tuile « Vérification d'identité », et le blocage
   `KYC_VERIFICATION_REQUIRED` de la création d'ordre pointe désormais vers ce parcours.
+- **Régime de texte + raccourcis d'accueil** (retour client, sept. 2026, capture de
+  référence fournie — app concurrente à pastilles d'icônes colorées, très peu de texte) :
+  passage sur l'ensemble des écrans mobile pour couper le texte décoratif (descriptions
+  d'`EmptyState` qui ne faisaient que reformuler le titre, sous-titres explicatifs,
+  libellés de bouton rallongés, `(optionnel)` répété sur chaque champ). Aucune logique
+  changée, uniquement du contenu de chaînes. Sur l'accueil, le bouton pleine largeur
+  « Payer un fournisseur » est remplacé par `QuickActionsRow` : 4 pastilles rondes
+  colorées (Payer / Ruée / Taux préférentiel / Portefeuille) au-dessus de la carte de
+  taux, qui gagne elle-même un petit bouton pilule « Convertir ». Élargissement
+  **délibéré et strictement localisé** de la palette (`AppColors.shortcutOrange`,
+  `shortcutViolet` + réutilisation de `signal`/`keyline` en fond clair) : la discipline
+  « le rouge est un accent rare » (section 6/7) reste intacte partout ailleurs — ces
+  teintes ne servent qu'aux 4 pastilles de l'accueil.

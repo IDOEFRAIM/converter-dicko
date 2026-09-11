@@ -79,6 +79,21 @@ abstract final class AppColors {
     stops: [0.0, 0.55, 1.0],
   );
 
+  // ---- Raccourcis d'accueil (retour client, sept. 2026 : app trop bavarde,
+  // veut des pastilles d'icones colorees plutot que du texte — capture de
+  // reference fournie). Elargissement delibere et STRICTEMENT LOCALISE aux 4
+  // pastilles [QuickActionsRow] de l'accueil : la discipline "le rouge est un
+  // accent rare, pas une couleur d'interface" (section 6/7) reste intacte
+  // partout ailleurs. Seules 2 teintes sont reellement nouvelles ; les deux
+  // autres pastilles reutilisent [signal] et [keyline], deja porteurs de sens
+  // (taux vivant, or de marque) plutot que d'inventer une 3e/4e couleur.
+  static const shortcutOrange = Color(0xFFFF8A3D);
+  static const shortcutOrangeSurface = Color(0xFFFFE9DA);
+  static const shortcutViolet = Color(0xFF8B5CF6);
+  static const shortcutVioletSurface = Color(0xFFEDE4FB);
+  static const signalSurfaceSoft = Color(0xFFDFF3F0);
+  static const keylineSurfaceSoft = Color(0xFFFBF0DC);
+
   // ---- Habillage "Mode Histoire" (STUDENT_FEMALE) — degrade pastel.
   static const blushPink = Color(0xFFF3C9D8);
   static const softMauve = Color(0xFFB27DC4);
