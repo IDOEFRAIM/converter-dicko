@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../../../core/storage/memory_book_store.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_surfaces.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/money.dart';
 import '../../../shared/utils/date_formatting.dart';
@@ -13,7 +12,6 @@ import '../../../shared/utils/file_share.dart';
 import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/corridor.dart';
 import '../../../shared/widgets/error_state.dart';
-import '../../../shared/widgets/grain.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/memory_frame.dart';
 import '../../../shared/widgets/status_badge.dart';
@@ -218,115 +216,102 @@ class _OrderDetailView extends StatelessWidget {
     );
   }
 
-  /// Recu "laque + or" (langage de design "Le Comptoir", Lot C) : le
-  /// justificatif d'un transfert termine se presente comme une piece scellee,
-  /// pas comme un bouton de telechargement gris.
+  /// Recu du transfert termine — pastille d'icone coloree sur carte claire
+  /// (meme logique que [QuickActionsRow] de l'accueil, retour client sept.
+  /// 2026 : moins de texte, moins de blocs sombres empiles). Remplace
+  /// l'ancienne presentation "laque + or".
   Widget _buildReceiptPanel(BuildContext context, OrderDetailController controller) {
     final reference = controller.order?.reference;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        decoration: AppSurfaces.lacquer(),
-        child: Stack(
-          children: [
-            const Positioned.fill(child: LedgerGrain(opacity: 0.06)),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.workspace_premium_outlined, color: AppColors.keyline, size: 18),
-                    const SizedBox(width: AppSpacing.xs),
-                    Text('JUSTIFICATIF OFFICIEL', style: AppTypography.eyebrow.copyWith(color: AppColors.keyline)),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  reference != null ? 'Transfert #$reference — termine' : 'Transfert termine',
-                  style: AppTypography.figureSmall.copyWith(color: AppColors.onLacquer),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.keyline,
-                      foregroundColor: AppColors.lacquer,
-                    ),
-                    onPressed: controller.downloadingReceipt ? null : () => _downloadReceipt(context, controller),
-                    icon: controller.downloadingReceipt
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.lacquer),
-                          )
-                        : const Icon(Icons.download_outlined, size: 18),
-                    label: Text(controller.downloadingReceipt ? 'Preparation...' : 'Telecharger le recu'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+    return _buildDownloadCard(
+      icon: Icons.workspace_premium_outlined,
+      accent: AppColors.keyline,
+      accentSurface: AppColors.keylineSurfaceSoft,
+      title: 'JUSTIFICATIF OFFICIEL',
+      description: reference != null ? 'Transfert #$reference — termine' : 'Transfert termine',
+      buttonLabel: 'Telecharger le recu',
+      busy: controller.downloadingReceipt,
+      onPressed: controller.downloadingReceipt ? null : () => _downloadReceipt(context, controller),
     );
   }
 
   /// Facture proforma (remarque produit #3) : parcours "payer un fournisseur".
-  /// Piece descriptive emise avant paiement, sans valeur d'acquittement — meme
-  /// presentation "laque + or" que le recu.
+  /// Piece descriptive emise avant paiement, sans valeur d'acquittement —
+  /// meme carte claire que le recu.
   Widget _buildProformaPanel(BuildContext context, OrderDetailController controller) {
     final busy = controller.downloadingProforma;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        decoration: AppSurfaces.lacquer(),
-        child: Stack(
-          children: [
-            const Positioned.fill(child: LedgerGrain(opacity: 0.06)),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+    return _buildDownloadCard(
+      icon: Icons.description_outlined,
+      accent: AppColors.shortcutOrange,
+      accentSurface: AppColors.shortcutOrangeSurface,
+      title: 'FACTURE PROFORMA',
+      description: 'Generee automatiquement. Pour votre banque ou le dedouanement.',
+      buttonLabel: 'Telecharger la proforma',
+      busy: busy,
+      onPressed: busy ? null : () => _downloadProforma(context, controller),
+    );
+  }
+
+  /// Carte commune aux deux documents telechargeables : pastille d'icone
+  /// coloree + titre + une ligne de description + bouton pilule.
+  Widget _buildDownloadCard({
+    required IconData icon,
+    required Color accent,
+    required Color accentSurface,
+    required String title,
+    required String description,
+    required String buttonLabel,
+    required bool busy,
+    required VoidCallback? onPressed,
+    IconData buttonIcon = Icons.download_outlined,
+    String busyLabel = 'Preparation...',
+  }) {
+    return _panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: accentSurface, shape: BoxShape.circle),
+                child: Icon(icon, color: accent, size: 20),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.description_outlined, color: AppColors.keyline, size: 18),
-                    const SizedBox(width: AppSpacing.xs),
-                    Text('FACTURE PROFORMA',
-                        style: AppTypography.eyebrow.copyWith(color: AppColors.keyline)),
+                    Text(title, style: AppTypography.eyebrow),
+                    const SizedBox(height: 2),
+                    Text(description, style: AppTypography.caption),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Generee automatiquement. Pour votre banque ou le dedouanement.',
-                  style: AppTypography.body.copyWith(color: AppColors.onLacquerMuted),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.keyline,
-                      foregroundColor: AppColors.lacquer,
-                    ),
-                    onPressed: busy ? null : () => _downloadProforma(context, controller),
-                    icon: busy
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.lacquer),
-                          )
-                        : const Icon(Icons.download_outlined, size: 18),
-                    label: Text(busy ? 'Preparation...' : 'Telecharger la proforma'),
-                  ),
-                ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: accent,
+                foregroundColor: Colors.white,
+                shape: const StadiumBorder(),
+              ),
+              onPressed: onPressed,
+              icon: busy
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : Icon(buttonIcon, size: 18),
+              label: Text(busy ? busyLabel : buttonLabel),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -359,35 +344,17 @@ class _OrderDetailView extends StatelessWidget {
         ),
       );
     }
-    return _panel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.photo_camera_outlined, color: Theme.of(context).colorScheme.primary, size: 18),
-              const SizedBox(width: AppSpacing.xs),
-              Text('SOUVENIR', style: AppTypography.eyebrow),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'La photo reste sur cet appareil.',
-            style: AppTypography.body.copyWith(color: AppColors.inkMuted),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: controller.capturingSelfie ? null : controller.captureSelfie,
-              icon: controller.capturingSelfie
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.photo_camera_outlined, size: 18),
-              label: Text(controller.capturingSelfie ? 'Ouverture...' : 'Prendre un selfie'),
-            ),
-          ),
-        ],
-      ),
+    return _buildDownloadCard(
+      icon: Icons.photo_camera_outlined,
+      accent: AppColors.shortcutViolet,
+      accentSurface: AppColors.shortcutVioletSurface,
+      title: 'SOUVENIR',
+      description: 'La photo reste sur cet appareil.',
+      buttonLabel: 'Prendre un selfie',
+      buttonIcon: Icons.photo_camera_outlined,
+      busyLabel: 'Ouverture...',
+      busy: controller.capturingSelfie,
+      onPressed: controller.capturingSelfie ? null : controller.captureSelfie,
     );
   }
 
@@ -398,7 +365,7 @@ class _OrderDetailView extends StatelessWidget {
       child: _panel(
         child: Row(
           children: [
-            Icon(Icons.timeline, color: Theme.of(context).colorScheme.primary),
+            _iconBadge(context, Icons.timeline, Theme.of(context).colorScheme.primary),
             const SizedBox(width: AppSpacing.md),
             const Expanded(child: Text('Voir le suivi du transfert')),
             const Icon(Icons.chevron_right, color: AppColors.inkFaint),
@@ -411,21 +378,37 @@ class _OrderDetailView extends StatelessWidget {
   Widget _buildSettlementPanel(BuildContext context, OrderDetail order) {
     final settlement = deriveSettlementView(order.status);
     return _panel(
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.local_shipping_outlined, color: Theme.of(context).colorScheme.primary, size: 18),
-              const SizedBox(width: AppSpacing.xs),
-              Text('REGLEMENT EN CHINE', style: AppTypography.eyebrow),
-            ],
+          _iconBadge(context, Icons.local_shipping_outlined, Theme.of(context).colorScheme.primary),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('REGLEMENT EN CHINE', style: AppTypography.eyebrow),
+                const SizedBox(height: AppSpacing.xs),
+                Text(settlement.label, style: AppTypography.bodyStrong),
+                Text(settlement.description, style: AppTypography.caption),
+              ],
+            ),
           ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(settlement.label, style: AppTypography.bodyStrong),
-          Text(settlement.description, style: AppTypography.caption),
         ],
       ),
+    );
+  }
+
+  /// Pastille d'icone coloree partagee par les panneaux secondaires (suivi,
+  /// reglement) — meme langage que [QuickActionsRow] et les cartes de
+  /// document, en plus discret (36px, teinte de l'accent courant).
+  Widget _iconBadge(BuildContext context, IconData icon, Color color) {
+    return Container(
+      width: 36,
+      height: 36,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
+      child: Icon(icon, color: color, size: 18),
     );
   }
 

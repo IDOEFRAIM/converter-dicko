@@ -240,3 +240,11 @@ Retours utilisateur post-refonte, traités hors « lots » :
   `shortcutViolet` + réutilisation de `signal`/`keyline` en fond clair) : la discipline
   « le rouge est un accent rare » (section 6/7) reste intacte partout ailleurs — ces
   teintes ne servent qu'aux 4 pastilles de l'accueil.
+- **Detail de transfert (`order_detail`) — meme logique** : les deux cartes "laque + or"
+  (justificatif, proforma) empilees l'une sur l'autre etaient le bloc le plus lourd/sombre
+  de l'app. Remplacees par une carte claire commune (`_buildDownloadCard`) : pastille
+  d'icone coloree (40px) + titre + une ligne + bouton pilule — meme grammaire que
+  `QuickActionsRow`. Justificatif garde l'accent or (`keyline`, deja "officiel/premium") ;
+  proforma reprend l'orange de "Payer" (meme parcours) ; le souvenir non-encore-pris
+  reprend le violet de "Ruee" (moment personnel). Suivi/reglement gagnent une pastille
+  discrete (36px, teinte `Theme.primary`) au lieu d'une simple icone posee.
