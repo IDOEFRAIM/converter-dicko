@@ -12,6 +12,7 @@ import '../../../shared/utils/file_share.dart';
 import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/corridor.dart';
 import '../../../shared/widgets/error_state.dart';
+import '../../../shared/widgets/icon_badge.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/memory_frame.dart';
 import '../../../shared/widgets/status_badge.dart';
@@ -271,13 +272,7 @@ class _OrderDetailView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(color: accentSurface, shape: BoxShape.circle),
-                child: Icon(icon, color: accent, size: 20),
-              ),
+              IconBadge(icon: icon, color: accent, background: accentSurface),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
@@ -365,7 +360,7 @@ class _OrderDetailView extends StatelessWidget {
       child: _panel(
         child: Row(
           children: [
-            _iconBadge(context, Icons.timeline, Theme.of(context).colorScheme.primary),
+            IconBadge(icon: Icons.timeline, color: Theme.of(context).colorScheme.primary, size: 36),
             const SizedBox(width: AppSpacing.md),
             const Expanded(child: Text('Voir le suivi du transfert')),
             const Icon(Icons.chevron_right, color: AppColors.inkFaint),
@@ -381,7 +376,7 @@ class _OrderDetailView extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _iconBadge(context, Icons.local_shipping_outlined, Theme.of(context).colorScheme.primary),
+          IconBadge(icon: Icons.local_shipping_outlined, color: Theme.of(context).colorScheme.primary, size: 36),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -396,19 +391,6 @@ class _OrderDetailView extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  /// Pastille d'icone coloree partagee par les panneaux secondaires (suivi,
-  /// reglement) — meme langage que [QuickActionsRow] et les cartes de
-  /// document, en plus discret (36px, teinte de l'accent courant).
-  Widget _iconBadge(BuildContext context, IconData icon, Color color) {
-    return Container(
-      width: 36,
-      height: 36,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
-      child: Icon(icon, color: color, size: 18),
     );
   }
 

@@ -8,6 +8,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/money.dart';
 import '../../../shared/models/purpose.dart';
 import '../../../shared/utils/validators.dart';
+import '../../../shared/widgets/icon_badge.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/primary_action.dart';
 import '../../orders/data/order_api.dart';
@@ -154,7 +155,13 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
               ),
             ],
             const SizedBox(height: AppSpacing.xl),
-            Text('BENEFICIAIRE', style: AppTypography.eyebrow),
+            Row(
+              children: [
+                const IconBadge(icon: Icons.storefront_outlined, color: AppColors.shortcutOrange, size: 32),
+                const SizedBox(width: AppSpacing.sm),
+                Text('BENEFICIAIRE', style: AppTypography.eyebrow),
+              ],
+            ),
             const SizedBox(height: AppSpacing.sm),
             if (controller.loadingSuppliers)
               const LoadingView()

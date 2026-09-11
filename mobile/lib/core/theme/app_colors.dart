@@ -79,14 +79,17 @@ abstract final class AppColors {
     stops: [0.0, 0.55, 1.0],
   );
 
-  // ---- Raccourcis d'accueil (retour client, sept. 2026 : app trop bavarde,
-  // veut des pastilles d'icones colorees plutot que du texte — capture de
-  // reference fournie). Elargissement delibere et STRICTEMENT LOCALISE aux 4
-  // pastilles [QuickActionsRow] de l'accueil : la discipline "le rouge est un
-  // accent rare, pas une couleur d'interface" (section 6/7) reste intacte
-  // partout ailleurs. Seules 2 teintes sont reellement nouvelles ; les deux
-  // autres pastilles reutilisent [signal] et [keyline], deja porteurs de sens
-  // (taux vivant, or de marque) plutot que d'inventer une 3e/4e couleur.
+  // ---- Pastilles d'action ([IconBadge]) — retour client, sept. 2026 : "app
+  // trop bavarde", "on doit clairement comprendre comment ca fonctionne" —
+  // capture de reference fournie (pastilles d'icones colorees, tres peu de
+  // texte). Devenu le langage standard de navigation/comprehension de
+  // l'app (accueil, detail de transfert, menu "Plus", parcours de paiement),
+  // pas seulement l'accueil comme au depart. Seules 2 teintes sont
+  // reellement nouvelles ; les autres pastilles reutilisent [signal],
+  // [keyline] et [ochre], deja porteurs de sens (taux vivant, or de marque,
+  // identite) plutot que d'inventer encore une couleur. La discipline "le
+  // rouge est un accent rare, pas une couleur d'interface" (section 6/7)
+  // reste intacte : [chinaRed]/[negative] ne sont jamais reutilises ici.
   static const shortcutOrange = Color(0xFFFF8A3D);
   static const shortcutOrangeSurface = Color(0xFFFFE9DA);
   static const shortcutViolet = Color(0xFF8B5CF6);

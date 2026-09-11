@@ -9,6 +9,7 @@ import '../../../shared/models/money.dart';
 import '../../../shared/utils/date_formatting.dart';
 import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/corridor.dart';
+import '../../../shared/widgets/icon_badge.dart';
 import '../../../shared/widgets/primary_action.dart';
 import '../../../shared/widgets/transfer_ticket.dart';
 import '../../orders/presentation/order_create_page.dart';
@@ -111,7 +112,13 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
 
   List<Widget> _buildAmountForm(QuoteCreateController controller) {
     return [
-      Text('VOUS ENVOYEZ', style: AppTypography.eyebrow),
+      Row(
+        children: [
+          const IconBadge(icon: Icons.send_outlined, color: AppColors.shortcutOrange, size: 32),
+          const SizedBox(width: AppSpacing.sm),
+          Text('VOUS ENVOYEZ', style: AppTypography.eyebrow),
+        ],
+      ),
       const SizedBox(height: AppSpacing.sm),
       Form(
         key: _formKey,

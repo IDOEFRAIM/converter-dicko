@@ -248,3 +248,20 @@ Retours utilisateur post-refonte, traités hors « lots » :
   proforma reprend l'orange de "Payer" (meme parcours) ; le souvenir non-encore-pris
   reprend le violet de "Ruee" (moment personnel). Suivi/reglement gagnent une pastille
   discrete (36px, teinte `Theme.primary`) au lieu d'une simple icone posee.
+- **Vision d'ensemble — le langage de pastille devient le standard de navigation**
+  (retour client : "app intuitive, on doit clairement comprendre comment ca
+  fonctionne"). Extraction en widget partage `shared/widgets/icon_badge.dart`
+  (`IconBadge`), reutilise partout desormais :
+  - `more_page` (menu "Plus") : ancienne liste plate de 7 lignes identiques ->
+    3 sections regroupees par theme (TAUX / MON COMPTE / deconnexion isolee),
+    chaque tuile porte la couleur de sa famille (signal = taux, keyline =
+    portefeuille, ochre = identite — meme couleur que le bandeau KYC de
+    l'accueil —, violet = pro).
+  - `quote_create` (etape 1, "combien j'envoie") et `order_create` (etape 2,
+    "a qui") gagnent chacune une pastille orange (meme accent que "Payer")
+    a cote de leur eyebrow : le fil visuel du parcours de paiement est
+    desormais continu de l'accueil jusqu'a l'ordre cree.
+  Le commentaire de tete d'`AppColors` (section "Pastilles d'action") a ete
+  mis a jour : ce n'est plus un elargissement localise a l'accueil, c'est le
+  langage standard de comprehension de l'app — la discipline "rouge = accent
+  rare" reste la seule regle non negociable.
