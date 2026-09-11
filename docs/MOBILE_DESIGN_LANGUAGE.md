@@ -265,3 +265,27 @@ Retours utilisateur post-refonte, traités hors « lots » :
   mis a jour : ce n'est plus un elargissement localise a l'accueil, c'est le
   langage standard de comprehension de l'app — la discipline "rouge = accent
   rare" reste la seule regle non negociable.
+- **Pastilles alignees par profil** (retour client : "les couleurs doivent
+  etre alignees avec les differents types de profil"). Jusqu'ici les 4
+  pastilles (envoyer/groupe/taux/premium) avaient les MEMES couleurs pour les
+  trois habillages — incoherent avec le reste de l'app, ou `Theme.primary`
+  varie deja selon [ExperienceProfile] (`AppTheme.forProfile`). Nouveau point
+  d'acces unique `ExperiencePalette.accentFor(profile, AccentRole)`
+  (`experience_theme.dart`) : 4 roles (`send`/`group`/`rate`/`premium`), une
+  couleur+fond par role ET par profil :
+  - **PRO** : shortcutOrange / shortcutViolet / signal / keyline (inchange).
+  - **STUDENT_MALE ("Mode Epopee")** : les 3 teintes DEJA du degrade epique
+    (chinaRed / epicPrimary / ochre) servent aux 3 premiers roles ; seul
+    "premium" recoit une teinte reellement nouvelle (`epicAmber`, ambre).
+  - **STUDENT_FEMALE ("Mode Histoire")** : blushPink/skyBlue (deja clairs)
+    deviennent le FOND de la pastille plutot que l'icone (contraste
+    insuffisant en premier plan) ; `storyPink`/`storyBlue`, plus satures,
+    sont les 2 seules teintes nouvelles pour l'icone. "premium" reste l'or de
+    marque (`keyline`) : le portefeuille est un repere universel, pas un
+    moment d'habillage.
+  Tous les ecrans qui posent une pastille de ces 4 roles (accueil, detail de
+  transfert, menu "Plus", devis, beneficiaire) passent desormais par
+  `accentFor` — aucun ne lit plus `AppColors.shortcut*`/`epic*`/`story*`
+  directement (verifie par recherche). "Verification d'identite" (ochre) et
+  "Notifications" (`Theme.primary`) restent hors de ces 4 roles : ce sont des
+  reperes deja universels/deja adaptatifs, pas des concepts a decliner.

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/auth/auth_session.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/experience_theme.dart';
 import '../../../shared/models/money.dart';
 import '../../../shared/models/purpose.dart';
 import '../../../shared/utils/validators.dart';
@@ -111,6 +113,8 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<OrderCreateController>();
+    final profile = context.watch<AuthSession>().experienceProfile;
+    final sendAccent = ExperiencePalette.accentFor(profile, AccentRole.send);
     final quote = controller.quote;
 
     return Scaffold(
@@ -157,7 +161,12 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
             const SizedBox(height: AppSpacing.xl),
             Row(
               children: [
-                const IconBadge(icon: Icons.storefront_outlined, color: AppColors.shortcutOrange, size: 32),
+                IconBadge(
+                  icon: Icons.storefront_outlined,
+                  color: sendAccent.color,
+                  background: sendAccent.surface,
+                  size: 32,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Text('BENEFICIAIRE', style: AppTypography.eyebrow),
               ],

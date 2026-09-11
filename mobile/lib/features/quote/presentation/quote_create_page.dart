@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/auth/auth_session.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/experience_theme.dart';
 import '../../../shared/models/money.dart';
 import '../../../shared/utils/date_formatting.dart';
 import '../../../shared/utils/validators.dart';
@@ -81,6 +83,7 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
   Widget build(BuildContext context) {
     final controller = context.watch<QuoteCreateController>();
     final quote = controller.quote;
+    final profile = context.watch<AuthSession>().experienceProfile;
 
     return Scaffold(
       appBar: AppBar(
@@ -102,7 +105,10 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
             children: [
               const Corridor(level: CorridorLevel.normal),
               const SizedBox(height: AppSpacing.xl),
-              if (quote == null) ..._buildAmountForm(controller) else ..._buildQuoteResult(controller, quote),
+              if (quote == null)
+                ..._buildAmountForm(controller, profile)
+              else
+                ..._buildQuoteResult(controller, quote),
             ],
           ),
         ),
@@ -110,11 +116,12 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
     );
   }
 
-  List<Widget> _buildAmountForm(QuoteCreateController controller) {
+  List<Widget> _buildAmountForm(QuoteCreateController controller, ExperienceProfile profile) {
+    final accent = ExperiencePalette.accentFor(profile, AccentRole.send);
     return [
       Row(
         children: [
-          const IconBadge(icon: Icons.send_outlined, color: AppColors.shortcutOrange, size: 32),
+          IconBadge(icon: Icons.send_outlined, color: accent.color, background: accent.surface, size: 32),
           const SizedBox(width: AppSpacing.sm),
           Text('VOUS ENVOYEZ', style: AppTypography.eyebrow),
         ],

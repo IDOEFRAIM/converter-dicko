@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_surfaces.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/experience_theme.dart';
 import '../../../shared/widgets/icon_badge.dart';
 import '../../auth/data/auth_repository.dart';
 
@@ -21,7 +22,9 @@ class MorePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AuthSession>().currentUser;
+    final authSession = context.watch<AuthSession>();
+    final user = authSession.currentUser;
+    final profile = authSession.experienceProfile;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Plus')),
@@ -58,19 +61,19 @@ class MorePage extends StatelessWidget {
             tiles: [
               _MoreTile(
                 icon: Icons.show_chart,
-                color: AppColors.signal,
+                color: ExperiencePalette.accentFor(profile, AccentRole.rate).color,
                 label: 'Historique',
                 onTap: () => context.push('/more/rates'),
               ),
               _MoreTile(
                 icon: Icons.notifications_active_outlined,
-                color: AppColors.signal,
+                color: ExperiencePalette.accentFor(profile, AccentRole.rate).color,
                 label: 'Alertes',
                 onTap: () => context.push('/more/rate-alerts'),
               ),
               _MoreTile(
                 icon: Icons.trending_up,
-                color: AppColors.signal,
+                color: ExperiencePalette.accentFor(profile, AccentRole.rate).color,
                 label: 'Taux preferentiel',
                 onTap: () => context.push('/more/preferred-rate'),
               ),
@@ -82,7 +85,7 @@ class MorePage extends StatelessWidget {
             tiles: [
               _MoreTile(
                 icon: Icons.account_balance_wallet_outlined,
-                color: AppColors.keyline,
+                color: ExperiencePalette.accentFor(profile, AccentRole.premium).color,
                 label: 'Portefeuille',
                 onTap: () => context.push('/more/wallet'),
               ),
@@ -100,7 +103,7 @@ class MorePage extends StatelessWidget {
               ),
               _MoreTile(
                 icon: Icons.business_center_outlined,
-                color: AppColors.shortcutViolet,
+                color: ExperiencePalette.accentFor(profile, AccentRole.group).color,
                 label: 'Espace professionnel',
                 onTap: () => context.push('/more/business'),
               ),

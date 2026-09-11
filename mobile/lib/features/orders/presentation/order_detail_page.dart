@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/auth/auth_session.dart';
 import '../../../core/storage/memory_book_store.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/experience_theme.dart';
 import '../../../shared/models/money.dart';
 import '../../../shared/utils/date_formatting.dart';
 import '../../../shared/utils/file_share.dart';
@@ -109,6 +111,7 @@ class _OrderDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<OrderDetailController>();
+    final profile = context.watch<AuthSession>().experienceProfile;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Transfert')),
@@ -138,14 +141,14 @@ class _OrderDetailView extends StatelessWidget {
                   _buildAmountFlow(order),
                   const SizedBox(height: AppSpacing.lg),
                   if (order.proformaAvailable) ...[
-                    _buildProformaPanel(context, controller),
+                    _buildProformaPanel(context, controller, profile),
                     const SizedBox(height: AppSpacing.lg),
                   ],
                   if (order.status == OrderStatus.awaitingPayment) _buildAwaitingPaymentActions(context, controller),
                   if (order.status == OrderStatus.completed) ...[
-                    _buildReceiptPanel(context, controller),
+                    _buildReceiptPanel(context, controller, profile),
                     const SizedBox(height: AppSpacing.lg),
-                    _buildMemoryPanel(context, controller, order),
+                    _buildMemoryPanel(context, controller, order, profile),
                   ],
                   const SizedBox(height: AppSpacing.md),
                   _buildTrackingLink(context, order),
@@ -221,12 +224,13 @@ class _OrderDetailView extends StatelessWidget {
   /// (meme logique que [QuickActionsRow] de l'accueil, retour client sept.
   /// 2026 : moins de texte, moins de blocs sombres empiles). Remplace
   /// l'ancienne presentation "laque + or".
-  Widget _buildReceiptPanel(BuildContext context, OrderDetailController controller) {
+  Widget _buildReceiptPanel(BuildContext context, OrderDetailController controller, ExperienceProfile profile) {
     final reference = controller.order?.reference;
+    final accent = ExperiencePalette.accentFor(profile, AccentRole.premium);
     return _buildDownloadCard(
       icon: Icons.workspace_premium_outlined,
-      accent: AppColors.keyline,
-      accentSurface: AppColors.keylineSurfaceSoft,
+      accent: accent.color,
+      accentSurface: accent.surface,
       title: 'JUSTIFICATIF OFFICIEL',
       description: reference != null ? 'Transfert #$reference — termine' : 'Transfert termine',
       buttonLabel: 'Telecharger le recu',
@@ -238,12 +242,13 @@ class _OrderDetailView extends StatelessWidget {
   /// Facture proforma (remarque produit #3) : parcours "payer un fournisseur".
   /// Piece descriptive emise avant paiement, sans valeur d'acquittement —
   /// meme carte claire que le recu.
-  Widget _buildProformaPanel(BuildContext context, OrderDetailController controller) {
+  Widget _buildProformaPanel(BuildContext context, OrderDetailController controller, ExperienceProfile profile) {
     final busy = controller.downloadingProforma;
+    final accent = ExperiencePalette.accentFor(profile, AccentRole.send);
     return _buildDownloadCard(
       icon: Icons.description_outlined,
-      accent: AppColors.shortcutOrange,
-      accentSurface: AppColors.shortcutOrangeSurface,
+      accent: accent.color,
+      accentSurface: accent.surface,
       title: 'FACTURE PROFORMA',
       description: 'Generee automatiquement. Pour votre banque ou le dedouanement.',
       buttonLabel: 'Telecharger la proforma',
@@ -313,7 +318,12 @@ class _OrderDetailView extends StatelessWidget {
 
   /// Livre memoire (remarque produit #5) : un selfie souvenir apres un
   /// transfert termine, stocke **uniquement sur cet appareil**.
-  Widget _buildMemoryPanel(BuildContext context, OrderDetailController controller, OrderDetail order) {
+  Widget _buildMemoryPanel(
+    BuildContext context,
+    OrderDetailController controller,
+    OrderDetail order,
+    ExperienceProfile profile,
+  ) {
     final path = controller.selfiePath;
     if (path != null) {
       return _panel(
@@ -339,10 +349,11 @@ class _OrderDetailView extends StatelessWidget {
         ),
       );
     }
+    final accent = ExperiencePalette.accentFor(profile, AccentRole.group);
     return _buildDownloadCard(
       icon: Icons.photo_camera_outlined,
-      accent: AppColors.shortcutViolet,
-      accentSurface: AppColors.shortcutVioletSurface,
+      accent: accent.color,
+      accentSurface: accent.surface,
       title: 'SOUVENIR',
       description: 'La photo reste sur cet appareil.',
       buttonLabel: 'Prendre un selfie',

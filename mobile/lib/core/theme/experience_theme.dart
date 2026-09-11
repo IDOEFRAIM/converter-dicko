@@ -15,6 +15,22 @@ class ExperienceGradient {
   const ExperienceGradient({required this.gradient, required this.foreground});
 }
 
+/// Couleur d'une pastille d'action ([IconBadge]) : icone + fond clair assorti.
+class AccentColor {
+  final Color color;
+  final Color surface;
+
+  const AccentColor(this.color, this.surface);
+}
+
+/// Role semantique d'une pastille — jamais une couleur directement : la
+/// couleur reelle varie avec [ExperienceProfile] (voir [ExperiencePalette.accentFor]).
+/// [send] : payer/envoyer/proforma (parcours de paiement). [group] : Ruee
+/// collective/moment personnel (souvenir). [rate] : taux preferentiel/alertes
+/// de taux. [premium] : portefeuille/justificatif officiel — tout ce qui est
+/// "de valeur, officiel".
+enum AccentRole { send, group, rate, premium }
+
 /// Point d'acces unique aux couleurs qui varient selon
 /// [ExperienceProfile] — jamais le taux, les frais ni aucune regle metier,
 /// uniquement l'habillage (mission "differenciation marketing").
@@ -32,6 +48,44 @@ abstract final class ExperiencePalette {
         ExperienceProfile.studentFemale =>
           const ExperienceGradient(gradient: AppColors.storyGradient, foreground: AppColors.navyDark),
       };
+
+  /// Couleur d'une pastille d'action pour [profile] et [role] — retour
+  /// client, sept. 2026 : "les couleurs doivent etre alignees avec les
+  /// differents types de profil". Point d'acces UNIQUE : aucun ecran ne doit
+  /// lire `AppColors.shortcut*`/`epic*`/`story*` directement pour un
+  /// [IconBadge] de navigation, toujours passer par cette fonction — sinon
+  /// un habillage se retrouve avec les couleurs d'un autre.
+  static AccentColor accentFor(ExperienceProfile profile, AccentRole role) {
+    switch (profile) {
+      case ExperienceProfile.pro:
+        return switch (role) {
+          AccentRole.send => const AccentColor(AppColors.shortcutOrange, AppColors.shortcutOrangeSurface),
+          AccentRole.group => const AccentColor(AppColors.shortcutViolet, AppColors.shortcutVioletSurface),
+          AccentRole.rate => const AccentColor(AppColors.signal, AppColors.signalSurfaceSoft),
+          AccentRole.premium => const AccentColor(AppColors.keyline, AppColors.keylineSurfaceSoft),
+        };
+      case ExperienceProfile.studentMale:
+        // "Mode Epopee" : les 3 teintes du degrade epique servent aux 3
+        // premiers roles ; seul "premium" (ambre) est une teinte nouvelle.
+        return switch (role) {
+          AccentRole.send => const AccentColor(AppColors.chinaRed, AppColors.chinaRedSurface),
+          AccentRole.group => const AccentColor(AppColors.epicPrimary, AppColors.epicPrimarySurface),
+          AccentRole.rate => const AccentColor(AppColors.ochre, AppColors.keylineSurfaceSoft),
+          AccentRole.premium => const AccentColor(AppColors.epicAmber, AppColors.epicAmberSurface),
+        };
+      case ExperienceProfile.studentFemale:
+        // "Mode Histoire" : blushPink/skyBlue servent de FOND (ils sont deja
+        // clairs) a une icone plus saturee (storyPink/storyBlue). "premium"
+        // reste l'or de marque : le portefeuille est un repere universel,
+        // pas un moment d'habillage.
+        return switch (role) {
+          AccentRole.send => const AccentColor(AppColors.softMauve, AppColors.storyMauveSurface),
+          AccentRole.group => const AccentColor(AppColors.storyPink, AppColors.blushPink),
+          AccentRole.rate => const AccentColor(AppColors.storyBlue, AppColors.skyBlue),
+          AccentRole.premium => const AccentColor(AppColors.keyline, AppColors.keylineSurfaceSoft),
+        };
+    }
+  }
 }
 
 /// Textes qui varient selon [ExperienceProfile] (mission "differenciation

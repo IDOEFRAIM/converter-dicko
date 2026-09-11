@@ -79,17 +79,32 @@ abstract final class AppColors {
     stops: [0.0, 0.55, 1.0],
   );
 
-  // ---- Pastilles d'action ([IconBadge]) — retour client, sept. 2026 : "app
-  // trop bavarde", "on doit clairement comprendre comment ca fonctionne" —
-  // capture de reference fournie (pastilles d'icones colorees, tres peu de
-  // texte). Devenu le langage standard de navigation/comprehension de
-  // l'app (accueil, detail de transfert, menu "Plus", parcours de paiement),
-  // pas seulement l'accueil comme au depart. Seules 2 teintes sont
-  // reellement nouvelles ; les autres pastilles reutilisent [signal],
-  // [keyline] et [ochre], deja porteurs de sens (taux vivant, or de marque,
-  // identite) plutot que d'inventer encore une couleur. La discipline "le
-  // rouge est un accent rare, pas une couleur d'interface" (section 6/7)
-  // reste intacte : [chinaRed]/[negative] ne sont jamais reutilises ici.
+  /// Pastilles d'action (Mode Epopee) — voir [ExperiencePalette.accentFor] :
+  /// memes roles que la palette PRO (envoyer/groupe/taux/premium), coloree
+  /// avec les teintes DEJA de ce habillage (epicPrimary/ochre/chinaRed) plus
+  /// une seule teinte reellement nouvelle (ambre, pour "premium" — aucune
+  /// des trois autres n'etait assez distincte pour ce role).
+  static const epicAmber = Color(0xFFE0793D);
+  static const epicAmberSurface = Color(0xFFFCE7D8);
+  static const chinaRedSurface = Color(0xFFFBE1E2);
+  static const epicPrimarySurface = Color(0xFFEEDCE2);
+
+  // ---- Pastilles d'action ([IconBadge]) — variante PRO. Retour client,
+  // sept. 2026 : "app trop bavarde", "on doit clairement comprendre comment
+  // ca fonctionne" (capture de reference fournie), PUIS "les couleurs
+  // doivent etre alignees avec les differents types de profil" -- ces 4
+  // roles (envoyer / groupe / taux / premium) existent desormais dans les
+  // TROIS habillages, jamais les memes teintes d'un profil a l'autre. Point
+  // d'acces unique : [ExperiencePalette.accentFor] -- aucun widget ne doit
+  // lire `AppColors.shortcut*`/`epic*`/`story*` directement, seulement via
+  // cette fonction (meme discipline que [ExperiencePalette.primaryFor] pour
+  // l'accent de marque). Ce bloc reste le seul a introduire 2 teintes
+  // reellement nouvelles pour PRO ; les deux autres pastilles PRO
+  // reutilisent [signal] et [keyline]. La discipline "le rouge est un
+  // accent rare, pas une couleur d'interface" (section 6/7) reste intacte
+  // en PRO : [chinaRed]/[negative] n'y sont jamais reutilises (les habillages
+  // STUDENT_MALE/FEMALE, eux, ont deja leur propre vocabulaire de couleurs
+  // "differenciation marketing", voir plus bas).
   static const shortcutOrange = Color(0xFFFF8A3D);
   static const shortcutOrangeSurface = Color(0xFFFFE9DA);
   static const shortcutViolet = Color(0xFF8B5CF6);
@@ -108,4 +123,13 @@ abstract final class AppColors {
     colors: [blushPink, softMauve, skyBlue],
     stops: [0.0, 0.55, 1.0],
   );
+
+  /// Pastilles d'action (Mode Histoire) — memes roles que la palette PRO.
+  /// [blushPink]/[skyBlue] sont deja des teintes claires : reutilisees
+  /// directement comme FOND de pastille plutot que comme icone (contraste
+  /// insuffisant en premier plan) ; [storyPink]/[storyBlue] sont les deux
+  /// seules teintes reellement nouvelles, plus saturees, pour l'icone.
+  static const storyMauveSurface = Color(0xFFF3EAF9);
+  static const storyPink = Color(0xFFD46A93);
+  static const storyBlue = Color(0xFF4FA3D1);
 }
