@@ -82,13 +82,9 @@ class MorePage extends StatelessWidget {
           const SizedBox(height: AppSpacing.xl),
           _MoreSection(
             title: 'MON COMPTE',
+            // Portefeuille retire (retour client) : aucun canal de rechargement
+            // n'existe encore cote client -- voir la meme note dans home_page.dart.
             tiles: [
-              _MoreTile(
-                icon: Icons.account_balance_wallet_outlined,
-                color: ExperiencePalette.accentFor(profile, AccentRole.premium).color,
-                label: 'Portefeuille',
-                onTap: () => context.push('/more/wallet'),
-              ),
               _MoreTile(
                 icon: Icons.verified_user_outlined,
                 color: AppColors.ochre,

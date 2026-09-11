@@ -102,13 +102,12 @@ class _HomePageState extends State<HomePage> {
                     foreground: ExperiencePalette.accentFor(profile, AccentRole.rate).color,
                     onTap: () => context.push('/more/preferred-rate'),
                   ),
-                  QuickAction(
-                    icon: Icons.account_balance_wallet_outlined,
-                    label: 'Portefeuille',
-                    background: ExperiencePalette.accentFor(profile, AccentRole.premium).surface,
-                    foreground: ExperiencePalette.accentFor(profile, AccentRole.premium).color,
-                    onTap: () => context.push('/more/wallet'),
-                  ),
+                  // Portefeuille retire des raccourcis (retour client) : aucun canal
+                  // de rechargement n'existe encore cote client (WalletService.deposit
+                  // n'est jamais appele), l'ecran resterait donc toujours vide -- pas
+                  // de raccourci vers une fonctionnalite qui ne peut rien montrer.
+                  // Page et route conservees (WalletApi/WalletController/WalletPage,
+                  // /more/wallet) pour reactivation quand un canal sera branche.
                 ],
               ),
               const SizedBox(height: AppSpacing.xl),
