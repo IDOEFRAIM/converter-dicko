@@ -55,10 +55,11 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="form__field">
-        <mat-label>
-          {{ isBankAccount ? 'Numero de compte bancaire' : 'Identifiant (compte Alipay / WeChat)' }}
-        </mat-label>
+        <mat-label>{{ identifierLabel }}</mat-label>
         <input matInput formControlName="identifier" autocomplete="off" />
+        @if (identifierHint) {
+          <mat-hint>{{ identifierHint }}</mat-hint>
+        }
         @if (form.controls.identifier.invalid && form.controls.identifier.touched) {
           <mat-error>L'identifiant du beneficiaire est obligatoire.</mat-error>
         }

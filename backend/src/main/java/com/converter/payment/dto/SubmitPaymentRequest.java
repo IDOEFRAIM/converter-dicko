@@ -25,7 +25,12 @@ public record SubmitPaymentRequest(
         @Size(max = 100)
         String transactionReference,
 
+        @NotBlank(message = "Le numero du payeur est obligatoire")
         @Size(max = 20)
-        String payerPhone
+        String payerPhone,
+
+        @NotBlank(message = "Le nom du payeur est obligatoire")
+        @Size(max = 160)
+        String payerName
 ) {
 }

@@ -131,7 +131,7 @@ class OrderTrackingServiceTest {
                 // Meme instant que le rejet du paiement ci-dessous : force la collision.
                 new OrderStatusHistory(orderId, OrderStatus.PAYMENT_SUBMITTED, OrderStatus.REJECTED, userId, "rejet", tie)));
         Payment payment = new Payment(orderId, PaymentMethod.MOBILE_MONEY, new BigDecimal("100000.00"),
-                new BigDecimal("100000.00"), "TX-1", null, t1);
+                new BigDecimal("100000.00"), "TX-1", null, null, t1);
         payment.reject(UUID.randomUUID(), "preuve invalide", tie);
         when(paymentRepository.findByOrderId(orderId)).thenReturn(Optional.of(payment));
         when(settlementRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
@@ -180,7 +180,7 @@ class OrderTrackingServiceTest {
                 new OrderStatusHistory(orderId, OrderStatus.PAYMENT_SUBMITTED, OrderStatus.PAYMENT_VERIFIED, userId, null, t0.plusSeconds(120)),
                 new OrderStatusHistory(orderId, OrderStatus.PAYMENT_VERIFIED, OrderStatus.PROCESSING, userId, null, t0.plusSeconds(180))));
         Payment payment = new Payment(orderId, PaymentMethod.MOBILE_MONEY, new BigDecimal("100000.00"),
-                new BigDecimal("100000.00"), "TX-2", null, t0.plusSeconds(60));
+                new BigDecimal("100000.00"), "TX-2", null, null, t0.plusSeconds(60));
         payment.confirm(UUID.randomUUID(), t0.plusSeconds(120));
         when(paymentRepository.findByOrderId(orderId)).thenReturn(Optional.of(payment));
         Settlement settlement = new Settlement(orderId, new BigDecimal("1176.47"), BeneficiaryType.ALIPAY,
@@ -204,7 +204,7 @@ class OrderTrackingServiceTest {
         when(historyRepository.findByOrderIdOrderByCreatedAtAsc(orderId)).thenReturn(List.of(
                 new OrderStatusHistory(orderId, null, OrderStatus.AWAITING_PAYMENT, userId, null, t0)));
         Payment payment = new Payment(orderId, PaymentMethod.MOBILE_MONEY, new BigDecimal("100000.00"),
-                new BigDecimal("100000.00"), "TX-3", null, t0);
+                new BigDecimal("100000.00"), "TX-3", null, null, t0);
         payment.confirm(UUID.randomUUID(), t0.plusSeconds(60));
         payment.setId(UUID.randomUUID());
         when(paymentRepository.findByOrderId(orderId)).thenReturn(Optional.of(payment));
@@ -228,7 +228,7 @@ class OrderTrackingServiceTest {
         when(historyRepository.findByOrderIdOrderByCreatedAtAsc(orderId)).thenReturn(List.of(
                 new OrderStatusHistory(orderId, null, OrderStatus.AWAITING_PAYMENT, userId, null, t0)));
         Payment payment = new Payment(orderId, PaymentMethod.MOBILE_MONEY, new BigDecimal("100000.00"),
-                new BigDecimal("100000.00"), "TX-4", null, t0);
+                new BigDecimal("100000.00"), "TX-4", null, null, t0);
         payment.confirm(UUID.randomUUID(), t0.plusSeconds(60));
         payment.setId(UUID.randomUUID());
         when(paymentRepository.findByOrderId(orderId)).thenReturn(Optional.of(payment));

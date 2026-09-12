@@ -49,6 +49,15 @@ public class Payment extends BaseEntity {
     @Column(name = "payer_phone", length = 20)
     private String payerPhone;
 
+    /**
+     * Nullable en base (V35, ajoutee apres coup — voir la migration) : seule
+     * la validation applicative ({@code SubmitPaymentRequest}) impose sa
+     * presence pour toute NOUVELLE declaration, jamais une reecriture des
+     * paiements deja soumis.
+     */
+    @Column(name = "payer_name", length = 160)
+    private String payerName;
+
     @Column(name = "submitted_at", nullable = false)
     private Instant submittedAt;
 
@@ -80,7 +89,7 @@ public class Payment extends BaseEntity {
 
     public Payment(UUID orderId, PaymentMethod method, BigDecimal expectedAmountXof,
                    BigDecimal receivedAmountXof, String transactionReference, String payerPhone,
-                   Instant submittedAt) {
+                   String payerName, Instant submittedAt) {
         this.orderId = orderId;
         this.method = method;
         this.status = PaymentStatus.SUBMITTED;
@@ -88,6 +97,7 @@ public class Payment extends BaseEntity {
         this.receivedAmountXof = receivedAmountXof;
         this.transactionReference = transactionReference;
         this.payerPhone = payerPhone;
+        this.payerName = payerName;
         this.submittedAt = submittedAt;
         this.createdAt = submittedAt;
         this.updatedAt = submittedAt;
@@ -143,6 +153,10 @@ public class Payment extends BaseEntity {
 
     public String getPayerPhone() {
         return payerPhone;
+    }
+
+    public String getPayerName() {
+        return payerName;
     }
 
     public Instant getSubmittedAt() {

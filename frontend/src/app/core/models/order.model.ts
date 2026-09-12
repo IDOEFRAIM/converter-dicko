@@ -62,6 +62,27 @@ export const BENEFICIARY_TYPE_OPTIONS: { value: BeneficiaryType; label: string }
   Object.keys(BENEFICIARY_TYPE_LABELS) as BeneficiaryType[]
 ).map((value) => ({ value, label: BENEFICIARY_TYPE_LABELS[value] }));
 
+/**
+ * Libelle du champ "identifiant" — sa nature reelle differe par type (retour
+ * client) : Alipay/WeChat Pay s'utilisent en Chine via un code QR, jamais un
+ * identifiant de compte classique comme une banque.
+ */
+export const BENEFICIARY_IDENTIFIER_LABELS: Record<BeneficiaryType, string> = {
+  ALIPAY: 'Code QR Alipay',
+  WECHAT_PAY: 'Code QR WeChat Pay',
+  CHINESE_BANK_ACCOUNT: 'Numero de compte bancaire',
+};
+
+/**
+ * Precision affichee sous le champ — le formulaire reste un champ texte
+ * (aucune photo/scan de code QR) : le client saisit l'identifiant associe a
+ * son code QR, jamais l'image elle-meme.
+ */
+export const BENEFICIARY_IDENTIFIER_HINTS: Partial<Record<BeneficiaryType, string>> = {
+  ALIPAY: 'Identifiant associe a votre code QR, pas une image.',
+  WECHAT_PAY: 'Identifiant associe a votre code QR, pas une image.',
+};
+
 export interface Beneficiary {
   type: BeneficiaryType;
   fullName: string;

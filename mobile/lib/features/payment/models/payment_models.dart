@@ -42,13 +42,15 @@ class SubmitPaymentRequest {
   final PaymentMethod method;
   final String receivedAmountXof;
   final String transactionReference;
-  final String? payerPhone;
+  final String payerPhone;
+  final String payerName;
 
   const SubmitPaymentRequest({
     required this.method,
     required this.receivedAmountXof,
     required this.transactionReference,
-    this.payerPhone,
+    required this.payerPhone,
+    required this.payerName,
   });
 
   Map<String, dynamic> toJson() => {
@@ -56,6 +58,7 @@ class SubmitPaymentRequest {
         'receivedAmountXof': receivedAmountXof,
         'transactionReference': transactionReference,
         'payerPhone': payerPhone,
+        'payerName': payerName,
       };
 }
 
@@ -94,6 +97,7 @@ class Payment {
   final String receivedAmountXof;
   final String transactionReference;
   final String? payerPhone;
+  final String? payerName;
   final String? rejectionReason;
   final List<PaymentProof> proofs;
   final DateTime submittedAt;
@@ -109,6 +113,7 @@ class Payment {
     required this.receivedAmountXof,
     required this.transactionReference,
     required this.payerPhone,
+    required this.payerName,
     required this.rejectionReason,
     required this.proofs,
     required this.submittedAt,
@@ -126,6 +131,7 @@ class Payment {
       receivedAmountXof: decimalStringFromJson(json['receivedAmountXof']),
       transactionReference: json['transactionReference'] as String? ?? '',
       payerPhone: json['payerPhone'] as String?,
+      payerName: json['payerName'] as String?,
       rejectionReason: json['rejectionReason'] as String?,
       proofs: (json['proofs'] as List<dynamic>? ?? const [])
           .map((e) => PaymentProof.fromJson(e as Map<String, dynamic>))

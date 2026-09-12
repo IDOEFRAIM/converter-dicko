@@ -19,6 +19,7 @@ public record PaymentResponse(
         BigDecimal receivedAmountXof,
         String transactionReference,
         String payerPhone,
+        String payerName,
         String rejectionReason,
         List<PaymentProofResponse> proofs,
         Instant submittedAt,

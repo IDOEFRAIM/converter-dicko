@@ -18,6 +18,7 @@ export interface Payment {
   receivedAmountXof: string;
   transactionReference: string;
   payerPhone: string | null;
+  payerName: string | null;
   rejectionReason: string | null;
   proofs: PaymentProof[];
   submittedAt: string;
@@ -29,7 +30,8 @@ export interface SubmitPaymentRequest {
   method: PaymentMethod;
   receivedAmountXof: string;
   transactionReference: string;
-  payerPhone: string | null;
+  payerPhone: string;
+  payerName: string;
 }
 
 export interface RejectPaymentRequest {

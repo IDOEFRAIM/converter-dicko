@@ -53,12 +53,14 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
   final _formKey = GlobalKey<FormState>();
   final _referenceController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _payerNameController = TextEditingController();
   PaymentMethod? _method;
 
   @override
   void dispose() {
     _referenceController.dispose();
     _phoneController.dispose();
+    _payerNameController.dispose();
     super.dispose();
   }
 
@@ -81,7 +83,8 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
     await controller.submit(
       method: method,
       transactionReference: _referenceController.text.trim(),
-      payerPhone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+      payerPhone: _phoneController.text.trim(),
+      payerName: _payerNameController.text.trim(),
     );
   }
 
@@ -171,11 +174,18 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
             ),
             const SizedBox(height: AppSpacing.md),
             TextFormField(
+              controller: _payerNameController,
+              maxLength: 160,
+              decoration: const InputDecoration(labelText: 'Nom du payeur *'),
+              validator: (value) => Validators.requiredMaxLength(value, 160, label: 'Le nom du payeur'),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextFormField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
               maxLength: 20,
-              decoration: const InputDecoration(labelText: 'Numero du payeur'),
-              validator: (value) => Validators.optionalMaxLength(value, 20, label: 'Le numero du payeur'),
+              decoration: const InputDecoration(labelText: 'Numero du payeur *'),
+              validator: (value) => Validators.requiredMaxLength(value, 20, label: 'Le numero du payeur'),
             ),
           ],
         ),

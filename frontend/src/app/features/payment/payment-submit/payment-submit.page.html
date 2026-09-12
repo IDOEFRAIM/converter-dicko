@@ -45,8 +45,19 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="form__field">
-          <mat-label>Numero du payeur (optionnel)</mat-label>
+          <mat-label>Nom du payeur</mat-label>
+          <input matInput formControlName="payerName" />
+          @if (form.controls.payerName.invalid && form.controls.payerName.touched) {
+            <mat-error>Le nom du payeur est obligatoire.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form__field">
+          <mat-label>Numero du payeur</mat-label>
           <input matInput formControlName="payerPhone" />
+          @if (form.controls.payerPhone.invalid && form.controls.payerPhone.touched) {
+            <mat-error>Le numero du payeur est obligatoire.</mat-error>
+          }
         </mat-form-field>
 
         <button mat-flat-button class="brand-button form__submit" type="submit" [disabled]="submitting()">

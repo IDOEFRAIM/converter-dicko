@@ -136,7 +136,8 @@ class _SupplierFormPageState extends State<SupplierFormPage> {
                   controller: _accountNumberController,
                   maxLength: 120,
                   decoration: InputDecoration(
-                    labelText: _type == BeneficiaryType.chineseBankAccount ? 'Numero de compte *' : 'Identifiant du compte *',
+                    labelText: '${_type.identifierLabel} *',
+                    helperText: _type.identifierHint,
                   ),
                   validator: (v) => Validators.requiredMaxLength(v, 120, label: 'Ce champ'),
                 ),

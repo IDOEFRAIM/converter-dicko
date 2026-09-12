@@ -40,6 +40,25 @@ enum BeneficiaryType {
     BeneficiaryType.wechatPay,
     BeneficiaryType.chineseBankAccount,
   ];
+
+  /// Libelle du champ "identifiant" — sa nature reelle differe par type
+  /// (retour client) : Alipay/WeChat Pay s'utilisent en Chine via un code
+  /// QR, jamais un identifiant de compte classique comme une banque.
+  String get identifierLabel => switch (this) {
+        BeneficiaryType.alipay => 'Code QR Alipay',
+        BeneficiaryType.wechatPay => 'Code QR WeChat Pay',
+        BeneficiaryType.chineseBankAccount => 'Numero de compte bancaire',
+        BeneficiaryType.unknown => 'Identifiant',
+      };
+
+  /// Precision affichee sous le champ — le formulaire reste un champ texte
+  /// (aucune photo/scan de code QR dans cette version) : le client saisit
+  /// l'identifiant associe a son code QR, jamais l'image elle-meme.
+  String? get identifierHint => switch (this) {
+        BeneficiaryType.alipay || BeneficiaryType.wechatPay =>
+          'Identifiant associe a votre code QR, pas une image.',
+        BeneficiaryType.chineseBankAccount || BeneficiaryType.unknown => null,
+      };
 }
 
 /// Devise du compte fournisseur — miroir de `Currency` backend.

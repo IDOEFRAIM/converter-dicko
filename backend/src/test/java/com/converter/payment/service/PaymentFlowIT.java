@@ -96,7 +96,7 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         ResponseEntity<ErrorResponse> response = restTemplate.exchange(
                 "/api/v1/orders/" + order.id() + "/payments", HttpMethod.POST,
                 new HttpEntity<>(new SubmitPaymentRequest(PaymentMethod.MOBILE_MONEY, new BigDecimal("50000"),
-                        "MM-REF-003", null), auth(user)),
+                        "MM-REF-003", "+2250700000000", "Payeur Test"), auth(user)),
                 ErrorResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);

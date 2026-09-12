@@ -70,7 +70,8 @@ class PaymentSubmitController extends ChangeNotifier {
   Future<bool> submit({
     required PaymentMethod method,
     required String transactionReference,
-    String? payerPhone,
+    required String payerPhone,
+    required String payerName,
   }) async {
     final currentOrder = order;
     if (currentOrder == null || submitting) return false;
@@ -80,6 +81,7 @@ class PaymentSubmitController extends ChangeNotifier {
       receivedAmountXof: currentOrder.amountXof,
       transactionReference: transactionReference,
       payerPhone: payerPhone,
+      payerName: payerName,
     );
 
     submitting = true;

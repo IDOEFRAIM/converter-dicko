@@ -66,7 +66,11 @@ describe('PaymentSubmitPage', () => {
   });
 
   it('submits the payment declaration then reveals the proof upload step', () => {
-    fixture.componentInstance.form.patchValue({ transactionReference: 'MM-REF-1' });
+    fixture.componentInstance.form.patchValue({
+      transactionReference: 'MM-REF-1',
+      payerPhone: '+2250700000000',
+      payerName: 'Jean Payeur',
+    });
 
     fixture.componentInstance.submitPayment();
     const req = httpMock.expectOne('/api/v1/orders/o1/payments');
@@ -74,7 +78,8 @@ describe('PaymentSubmitPage', () => {
       method: 'MOBILE_MONEY',
       receivedAmountXof: '100000',
       transactionReference: 'MM-REF-1',
-      payerPhone: null,
+      payerPhone: '+2250700000000',
+      payerName: 'Jean Payeur',
     });
     req.flush({
       data: {
@@ -85,7 +90,8 @@ describe('PaymentSubmitPage', () => {
         expectedAmountXof: '100000.00',
         receivedAmountXof: '100000.00',
         transactionReference: 'MM-REF-1',
-        payerPhone: null,
+        payerPhone: '+2250700000000',
+        payerName: 'Jean Payeur',
         rejectionReason: null,
         proofs: [],
         submittedAt: '2026-01-01T10:05:00Z',
@@ -99,7 +105,11 @@ describe('PaymentSubmitPage', () => {
   });
 
   it('shows a safe-retry message on network failure, never a definitive failure message', () => {
-    fixture.componentInstance.form.patchValue({ transactionReference: 'MM-REF-1' });
+    fixture.componentInstance.form.patchValue({
+      transactionReference: 'MM-REF-1',
+      payerPhone: '+2250700000000',
+      payerName: 'Jean Payeur',
+    });
     fixture.componentInstance.submitPayment();
 
     const req = httpMock.expectOne('/api/v1/orders/o1/payments');
@@ -110,7 +120,11 @@ describe('PaymentSubmitPage', () => {
   });
 
   it('reuses the same Idempotency-Key when retrying an unchanged submission after a failure', () => {
-    fixture.componentInstance.form.patchValue({ transactionReference: 'MM-REF-1' });
+    fixture.componentInstance.form.patchValue({
+      transactionReference: 'MM-REF-1',
+      payerPhone: '+2250700000000',
+      payerName: 'Jean Payeur',
+    });
 
     fixture.componentInstance.submitPayment();
     const first = httpMock.expectOne('/api/v1/orders/o1/payments');
@@ -129,7 +143,8 @@ describe('PaymentSubmitPage', () => {
         expectedAmountXof: '100000.00',
         receivedAmountXof: '100000.00',
         transactionReference: 'MM-REF-1',
-        payerPhone: null,
+        payerPhone: '+2250700000000',
+        payerName: 'Jean Payeur',
         rejectionReason: null,
         proofs: [],
         submittedAt: '2026-01-01T10:05:00Z',
@@ -141,7 +156,11 @@ describe('PaymentSubmitPage', () => {
   });
 
   it('uses a new Idempotency-Key when the submitted reference changes (a different intent)', () => {
-    fixture.componentInstance.form.patchValue({ transactionReference: 'MM-REF-1' });
+    fixture.componentInstance.form.patchValue({
+      transactionReference: 'MM-REF-1',
+      payerPhone: '+2250700000000',
+      payerName: 'Jean Payeur',
+    });
     fixture.componentInstance.submitPayment();
     const first = httpMock.expectOne('/api/v1/orders/o1/payments');
     const firstKey = first.request.headers.get('Idempotency-Key');
@@ -155,7 +174,11 @@ describe('PaymentSubmitPage', () => {
   });
 
   it('disables submission while a request is already in flight', () => {
-    fixture.componentInstance.form.patchValue({ transactionReference: 'MM-REF-1' });
+    fixture.componentInstance.form.patchValue({
+      transactionReference: 'MM-REF-1',
+      payerPhone: '+2250700000000',
+      payerName: 'Jean Payeur',
+    });
     fixture.componentInstance.submitPayment();
     expect(fixture.componentInstance.submitting()).toBe(true);
 
@@ -174,7 +197,8 @@ describe('PaymentSubmitPage', () => {
       expectedAmountXof: '100000.00',
       receivedAmountXof: '100000.00',
       transactionReference: 'MM-REF-1',
-      payerPhone: null,
+      payerPhone: '+2250700000000',
+      payerName: 'Jean Payeur',
       rejectionReason: null,
       proofs: [],
       submittedAt: '2026-01-01T10:05:00Z',

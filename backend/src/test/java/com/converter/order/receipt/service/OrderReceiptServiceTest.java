@@ -141,7 +141,8 @@ class OrderReceiptServiceTest {
         Beneficiary beneficiary = new Beneficiary(order.getId(), BeneficiaryType.CHINESE_BANK_ACCOUNT, "Zhang San",
                 "6222000000001111", "Bank of China", "Shanghai Branch", order.getCreatedAt());
         Payment payment = new Payment(order.getId(), PaymentMethod.MOBILE_MONEY, order.getAmountXof(),
-                order.getAmountXof(), "MM-PAY-REF-42", "+2250700000000", Instant.parse("2026-09-01T11:00:00Z"));
+                order.getAmountXof(), "MM-PAY-REF-42", "+2250700000000", "Payeur Test",
+                Instant.parse("2026-09-01T11:00:00Z"));
         payment.confirm(UUID.randomUUID(), Instant.parse("2026-09-01T12:00:00Z"));
 
         when(orderRepository.findById(order.getId())).thenReturn(Optional.of(order));

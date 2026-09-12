@@ -12,7 +12,13 @@ import { OrderService } from '../../../core/services/order.service';
 import { SupplierService } from '../../../core/services/supplier.service';
 import { extractErrorMessage } from '../../../core/services/api-error.util';
 import { IdempotencyAttempt } from '../../../core/services/idempotency.util';
-import { BeneficiaryType, BENEFICIARY_TYPE_OPTIONS, CreateOrderRequest } from '../../../core/models/order.model';
+import {
+  BeneficiaryType,
+  BENEFICIARY_IDENTIFIER_HINTS,
+  BENEFICIARY_IDENTIFIER_LABELS,
+  BENEFICIARY_TYPE_OPTIONS,
+  CreateOrderRequest,
+} from '../../../core/models/order.model';
 import { Purpose, PURPOSE_OPTIONS } from '../../../core/models/common.model';
 import { SupplierSummary } from '../../../core/models/supplier.model';
 
@@ -79,6 +85,14 @@ export class OrderCreatePage implements OnInit {
 
   get isBankAccount(): boolean {
     return this.form.controls.type.value === 'CHINESE_BANK_ACCOUNT';
+  }
+
+  get identifierLabel(): string {
+    return BENEFICIARY_IDENTIFIER_LABELS[this.form.controls.type.value as BeneficiaryType];
+  }
+
+  get identifierHint(): string | null {
+    return BENEFICIARY_IDENTIFIER_HINTS[this.form.controls.type.value as BeneficiaryType] ?? null;
   }
 
   ngOnInit(): void {

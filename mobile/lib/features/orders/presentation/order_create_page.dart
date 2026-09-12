@@ -283,9 +283,8 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
             controller: _identifierController,
             maxLength: 120,
             decoration: InputDecoration(
-              labelText: _manualType == BeneficiaryType.chineseBankAccount
-                  ? 'Numero de compte bancaire'
-                  : 'Identifiant du compte',
+              labelText: _manualType.identifierLabel,
+              helperText: _manualType.identifierHint,
             ),
             validator: (v) => Validators.requiredMaxLength(v, 120, label: 'Ce champ'),
           ),

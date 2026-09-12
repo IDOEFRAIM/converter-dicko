@@ -101,7 +101,8 @@ public abstract class AbstractOrderPipelineIT extends AbstractRateQuoteIT {
             String userToken, UUID orderId, String receivedAmountXof, String reference) {
         return restTemplate.exchange("/api/v1/orders/" + orderId + "/payments", HttpMethod.POST,
                 new HttpEntity<>(new SubmitPaymentRequest(PaymentMethod.MOBILE_MONEY,
-                        new BigDecimal(receivedAmountXof), reference, "+2250700000000"), auth(userToken)),
+                        new BigDecimal(receivedAmountXof), reference, "+2250700000000", "Payeur Test"),
+                        auth(userToken)),
                 new ParameterizedTypeReference<ApiResponse<PaymentResponse>>() {
                 });
     }

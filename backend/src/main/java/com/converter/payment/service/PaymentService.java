@@ -124,7 +124,8 @@ public class PaymentService {
 
         Instant now = clock.instant();
         Payment payment = new Payment(orderId, request.method(), order.getAmountXof(),
-                request.receivedAmountXof(), request.transactionReference(), request.payerPhone(), now);
+                request.receivedAmountXof(), request.transactionReference(), request.payerPhone(),
+                request.payerName(), now);
         Payment saved;
         try {
             saved = paymentRepository.saveAndFlush(payment);
@@ -331,7 +332,7 @@ public class PaymentService {
         return new PaymentResponse(
                 payment.getId(), payment.getOrderId(), payment.getMethod(), payment.getStatus(),
                 payment.getExpectedAmountXof(), payment.getReceivedAmountXof(), payment.getTransactionReference(),
-                payment.getPayerPhone(), payment.getRejectionReason(), proofs,
+                payment.getPayerPhone(), payment.getPayerName(), payment.getRejectionReason(), proofs,
                 payment.getSubmittedAt(), payment.getConfirmedAt(), payment.getRejectedAt());
     }
 }
