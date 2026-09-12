@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Requis pour tout appel API (mission section 13/14) -- sans cette permission,
+    <!-- Requis pour tout appel API (mission section 13/14) : sans cette permission,
          un build release ne peut faire aucune requete reseau. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <application
