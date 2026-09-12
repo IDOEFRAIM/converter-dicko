@@ -16,8 +16,17 @@ import 'package:google_sign_in/google_sign_in.dart';
 class GoogleAuthClient {
   final GoogleSignIn _googleSignIn;
 
+  // `clientId` est ignore par les SDK natifs Android/iOS (qui lisent leur
+  // propre config : SHA-1 enregistre / GIDClientID) mais OBLIGATOIRE pour
+  // l'initialisation du plugin web (`google_sign_in_web`), qui echoue sinon
+  // avec `appClientId != null` des le premier tap. Meme Client ID Web des
+  // deux cotes : rien a distinguer, un seul id a fournir.
   GoogleAuthClient({required String serverClientId})
-      : _googleSignIn = GoogleSignIn(serverClientId: serverClientId, scopes: const ['email']);
+      : _googleSignIn = GoogleSignIn(
+          clientId: serverClientId,
+          serverClientId: serverClientId,
+          scopes: const ['email'],
+        );
 
   /// Ouvre le selecteur de compte natif puis renvoie le jeton d'identite (ID
   /// token) a transmettre au backend pour verification — `null` si
