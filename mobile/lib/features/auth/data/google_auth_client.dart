@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -16,17 +17,17 @@ import 'package:google_sign_in/google_sign_in.dart';
 class GoogleAuthClient {
   final GoogleSignIn _googleSignIn;
 
-  // `clientId` est ignore par les SDK natifs Android/iOS (qui lisent leur
-  // propre config : SHA-1 enregistre / GIDClientID) mais OBLIGATOIRE pour
-  // l'initialisation du plugin web (`google_sign_in_web`), qui echoue sinon
-  // avec `appClientId != null` des le premier tap. Meme Client ID Web des
-  // deux cotes : rien a distinguer, un seul id a fournir.
+  // Le plugin web (`google_sign_in_web`) et les SDK natifs Android/iOS
+  // s'attendent a des parametres opposes pour le MEME Client ID Web :
+  // - Web : `clientId` obligatoire, `serverClientId` explicitement REFUSE
+  //   (assertion `params.serverClientId == null` sinon).
+  // - Natif : `serverClientId` obligatoire (c'est ce qui donne un jeton
+  //   d'identite dont l'audience correspond au backend) ; `clientId` est
+  //   ignore (config lue depuis le SHA-1 enregistre / GIDClientID natif).
   GoogleAuthClient({required String serverClientId})
-      : _googleSignIn = GoogleSignIn(
-          clientId: serverClientId,
-          serverClientId: serverClientId,
-          scopes: const ['email'],
-        );
+      : _googleSignIn = kIsWeb
+            ? GoogleSignIn(clientId: serverClientId, scopes: const ['email'])
+            : GoogleSignIn(serverClientId: serverClientId, scopes: const ['email']);
 
   /// Ouvre le selecteur de compte natif puis renvoie le jeton d'identite (ID
   /// token) a transmettre au backend pour verification — `null` si
