@@ -38,6 +38,7 @@ export class AdminLayoutComponent {
     { path: '/admin/kyc', icon: 'badge', label: "Verif. identite" },
     { path: '/admin/settlements', icon: 'send', label: 'Reglements' },
     { path: '/admin/treasury', icon: 'account_balance', label: 'Tresorerie' },
+    { path: '/admin/support', icon: 'forum', label: 'Messagerie' },
   ];
 
   logout(): void {

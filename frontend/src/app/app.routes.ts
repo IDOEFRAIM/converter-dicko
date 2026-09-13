@@ -115,6 +115,10 @@ export const routes: Routes = [
         path: 'business',
         loadComponent: () => import('./features/business/business.page').then((m) => m.BusinessPage),
       },
+      {
+        path: 'support',
+        loadComponent: () => import('./features/support/support.page').then((m) => m.SupportPage),
+      },
     ],
   },
   {
@@ -181,6 +185,20 @@ export const routes: Routes = [
         path: 'treasury',
         loadComponent: () =>
           import('./features/admin/admin-treasury/admin-treasury.page').then((m) => m.AdminTreasuryPage),
+      },
+      {
+        path: 'support',
+        loadComponent: () =>
+          import('./features/admin/admin-support-list/admin-support-list.page').then(
+            (m) => m.AdminSupportListPage,
+          ),
+      },
+      {
+        path: 'support/:userId',
+        loadComponent: () =>
+          import('./features/admin/admin-support-thread/admin-support-thread.page').then(
+            (m) => m.AdminSupportThreadPage,
+          ),
       },
     ],
   },

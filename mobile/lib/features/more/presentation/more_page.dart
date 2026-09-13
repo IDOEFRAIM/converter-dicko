@@ -103,6 +103,12 @@ class MorePage extends StatelessWidget {
                 label: 'Espace professionnel',
                 onTap: () => context.push('/more/business'),
               ),
+              _MoreTile(
+                icon: Icons.forum_outlined,
+                color: Theme.of(context).colorScheme.primary,
+                label: 'Messagerie / Reclamation',
+                onTap: () => context.push('/more/support'),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.xl),

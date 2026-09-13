@@ -10,6 +10,7 @@ import com.converter.payment.dto.PaymentProofResponse;
 import com.converter.payment.dto.PaymentResponse;
 import com.converter.payment.dto.SubmitPaymentRequest;
 import com.converter.quote.dto.QuoteResponse;
+import com.converter.settlement.dto.SettlementResponse;
 import com.converter.support.AbstractOrderPipelineIT;
 import com.converter.treasury.domain.Currency;
 import com.converter.user.domain.RoleCode;
@@ -178,8 +179,15 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         assertThat(xofAfter.subtract(xofBefore)).isEqualByComparingTo(new BigDecimal("100000.00"));
     }
 
+    /**
+     * REJECTED n'est plus un etat terminal (resoumission possible, voir plus bas) : la
+     * reservation CNY reste donc VOLONTAIREMENT en place apres un rejet -- la liberer puis la
+     * reprendre a la resoumission violerait {@code uq_treasury_tx_reservation_per_order}/{@code
+     * uq_treasury_tx_resolution_per_order} (V16, P2-4 : au plus une reservation/resolution par
+     * ordre). Seuls CANCELLED/EXPIRED (veritablement terminaux) liberent encore la CNY.
+     */
     @Test
-    void reject_terminatesOrderAndReleasesTreasury() {
+    void reject_setsOrderToRejectedButKeepsTreasuryReservedForAPossibleResubmission() {
         String admin = adminToken();
         publishRate(admin, "85.000000");
         depositCny(admin, "1000000");
@@ -206,7 +214,7 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         assertThat(reloaded.getBody().data().status()).isEqualTo(OrderStatus.REJECTED);
 
         BigDecimal cnyAvailableAfter = treasurySnapshot(admin, Currency.CNY).available();
-        assertThat(cnyAvailableAfter.subtract(cnyAvailableBefore)).isEqualByComparingTo(order.amountCny());
+        assertThat(cnyAvailableAfter).isEqualByComparingTo(cnyAvailableBefore);
     }
 
     /**
@@ -232,6 +240,148 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
 
         assertThat(rejected.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(rejected.getBody().data().status()).isEqualTo(PaymentStatus.REJECTED);
+    }
+
+    // ---- Resoumission apres rejet (retour client : forcer un nouvel ordre etait un contournement) ----
+
+    @Test
+    void resubmitPayment_afterRejection_succeedsOnTheSameOrderWithoutCreatingANewOne() {
+        String admin = adminToken();
+        publishRate(admin, "85.000000");
+        depositCny(admin, "1000000");
+        String user = tokenFor(createUser(RoleCode.USER));
+        QuoteResponse quote = createAcceptedQuote(user, "100000");
+        OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
+        PaymentResponse firstAttempt = submitPayment(user, order.id(), "100000", "MM-REF-RESUB-1");
+        uploadProof(user, firstAttempt.id());
+        rejectPayment(admin, firstAttempt.id(), "preuve illisible");
+
+        ResponseEntity<ApiResponse<PaymentResponse>> resubmitted = submitPaymentRaw(
+                user, order.id(), "100000", "MM-REF-RESUB-2");
+
+        assertThat(resubmitted.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        PaymentResponse payment = resubmitted.getBody().data();
+        // MEME paiement mis a jour (meme id), pas un second paiement cree pour cet ordre.
+        assertThat(payment.id()).isEqualTo(firstAttempt.id());
+        assertThat(payment.status()).isEqualTo(PaymentStatus.SUBMITTED);
+        assertThat(payment.rejectionReason()).isNull();
+        assertThat(payment.transactionReference()).isEqualTo("MM-REF-RESUB-2");
+
+        ResponseEntity<ApiResponse<OrderDetailResponse>> reloaded = restTemplate.exchange(
+                "/api/v1/orders/" + order.id(), HttpMethod.GET, new HttpEntity<>(auth(user)),
+                new ParameterizedTypeReference<ApiResponse<OrderDetailResponse>>() {
+                });
+        // MEME ordre (meme id/reference), jamais un second ordre a recreer.
+        assertThat(reloaded.getBody().data().id()).isEqualTo(order.id());
+        assertThat(reloaded.getBody().data().status()).isEqualTo(OrderStatus.PAYMENT_SUBMITTED);
+        assertThat(reloaded.getBody().data().rejectionReason()).isNull();
+    }
+
+    /**
+     * Le paiement reel hors plateforme n'a pas change : reutiliser exactement la MEME reference
+     * de transaction lors de la resoumission ne doit jamais etre traite comme un doublon contre
+     * soi-meme (voir {@code existsByMethodAndTransactionReferenceAndIdNot}).
+     */
+    @Test
+    void resubmitPayment_reusingTheSameTransactionReference_isAllowed() {
+        String admin = adminToken();
+        publishRate(admin, "85.000000");
+        depositCny(admin, "1000000");
+        String user = tokenFor(createUser(RoleCode.USER));
+        QuoteResponse quote = createAcceptedQuote(user, "50000");
+        OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
+        PaymentResponse firstAttempt = submitPayment(user, order.id(), "50000", "MM-REF-SAME-REF");
+        uploadProof(user, firstAttempt.id());
+        rejectPayment(admin, firstAttempt.id(), "montant illisible sur la photo");
+
+        ResponseEntity<ApiResponse<PaymentResponse>> resubmitted = submitPaymentRaw(
+                user, order.id(), "50000", "MM-REF-SAME-REF");
+
+        assertThat(resubmitted.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(resubmitted.getBody().data().transactionReference()).isEqualTo("MM-REF-SAME-REF");
+    }
+
+    @Test
+    void resubmitPayment_reusingAnotherOrdersTransactionReference_isStillRejectedAsDuplicate() {
+        String admin = adminToken();
+        publishRate(admin, "85.000000");
+        depositCny(admin, "2000000");
+        String user = tokenFor(createUser(RoleCode.USER));
+
+        QuoteResponse quoteA = createAcceptedQuote(user, "50000");
+        OrderDetailResponse orderA = createOrder(user, quoteA.id(), alipayBeneficiary());
+        submitPayment(user, orderA.id(), "50000", "MM-REF-OTHER-ORDER");
+
+        QuoteResponse quoteB = createAcceptedQuote(user, "60000");
+        OrderDetailResponse orderB = createOrder(user, quoteB.id(), alipayBeneficiary());
+        PaymentResponse paymentB = submitPayment(user, orderB.id(), "60000", "MM-REF-TO-REJECT");
+        uploadProof(user, paymentB.id());
+        rejectPayment(admin, paymentB.id(), "reference illisible");
+
+        ResponseEntity<ErrorResponse> response = restTemplate.exchange(
+                "/api/v1/orders/" + orderB.id() + "/payments", HttpMethod.POST,
+                new HttpEntity<>(new SubmitPaymentRequest(PaymentMethod.MOBILE_MONEY, new BigDecimal("60000"),
+                        "MM-REF-OTHER-ORDER", "+2250700000000", "Payeur Test"), auth(user)),
+                ErrorResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getBody().code()).isEqualTo("DUPLICATE_TRANSACTION_REFERENCE");
+    }
+
+    /**
+     * Le coeur du bug signale : apres un rejet, le client resoumet sur le MEME ordre puis
+     * l'admin confirme -- l'ordre doit progresser normalement vers PAYMENT_VERIFIED, jamais un
+     * "reglement deja fait" ou tout autre etat incoherent issu d'un contournement (recreer un
+     * second ordre pour la meme transaction reelle).
+     */
+    @Test
+    void confirmAfterResubmission_transitionsOrderToPaymentVerified() {
+        String admin = adminToken();
+        publishRate(admin, "85.000000");
+        depositCny(admin, "1000000");
+        String user = tokenFor(createUser(RoleCode.USER));
+        QuoteResponse quote = createAcceptedQuote(user, "100000");
+        OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
+        PaymentResponse firstAttempt = submitPayment(user, order.id(), "100000", "MM-REF-CONFIRM-1");
+        uploadProof(user, firstAttempt.id());
+        rejectPayment(admin, firstAttempt.id(), "preuve illisible");
+
+        PaymentResponse resubmitted = submitPayment(user, order.id(), "100000", "MM-REF-CONFIRM-2");
+        uploadProof(user, resubmitted.id());
+        PaymentResponse confirmed = confirmPayment(admin, resubmitted.id());
+
+        assertThat(confirmed.status()).isEqualTo(PaymentStatus.CONFIRMED);
+        ResponseEntity<ApiResponse<OrderDetailResponse>> reloaded = restTemplate.exchange(
+                "/api/v1/orders/" + order.id(), HttpMethod.GET, new HttpEntity<>(auth(user)),
+                new ParameterizedTypeReference<ApiResponse<OrderDetailResponse>>() {
+                });
+        assertThat(reloaded.getBody().data().status()).isEqualTo(OrderStatus.PAYMENT_VERIFIED);
+
+        // Le reglement peut bien etre cree pour cet ordre -- jamais "un reglement existe deja".
+        SettlementResponse settlement = createSettlement(admin, order.id());
+        assertThat(settlement.orderId()).isEqualTo(order.id());
+    }
+
+    @Test
+    void resubmitPayment_neverTouchesTheStillHeldTreasuryReservation() {
+        String admin = adminToken();
+        publishRate(admin, "85.000000");
+        depositCny(admin, "1000000");
+        String user = tokenFor(createUser(RoleCode.USER));
+        QuoteResponse quote = createAcceptedQuote(user, "100000");
+        OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
+        PaymentResponse firstAttempt = submitPayment(user, order.id(), "100000", "MM-REF-TREASURY-1");
+        uploadProof(user, firstAttempt.id());
+        rejectPayment(admin, firstAttempt.id(), "preuve illisible");
+
+        BigDecimal cnyAvailableBeforeResubmit = treasurySnapshot(admin, Currency.CNY).available();
+
+        submitPayment(user, order.id(), "100000", "MM-REF-TREASURY-2");
+
+        // Ni reduite (pas de deuxieme reservation -- interdite par uq_treasury_tx_reservation_
+        // per_order) ni augmentee (jamais liberee au rejet) : totalement inchangee.
+        BigDecimal cnyAvailableAfterResubmit = treasurySnapshot(admin, Currency.CNY).available();
+        assertThat(cnyAvailableAfterResubmit).isEqualByComparingTo(cnyAvailableBeforeResubmit);
     }
 
     /**

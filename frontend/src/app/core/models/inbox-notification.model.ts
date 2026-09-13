@@ -9,7 +9,8 @@ export type NotificationType =
   | 'PREFERRED_RATE_EXPIRED'
   | 'EXCHANGE_CANCELLED'
   | 'ORDER_EXPIRED'
-  | 'RATE_ALERT_TRIGGERED';
+  | 'RATE_ALERT_TRIGGERED'
+  | 'SUPPORT_REPLY';
 
 export interface InboxNotification {
   id: string;
@@ -37,6 +38,7 @@ export const NOTIFICATION_TYPE_META: Record<NotificationType, { icon: string; la
   EXCHANGE_CANCELLED: { icon: 'cancel', label: 'Echange annule' },
   ORDER_EXPIRED: { icon: 'timer_off', label: 'Ordre expire' },
   RATE_ALERT_TRIGGERED: { icon: 'notifications_active', label: 'Alerte de taux declenchee' },
+  SUPPORT_REPLY: { icon: 'forum', label: 'Reponse du support' },
 };
 
 export function notificationIcon(type: string): string {

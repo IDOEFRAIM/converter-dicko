@@ -100,7 +100,7 @@ export class AdminPaymentsPage implements OnInit {
     }
     openConfirmDialog(this.dialog, {
       title: 'Rejeter le paiement',
-      message: 'Cette action termine definitivement l\'ordre associe.',
+      message: 'Le client pourra resoumettre une preuve de paiement pour ce meme ordre.',
       confirmLabel: 'Rejeter',
       requireReasonLabel: 'Motif du rejet',
     }).subscribe((reason) => {

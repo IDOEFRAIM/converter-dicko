@@ -14,8 +14,9 @@ package com.converter.order.domain;
  *                 |            +----&gt; EXPIRED (non declenche automatiquement dans cette phase)
  *                 v
  *         PAYMENT_SUBMITTED ---+----&gt; REJECTED
- *                 |
- *                 v
+ *                 |                       |
+ *                 |  &lt;--------------------+  (resoumission : meme Order/Payment, jamais un
+ *                 v                          nouvel ordre -- voir Payment#resubmit)
  *         PAYMENT_VERIFIED
  *                 |
  *                 v

@@ -146,6 +146,7 @@ class _OrderDetailView extends StatelessWidget {
                     const SizedBox(height: AppSpacing.lg),
                   ],
                   if (order.status == OrderStatus.awaitingPayment) _buildAwaitingPaymentActions(context, controller),
+                  if (order.status == OrderStatus.rejected) _buildRejectedActions(context, controller),
                   if (order.status == OrderStatus.completed) ...[
                     _buildReceiptPanel(context, controller, profile),
                     const SizedBox(height: AppSpacing.lg),
@@ -218,6 +219,20 @@ class _OrderDetailView extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  /// Un paiement rejete se resoumet sur ce MEME ordre (retour client : forcer la creation d'un
+  /// nouvel ordre pour reessayer etait un contournement, jamais une solution) -- meme ecran de
+  /// declaration que pour un premier paiement, le backend distingue lui-meme premiere soumission
+  /// et resoumission (voir PaymentService#submit).
+  Widget _buildRejectedActions(BuildContext context, OrderDetailController controller) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () => context.push('/activity/orders/${controller.orderId}/payment'),
+        child: const Text('Resoumettre le paiement'),
+      ),
     );
   }
 

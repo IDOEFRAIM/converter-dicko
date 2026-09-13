@@ -8,6 +8,7 @@ import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
 import '../../features/auth/presentation/splash_page.dart';
 import '../../features/business/presentation/business_page.dart';
+import '../../features/support/presentation/support_page.dart';
 import '../../features/home/presentation/home_page.dart';
 import '../../features/kyc/presentation/kyc_page.dart';
 import '../../features/more/presentation/more_page.dart';
@@ -201,6 +202,7 @@ GoRouter buildAppRouter(AuthSession authSession) {
                   GoRoute(path: 'wallet', builder: (context, state) => const WalletPage()),
                   GoRoute(path: 'notifications', builder: (context, state) => const NotificationsPage()),
                   GoRoute(path: 'business', builder: (context, state) => const BusinessPage()),
+                  GoRoute(path: 'support', builder: (context, state) => const SupportPage()),
                   GoRoute(path: 'kyc', builder: (context, state) => const KycPage()),
                 ],
               ),

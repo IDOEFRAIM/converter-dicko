@@ -1,0 +1,33 @@
+.support-table {
+  width: 100%;
+}
+
+.support-table__row {
+  cursor: pointer;
+}
+
+.support-table__user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.support-table__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--brand-red, #ce1922);
+  flex-shrink: 0;
+}
+
+.support-table__phone {
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
+.support-table__preview {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

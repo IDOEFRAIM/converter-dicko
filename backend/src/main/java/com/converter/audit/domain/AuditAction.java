@@ -46,6 +46,7 @@ public enum AuditAction {
 
     // ---- Paiements ----
     PAYMENT_SUBMITTED,
+    PAYMENT_RESUBMITTED,
     PAYMENT_PROOF_UPLOADED,
     PAYMENT_VERIFIED,
     PAYMENT_CONFIRMED,

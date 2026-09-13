@@ -120,10 +120,40 @@ public class Payment extends BaseEntity {
         this.updatedAt = now;
     }
 
+    /**
+     * Un paiement rejete peut etre resoumis par le client -- meme {@code Order} (jamais un
+     * nouvel ordre a recreer), meme {@code Payment} mis a jour a nouveau vers SUBMITTED. Les
+     * preuves deja televersees pour la tentative rejetee restent attachees (jamais supprimees) :
+     * l'admin voit l'historique complet a la revue suivante.
+     */
+    public void resubmit(PaymentMethod method, BigDecimal receivedAmountXof, String transactionReference,
+                         String payerPhone, String payerName, Instant now) {
+        requireRejected();
+        this.method = method;
+        this.receivedAmountXof = receivedAmountXof;
+        this.transactionReference = transactionReference;
+        this.payerPhone = payerPhone;
+        this.payerName = payerName;
+        this.status = PaymentStatus.SUBMITTED;
+        this.submittedAt = now;
+        this.confirmedAt = null;
+        this.rejectedAt = null;
+        this.reviewedBy = null;
+        this.rejectionReason = null;
+        this.updatedAt = now;
+    }
+
     private void requireSubmitted() {
         if (this.status != PaymentStatus.SUBMITTED) {
             throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATE,
                     "Ce paiement a deja ete traite (statut actuel : " + this.status + ").");
+        }
+    }
+
+    private void requireRejected() {
+        if (this.status != PaymentStatus.REJECTED) {
+            throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATE,
+                    "Seul un paiement rejete peut etre resoumis (statut actuel : " + this.status + ").");
         }
     }
 

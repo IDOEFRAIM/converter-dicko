@@ -22,5 +22,7 @@ public enum NotificationType {
     /** Un profil STUDENT_MALE/STUDENT_FEMALE vient de franchir un nouveau palier de badge
      * (mission "differenciation marketing" : celebrer le moment, jamais seulement l'afficher au
      * prochain chargement de "Mes gains") — jamais declenche pour PRO (aucun badge). */
-    BADGE_UNLOCKED
+    BADGE_UNLOCKED,
+    /** Un administrateur a repondu au fil de messagerie SAV de l'utilisateur. */
+    SUPPORT_REPLY
 }

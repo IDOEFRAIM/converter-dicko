@@ -28,18 +28,40 @@ class OrderStateMachineTest {
         stateMachine.assertTransition(OrderStatus.AWAITING_PAYMENT, OrderStatus.CANCELLED);
         stateMachine.assertTransition(OrderStatus.AWAITING_PAYMENT, OrderStatus.EXPIRED);
         stateMachine.assertTransition(OrderStatus.PAYMENT_SUBMITTED, OrderStatus.REJECTED);
+        stateMachine.assertTransition(OrderStatus.REJECTED, OrderStatus.PAYMENT_SUBMITTED);
     }
 
+    /**
+     * REJECTED n'est PLUS un etat terminal (retour client : forcer un nouvel ordre pour
+     * resoumettre un paiement rejete etait un contournement, jamais une solution) : une
+     * resoumission (REJECTED -&gt; PAYMENT_SUBMITTED) reste la SEULE transition legale depuis cet
+     * etat, exclue ici du test generique de terminalite ci-dessous et verifiee separement.
+     */
     @ParameterizedTest
     @EnumSource(OrderStatus.class)
     void terminalStates_acceptNoFurtherTransition(OrderStatus terminal) {
         if (terminal != OrderStatus.COMPLETED && terminal != OrderStatus.CANCELLED
-                && terminal != OrderStatus.REJECTED && terminal != OrderStatus.EXPIRED) {
+                && terminal != OrderStatus.EXPIRED) {
             return;
         }
         for (OrderStatus target : OrderStatus.values()) {
             assertThatThrownBy(() -> stateMachine.assertTransition(terminal, target))
                     .as("%s -> %s doit etre refuse", terminal, target)
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> assertThat(((BusinessException) ex).errorCode())
+                            .isEqualTo(ErrorCode.INVALID_ORDER_STATE));
+        }
+    }
+
+    @Test
+    void rejected_onlyAcceptsResubmissionToPaymentSubmitted() {
+        stateMachine.assertTransition(OrderStatus.REJECTED, OrderStatus.PAYMENT_SUBMITTED);
+        for (OrderStatus target : OrderStatus.values()) {
+            if (target == OrderStatus.PAYMENT_SUBMITTED) {
+                continue;
+            }
+            assertThatThrownBy(() -> stateMachine.assertTransition(OrderStatus.REJECTED, target))
+                    .as("REJECTED -> %s doit etre refuse", target)
                     .isInstanceOf(BusinessException.class)
                     .satisfies(ex -> assertThat(((BusinessException) ex).errorCode())
                             .isEqualTo(ErrorCode.INVALID_ORDER_STATE));

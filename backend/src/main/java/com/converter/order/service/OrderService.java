@@ -312,10 +312,22 @@ public class OrderService {
     // Transitions declenchees par d'autres modules (payment, settlement)
     // -----------------------------------------------------------------
 
+    /**
+     * Utilise aussi bien pour la premiere declaration (AWAITING_PAYMENT -&gt; PAYMENT_SUBMITTED)
+     * que pour une resoumission apres rejet (REJECTED -&gt; PAYMENT_SUBMITTED, voir {@link
+     * com.converter.order.service.OrderStateMachine}) : dans ce second cas, le motif de rejet
+     * affiche au client est efface (il n'a plus lieu d'etre pendant la nouvelle revue). La
+     * reservation CNY, elle, n'a jamais ete touchee au rejet (voir {@link
+     * #transitionToRejected}) : rien a reprendre ici.
+     */
     @Transactional
     public void transitionToPaymentSubmitted(UUID orderId, UUID actorId) {
         Order order = orderRepository.findByIdForUpdate(orderId).orElseThrow(() -> notFound(orderId));
+        boolean isResubmission = order.getStatus() == OrderStatus.REJECTED;
         transition(order, OrderStatus.PAYMENT_SUBMITTED, actorId, null);
+        if (isResubmission) {
+            order.setRejectionReason(null);
+        }
         orderRepository.save(order);
         auditService.record(actorId, null, AuditAction.ORDER_PAYMENT_SUBMITTED, "Order", orderId.toString(), null);
     }
@@ -328,12 +340,19 @@ public class OrderService {
         auditService.record(actorId, null, AuditAction.ORDER_PAYMENT_VERIFIED, "Order", orderId.toString(), null);
     }
 
+    /**
+     * Ne libere JAMAIS la reservation CNY : depuis que REJECTED n'est plus terminal (une
+     * resoumission est possible, voir {@link OrderStateMachine}), l'ordre peut encore aboutir --
+     * la CNY doit rester provisionnee derriere. La liberer ici puis la reprendre a la resoumission
+     * violerait de toute facon {@code uq_treasury_tx_reservation_per_order}/{@code
+     * uq_treasury_tx_resolution_per_order} (V16, P2-4 : au plus UNE reservation et UNE resolution
+     * par ordre, jamais deux). Seuls CANCELLED/EXPIRED (veritablement terminaux) liberent encore.
+     */
     @Transactional
     public void transitionToRejected(UUID orderId, UUID actorId, String reason) {
         Order order = orderRepository.findByIdForUpdate(orderId).orElseThrow(() -> notFound(orderId));
         transition(order, OrderStatus.REJECTED, actorId, reason);
         order.setRejectionReason(reason);
-        releaseReservationIfNeeded(order, actorId, "Paiement rejete : " + reason);
         orderRepository.save(order);
         auditService.record(actorId, null, AuditAction.ORDER_REJECTED, "Order", orderId.toString(), null);
     }

@@ -19,6 +19,7 @@ enum NotificationKind {
   poolSucceeded,
   poolExpired,
   badgeUnlocked,
+  supportReply,
   unknown;
 
   static NotificationKind fromCode(String? code) {
@@ -51,6 +52,8 @@ enum NotificationKind {
         return NotificationKind.poolExpired;
       case 'BADGE_UNLOCKED':
         return NotificationKind.badgeUnlocked;
+      case 'SUPPORT_REPLY':
+        return NotificationKind.supportReply;
       default:
         return NotificationKind.unknown;
     }
@@ -72,6 +75,7 @@ enum NotificationKind {
         NotificationKind.poolSucceeded => Icons.celebration_outlined,
         NotificationKind.poolExpired => Icons.hourglass_disabled_outlined,
         NotificationKind.badgeUnlocked => Icons.workspace_premium_outlined,
+        NotificationKind.supportReply => Icons.chat_bubble_outline,
         NotificationKind.unknown => Icons.notifications_outlined,
       };
 }

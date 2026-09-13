@@ -107,28 +107,57 @@ public class PaymentService {
         ownershipService.assertOwnedBy(order.getUserId(), userId, ErrorCode.ORDER_NOT_FOUND,
                 "Ordre introuvable : " + orderId);
 
-        if (order.getStatus() != OrderStatus.AWAITING_PAYMENT) {
+        // Un paiement REJETE peut etre resoumis sur ce MEME ordre (retour client : forcer la
+        // creation d'un nouvel ordre pour reessayer est un contournement, pas une solution --
+        // voir Payment#resubmit / OrderStateMachine REJECTED -> PAYMENT_SUBMITTED). Toute autre
+        // valeur (deja soumis, deja verifie, deja traite...) reste refusee comme avant.
+        boolean isResubmission = order.getStatus() == OrderStatus.REJECTED;
+        if (order.getStatus() != OrderStatus.AWAITING_PAYMENT && !isResubmission) {
             throw new BusinessException(ErrorCode.INVALID_ORDER_STATE,
                     "Cet ordre n'est plus en attente de paiement (statut actuel : " + order.getStatus() + ").");
         }
+        assertMethodEnabled(request.method());
+        assertAmountMatchesExpected(order.getAmountXof(), request.receivedAmountXof());
+
+        Instant now = clock.instant();
+        Payment saved;
+        if (isResubmission) {
+            saved = resubmitRejectedPayment(orderId, request, now);
+        } else {
+            saved = submitNewPayment(orderId, order, request, now);
+        }
+
+        // Transition de l'ordre dans la MEME transaction : soit les deux
+        // ecritures reussissent, soit aucune (propagation REQUIRED par defaut).
+        orderService.transitionToPaymentSubmitted(orderId, userId);
+
+        AuditAction action = isResubmission ? AuditAction.PAYMENT_RESUBMITTED : AuditAction.PAYMENT_SUBMITTED;
+        auditService.record(userId, null, action, "Payment", saved.getId().toString(),
+                "{\"orderId\":\"" + orderId + "\",\"reference\":\"" + request.transactionReference() + "\"}");
+        String message = isResubmission
+                ? "Votre nouveau paiement pour l'ordre " + orderId + " a ete declare et est en cours de verification."
+                : "Votre paiement pour l'ordre " + orderId + " a ete declare et est en cours de verification.";
+        notificationService.create(userId, NotificationType.PAYMENT_SUBMITTED, "Paiement declare", message);
+        log.info("Paiement {} {} pour l'ordre {} par {}", saved.getId(),
+                isResubmission ? "resoumis" : "declare", orderId, userId);
+
+        return toResponse(saved, isResubmission ? loadProofs(saved.getId()) : List.of());
+    }
+
+    private Payment submitNewPayment(UUID orderId, Order order, SubmitPaymentRequest request, Instant now) {
         if (paymentRepository.existsByOrderId(orderId)) {
             throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATE,
                     "Un paiement a deja ete declare pour cet ordre.");
         }
-        assertMethodEnabled(request.method());
-        assertAmountMatchesExpected(order.getAmountXof(), request.receivedAmountXof());
         if (paymentRepository.existsByMethodAndTransactionReference(request.method(), request.transactionReference())) {
             throw new BusinessException(ErrorCode.DUPLICATE_TRANSACTION_REFERENCE,
                     "Cette reference de transaction a deja ete utilisee pour un autre paiement.");
         }
-
-        Instant now = clock.instant();
         Payment payment = new Payment(orderId, request.method(), order.getAmountXof(),
                 request.receivedAmountXof(), request.transactionReference(), request.payerPhone(),
                 request.payerName(), now);
-        Payment saved;
         try {
-            saved = paymentRepository.saveAndFlush(payment);
+            return paymentRepository.saveAndFlush(payment);
         } catch (DataIntegrityViolationException ex) {
             // Course concurrente ayant franchi les pre-verifications ci-dessus (uq_payments_order
             // ou uq_payments_txref). Impossible de re-interroger la base ici (la transaction PG
@@ -138,18 +167,19 @@ public class PaymentService {
             throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATE,
                     "Un paiement a deja ete declare pour cet ordre (ou la reference de transaction est deja prise).");
         }
+    }
 
-        // Transition de l'ordre dans la MEME transaction : soit les deux
-        // ecritures reussissent, soit aucune (propagation REQUIRED par defaut).
-        orderService.transitionToPaymentSubmitted(orderId, userId);
-
-        auditService.record(userId, null, AuditAction.PAYMENT_SUBMITTED, "Payment", saved.getId().toString(),
-                "{\"orderId\":\"" + orderId + "\",\"reference\":\"" + request.transactionReference() + "\"}");
-        notificationService.create(userId, NotificationType.PAYMENT_SUBMITTED, "Paiement declare",
-                "Votre paiement pour l'ordre " + orderId + " a ete declare et est en cours de verification.");
-        log.info("Paiement {} declare pour l'ordre {} par {}", saved.getId(), orderId, userId);
-
-        return toResponse(saved, List.of());
+    private Payment resubmitRejectedPayment(UUID orderId, SubmitPaymentRequest request, Instant now) {
+        Payment existing = paymentRepository.findByOrderIdForUpdate(orderId)
+                .orElseThrow(() -> notFoundPayment(orderId));
+        if (paymentRepository.existsByMethodAndTransactionReferenceAndIdNot(
+                request.method(), request.transactionReference(), existing.getId())) {
+            throw new BusinessException(ErrorCode.DUPLICATE_TRANSACTION_REFERENCE,
+                    "Cette reference de transaction a deja ete utilisee pour un autre paiement.");
+        }
+        existing.resubmit(request.method(), request.receivedAmountXof(), request.transactionReference(),
+                request.payerPhone(), request.payerName(), now);
+        return paymentRepository.save(existing);
     }
 
     @Transactional

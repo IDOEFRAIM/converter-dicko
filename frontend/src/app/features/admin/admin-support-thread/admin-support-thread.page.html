@@ -1,0 +1,36 @@
+<app-page-header title="Messagerie" subtitle="Conversation avec cet utilisateur">
+  <button mat-icon-button (click)="back()" aria-label="Retour"><mat-icon>arrow_back</mat-icon></button>
+</app-page-header>
+
+@if (errorMessage()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+}
+
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else {
+  <div class="support-thread">
+    @for (message of messages(); track message.id) {
+      <div class="support-bubble" [class.support-bubble--admin]="message.fromAdmin">
+        <p class="support-bubble__body">{{ message.body }}</p>
+        <p class="support-bubble__meta">
+          {{ message.fromAdmin ? 'Vous (support)' : 'Utilisateur' }} · {{ message.createdAt | date: 'dd/MM/yyyy HH:mm' }}
+        </p>
+      </div>
+    }
+  </div>
+
+  <form class="support-composer" [formGroup]="form" (ngSubmit)="send()">
+    <mat-form-field appearance="outline" class="support-composer__field">
+      <mat-label>Votre reponse</mat-label>
+      <textarea matInput formControlName="body" rows="2" maxlength="2000"></textarea>
+    </mat-form-field>
+    <button mat-flat-button class="brand-button support-composer__send" type="submit" [disabled]="sending()">
+      @if (sending()) {
+        <mat-spinner diameter="20" />
+      } @else {
+        <mat-icon>send</mat-icon>
+      }
+    </button>
+  </form>
+}

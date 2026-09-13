@@ -21,9 +21,13 @@ import java.util.Set;
  * PAYMENT_SUBMITTED -&gt; PAYMENT_VERIFIED | REJECTED
  * PAYMENT_VERIFIED  -&gt; PROCESSING
  * PROCESSING        -&gt; COMPLETED
+ * REJECTED          -&gt; PAYMENT_SUBMITTED  (resoumission : meme Order, meme Payment mis a jour --
+ *                                          voir Payment#resubmit -- jamais un nouvel ordre a
+ *                                          recreer)
  * </pre>
  *
- * Etats terminaux : COMPLETED, CANCELLED, REJECTED, EXPIRED.
+ * Etats terminaux : COMPLETED, CANCELLED, EXPIRED. REJECTED n'est PAS terminal (resoumission
+ * possible) -- seul un ordre annule/complete/expire ne peut plus jamais bouger.
  */
 @Component
 public class OrderStateMachine {
@@ -40,7 +44,7 @@ public class OrderStateMachine {
         map.put(OrderStatus.PROCESSING, EnumSet.of(OrderStatus.COMPLETED));
         map.put(OrderStatus.COMPLETED, EnumSet.noneOf(OrderStatus.class));
         map.put(OrderStatus.CANCELLED, EnumSet.noneOf(OrderStatus.class));
-        map.put(OrderStatus.REJECTED, EnumSet.noneOf(OrderStatus.class));
+        map.put(OrderStatus.REJECTED, EnumSet.of(OrderStatus.PAYMENT_SUBMITTED));
         map.put(OrderStatus.EXPIRED, EnumSet.noneOf(OrderStatus.class));
         return map;
     }

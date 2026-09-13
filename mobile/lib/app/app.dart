@@ -22,6 +22,7 @@ import '../features/preferred_rate/data/preferred_rate_api.dart';
 import '../features/quote/data/quote_api.dart';
 import '../features/rates/data/rate_history_api.dart';
 import '../features/settings/data/settings_api.dart';
+import '../features/support/data/support_api.dart';
 import '../features/suppliers/data/supplier_api.dart';
 import '../features/wallet/data/wallet_api.dart';
 import 'router/app_router.dart';
@@ -68,6 +69,7 @@ class ConverterApp extends StatelessWidget {
         Provider<WalletApi>(create: (context) => WalletApi(context.read<ApiClient>())),
         Provider<AchievementApi>(create: (context) => AchievementApi(context.read<ApiClient>())),
         Provider<PoolApi>(create: (context) => PoolApi(context.read<ApiClient>())),
+        Provider<SupportApi>(create: (context) => SupportApi(context.read<ApiClient>())),
         Provider<KycApi>(create: (context) => KycApi(context.read<ApiClient>())),
         Provider<CelebratedBadgesStore>(create: (_) => const CelebratedBadgesStore()),
         Provider<MemoryBookStore>(create: (_) => const MemoryBookStore()),

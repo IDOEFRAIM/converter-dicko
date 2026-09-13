@@ -51,6 +51,10 @@
       <button mat-stroked-button color="warn" (click)="cancel()" [disabled]="cancelling()">Annuler</button>
       <button mat-flat-button class="brand-button" (click)="goToPayment()">Payer maintenant</button>
     </div>
+  } @else if (o.status === 'REJECTED') {
+    <div class="order-cta-row">
+      <button mat-flat-button class="brand-button" (click)="goToPayment()">Resoumettre le paiement</button>
+    </div>
   } @else if (o.status === 'COMPLETED') {
     <div class="panel receipt-panel">
       <p class="section-heading">
