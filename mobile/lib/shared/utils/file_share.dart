@@ -28,29 +28,34 @@ Future<void> saveAndShareBytes({
   );
 }
 
-/// Materialise des octets PDF puis les OUVRE dans le lecteur du systeme —
-/// comportement attendu d'un "telechargement" : le document s'affiche.
+/// Materialise des octets (PDF ou image) puis les OUVRE dans le lecteur du
+/// systeme — comportement attendu d'un "telechargement" : le document s'affiche.
 ///
-/// A utiliser pour le recu et la facture proforma : la feuille de partage
-/// ([saveAndShareBytes]) y mettait en avant WhatsApp / la liste de contacts,
-/// ce qui laissait croire a une invitation (ruee collective) plutot qu'a un
-/// telechargement (retour utilisateur, sept. 2026).
+/// A utiliser pour le recu, la facture proforma et le code QR fournisseur :
+/// la feuille de partage ([saveAndShareBytes]) y mettait en avant WhatsApp /
+/// la liste de contacts, ce qui laissait croire a une invitation (ruee
+/// collective) plutot qu'a un telechargement (retour utilisateur, sept. 2026).
+///
+/// [mimeType] doit etre celui reellement renvoye par le backend (jamais
+/// devine cote client) : un mauvais type fait choisir la mauvaise application
+/// systeme, voire un echec pur et simple d'ouverture selon le lecteur installe.
 ///
 /// Repli sur la feuille de partage uniquement si aucune application ne sait
-/// ouvrir un PDF (l'utilisateur peut alors l'enregistrer dans Fichiers/Drive).
-/// Toute autre issue leve : l'ecran appelant a deja un `catch` qui affiche un
-/// message — le telechargement reseau avait reussi, on ne laisse jamais l'echec
-/// d'ouverture passer pour "rien ne s'est produit".
+/// ouvrir ce type de fichier (l'utilisateur peut alors l'enregistrer dans
+/// Fichiers/Drive). Toute autre issue leve : l'ecran appelant a deja un
+/// `catch` qui affiche un message — le telechargement reseau avait reussi, on
+/// ne laisse jamais l'echec d'ouverture passer pour "rien ne s'est produit".
 Future<void> saveAndOpenBytes({
   required List<int> bytes,
   required String fileName,
+  String mimeType = 'application/pdf',
   Rect? sharePositionOrigin,
 }) async {
   final directory = await getTemporaryDirectory();
   final file = File('${directory.path}/$fileName');
   await file.writeAsBytes(Uint8List.fromList(bytes), flush: true);
 
-  final result = await OpenFilex.open(file.path, type: 'application/pdf');
+  final result = await OpenFilex.open(file.path, type: mimeType);
   switch (result.type) {
     case ResultType.done:
       return;

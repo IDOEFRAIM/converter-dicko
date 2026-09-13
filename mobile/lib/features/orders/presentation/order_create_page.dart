@@ -283,8 +283,15 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
             controller: _identifierController,
             maxLength: 120,
             decoration: InputDecoration(
-              labelText: _manualType.identifierLabel,
-              helperText: _manualType.identifierHint,
+              // Saisie manuelle ponctuelle (sans fournisseur enregistre) : jamais de
+              // televersement de code QR ici -- pour Alipay/WeChat Pay, enregistrer
+              // ce contact comme fournisseur permet d'y joindre le vrai code QR.
+              labelText: _manualType == BeneficiaryType.chineseBankAccount
+                  ? 'Numero de compte bancaire'
+                  : 'Identifiant ${_manualType.label}',
+              helperText: _manualType == BeneficiaryType.chineseBankAccount
+                  ? null
+                  : 'Alias, numero de telephone ou identifiant associe a ce compte.',
             ),
             validator: (v) => Validators.requiredMaxLength(v, 120, label: 'Ce champ'),
           ),

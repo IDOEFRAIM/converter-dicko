@@ -41,9 +41,12 @@ enum BeneficiaryType {
     BeneficiaryType.chineseBankAccount,
   ];
 
-  /// Libelle du champ "identifiant" — sa nature reelle differe par type
-  /// (retour client) : Alipay/WeChat Pay s'utilisent en Chine via un code
-  /// QR, jamais un identifiant de compte classique comme une banque.
+  /// Un code QR Alipay/WeChat est une IMAGE, jamais un texte (retour client) :
+  /// seul CHINESE_BANK_ACCOUNT garde un identifiant de compte classique saisi
+  /// au clavier. Pour les deux autres, {@link requiresQrCode} pilote
+  /// l'affichage d'un televersement de photo a la place de ce champ texte.
+  bool get requiresQrCode => this == BeneficiaryType.alipay || this == BeneficiaryType.wechatPay;
+
   String get identifierLabel => switch (this) {
         BeneficiaryType.alipay => 'Code QR Alipay',
         BeneficiaryType.wechatPay => 'Code QR WeChat Pay',
@@ -51,13 +54,12 @@ enum BeneficiaryType {
         BeneficiaryType.unknown => 'Identifiant',
       };
 
-  /// Precision affichee sous le champ — le formulaire reste un champ texte
-  /// (aucune photo/scan de code QR dans cette version) : le client saisit
-  /// l'identifiant associe a son code QR, jamais l'image elle-meme.
-  String? get identifierHint => switch (this) {
-        BeneficiaryType.alipay || BeneficiaryType.wechatPay =>
-          'Identifiant associe a votre code QR, pas une image.',
-        BeneficiaryType.chineseBankAccount || BeneficiaryType.unknown => null,
+  /// Libelle du champ texte optionnel complementaire au QR (alias du compte,
+  /// nom affiche sur le paiement...) — jamais l'identifiant reel pour
+  /// alipay/wechat, qui est le QR lui-meme.
+  String get supplementaryReferenceLabel => switch (this) {
+        BeneficiaryType.alipay || BeneficiaryType.wechatPay => 'Reference complementaire (optionnel)',
+        BeneficiaryType.chineseBankAccount || BeneficiaryType.unknown => identifierLabel,
       };
 }
 
@@ -95,6 +97,10 @@ class SupplierSummary {
   final SupplierStatus status;
   final DateTime createdAt;
 
+  /// `false` pour un ALIPAY/WECHAT_PAY sans code QR encore televerse — ce
+  /// fournisseur ne peut pas encore etre utilise pour creer un ordre.
+  final bool readyForPayment;
+
   const SupplierSummary({
     required this.id,
     required this.type,
@@ -106,6 +112,7 @@ class SupplierSummary {
     required this.favorite,
     required this.status,
     required this.createdAt,
+    required this.readyForPayment,
   });
 
   factory SupplierSummary.fromJson(Map<String, dynamic> json) {
@@ -120,6 +127,7 @@ class SupplierSummary {
       favorite: json['favorite'] as bool? ?? false,
       status: SupplierStatus.fromCode(json['status'] as String?),
       createdAt: DateTime.parse(json['createdAt'] as String),
+      readyForPayment: json['readyForPayment'] as bool? ?? true,
     );
   }
 }
@@ -139,7 +147,7 @@ class SupplierDetail {
   final String? bankName;
   final String? bankBranch;
   final String? accountName;
-  final String accountNumber;
+  final String? accountNumber;
   final String? bankAddress;
   final String? swiftCode;
   final SupplierCurrency currency;
@@ -149,6 +157,9 @@ class SupplierDetail {
   final SupplierStatus status;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool qrCodeUploaded;
+  final String? qrCodeFileName;
+  final bool readyForPayment;
 
   const SupplierDetail({
     required this.id,
@@ -173,6 +184,9 @@ class SupplierDetail {
     required this.status,
     required this.createdAt,
     required this.updatedAt,
+    required this.qrCodeUploaded,
+    required this.qrCodeFileName,
+    required this.readyForPayment,
   });
 
   factory SupplierDetail.fromJson(Map<String, dynamic> json) {
@@ -189,7 +203,7 @@ class SupplierDetail {
       bankName: json['bankName'] as String?,
       bankBranch: json['bankBranch'] as String?,
       accountName: json['accountName'] as String?,
-      accountNumber: json['accountNumber'] as String? ?? '',
+      accountNumber: json['accountNumber'] as String?,
       bankAddress: json['bankAddress'] as String?,
       swiftCode: json['swiftCode'] as String?,
       currency: SupplierCurrency.fromCode(json['currency'] as String?),
@@ -199,6 +213,9 @@ class SupplierDetail {
       status: SupplierStatus.fromCode(json['status'] as String?),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+      qrCodeUploaded: json['qrCodeUploaded'] as bool? ?? false,
+      qrCodeFileName: json['qrCodeFileName'] as String?,
+      readyForPayment: json['readyForPayment'] as bool? ?? true,
     );
   }
 }
@@ -216,7 +233,7 @@ class SupplierRequest {
   final String? bankName;
   final String? bankBranch;
   final String? accountName;
-  final String accountNumber;
+  final String? accountNumber;
   final String? bankAddress;
   final String? swiftCode;
   final SupplierCurrency currency;
@@ -235,7 +252,7 @@ class SupplierRequest {
     this.bankName,
     this.bankBranch,
     this.accountName,
-    required this.accountNumber,
+    this.accountNumber,
     this.bankAddress,
     this.swiftCode,
     required this.currency,

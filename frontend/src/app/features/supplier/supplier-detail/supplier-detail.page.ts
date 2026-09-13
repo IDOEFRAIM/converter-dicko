@@ -9,6 +9,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SupplierService } from '../../../core/services/supplier.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { extractErrorMessage } from '../../../core/services/api-error.util';
+import { openPendingTab, resolveBlobTab } from '../../../core/services/file-download.util';
 import { SupplierDetail } from '../../../core/models/supplier.model';
 import { BENEFICIARY_TYPE_LABELS } from '../../../core/models/order.model';
 import { PURPOSE_LABELS } from '../../../core/models/common.model';
@@ -41,10 +42,15 @@ export class SupplierDetailPage implements OnInit {
   readonly loading = signal(true);
   readonly actionInProgress = signal(false);
   readonly errorMessage = signal<string | null>(null);
+  readonly openingQrCode = signal(false);
 
   readonly typeLabel = computed(() => {
     const type = this.supplier()?.type;
     return type ? BENEFICIARY_TYPE_LABELS[type] : '';
+  });
+  readonly requiresQrCode = computed(() => {
+    const type = this.supplier()?.type;
+    return type === 'ALIPAY' || type === 'WECHAT_PAY';
   });
   readonly purposeLabel = computed(() => {
     const purpose = this.supplier()?.purpose;
@@ -98,6 +104,26 @@ export class SupplierDetailPage implements OnInit {
     if (supplier) {
       this.router.navigate(['/suppliers', supplier.id, 'pay-again']);
     }
+  }
+
+  viewQrCode(): void {
+    const supplier = this.supplier();
+    if (!supplier || this.openingQrCode()) {
+      return;
+    }
+    const tab = openPendingTab();
+    this.openingQrCode.set(true);
+    this.supplierService.downloadQrCode(supplier.id).subscribe({
+      next: (blob) => {
+        this.openingQrCode.set(false);
+        resolveBlobTab(tab, blob);
+      },
+      error: (error) => {
+        this.openingQrCode.set(false);
+        tab?.close();
+        this.notification.error(extractErrorMessage(error));
+      },
+    });
   }
 
   edit(): void {

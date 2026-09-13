@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../../core/network/api_client.dart';
 import '../../../shared/models/page_response.dart';
 import '../../orders/models/order_models.dart';
@@ -50,6 +52,19 @@ class SupplierApi {
   Future<SupplierDetail> deactivate(String id) async {
     final body = await _client.post('/v1/suppliers/$id/deactivate');
     return SupplierDetail.fromJson(body['data'] as Map<String, dynamic>);
+  }
+
+  /// Un code QR Alipay/WeChat est une IMAGE, jamais un champ texte -- televerse
+  /// separement de create/update (l'ID du fournisseur doit deja exister).
+  /// Remplace le code QR precedent s'il en existait deja un.
+  Future<SupplierDetail> uploadQrCode(String id, String filePath, String fileName) async {
+    final formData = FormData.fromMap({'file': await MultipartFile.fromFile(filePath, filename: fileName)});
+    final body = await _client.postMultipart('/v1/suppliers/$id/qr-code', formData);
+    return SupplierDetail.fromJson(body['data'] as Map<String, dynamic>);
+  }
+
+  Future<BinaryDownload> downloadQrCode(String id) {
+    return _client.downloadBytes('/v1/suppliers/$id/qr-code');
   }
 
   /// Cree un NOUVEAU devis (pricing courant) puis un NOUVEL ordre — ne clone

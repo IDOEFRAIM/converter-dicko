@@ -66,6 +66,21 @@ export class SupplierService {
   }
 
   /**
+   * Un code QR Alipay/WeChat est une IMAGE, jamais un champ texte -- televerse separement de
+   * create/update (l'ID du fournisseur doit deja exister). Remplace le code QR precedent s'il
+   * en existait deja un.
+   */
+  uploadQrCode(id: string, file: File): Observable<ApiResponse<SupplierDetail>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<ApiResponse<SupplierDetail>>(`${this.baseUrl}/${id}/qr-code`, formData);
+  }
+
+  downloadQrCode(id: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/qr-code`, { responseType: 'blob' });
+  }
+
+  /**
    * Cree un NOUVEAU devis (pricing courant) puis un NOUVEL ordre. Ne copie jamais le taux,
    * les frais ni le montant d'une transaction passee. {@code idempotencyKey} : voir
    * {@link newIdempotencyKey}.

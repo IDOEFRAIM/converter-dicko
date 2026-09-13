@@ -25,16 +25,40 @@
       }
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="form__field">
-      <mat-label>{{ identifierLabel }}</mat-label>
-      <input matInput formControlName="accountNumber" maxlength="120" autocomplete="off" />
-      @if (identifierHint) {
-        <mat-hint>{{ identifierHint }}</mat-hint>
-      }
-      @if (form.controls.accountNumber.invalid && form.controls.accountNumber.touched) {
-        <mat-error>L'identifiant de compte est obligatoire.</mat-error>
-      }
-    </mat-form-field>
+    @if (requiresQrCode) {
+      <div class="qr-code-field">
+        <label class="qr-code-field__label">{{ identifierLabel }} *</label>
+        <div class="qr-code-field__dropzone" (click)="qrFileInput.click()">
+          @if (qrCodePreviewUrl()) {
+            <img [src]="qrCodePreviewUrl()" alt="Apercu du code QR" class="qr-code-field__preview" />
+            <p class="qr-code-field__caption">Touchez pour changer</p>
+          } @else if (existingQrCodeFileName()) {
+            <mat-icon>qr_code_2</mat-icon>
+            <p class="qr-code-field__caption">Code QR enregistre : {{ existingQrCodeFileName() }}</p>
+            <p class="qr-code-field__caption">Touchez pour le remplacer</p>
+          } @else {
+            <mat-icon>add_a_photo</mat-icon>
+            <p class="qr-code-field__caption">Ajouter une photo du code QR</p>
+            <p class="qr-code-field__caption">Capture d'ecran ou photo -- pas de saisie manuelle</p>
+          }
+        </div>
+        <input #qrFileInput type="file" accept="image/png,image/jpeg,image/webp" hidden
+               (change)="onQrCodeFileSelected($event)" />
+      </div>
+
+      <mat-form-field appearance="outline" class="form__field">
+        <mat-label>Reference complementaire (optionnel)</mat-label>
+        <input matInput formControlName="accountNumber" maxlength="120" autocomplete="off" />
+      </mat-form-field>
+    } @else {
+      <mat-form-field appearance="outline" class="form__field">
+        <mat-label>{{ identifierLabel }}</mat-label>
+        <input matInput formControlName="accountNumber" maxlength="120" autocomplete="off" />
+        @if (form.controls.accountNumber.invalid && form.controls.accountNumber.touched) {
+          <mat-error>L'identifiant de compte est obligatoire.</mat-error>
+        }
+      </mat-form-field>
+    }
 
     <mat-form-field appearance="outline" class="form__field">
       <mat-label>Nom du titulaire du compte</mat-label>

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/errors/api_exception.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../shared/utils/file_share.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/status_badge.dart';
@@ -126,7 +128,14 @@ class _SupplierDetailView extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: AppSpacing.sm),
-                      _row('Identifiant', supplier.accountNumber),
+                      if (supplier.type.requiresQrCode)
+                        _qrCodeRow(context, controller, supplier)
+                      else if (supplier.accountNumber != null && supplier.accountNumber!.isNotEmpty)
+                        _row(supplier.type.identifierLabel, supplier.accountNumber!),
+                      if (supplier.type.requiresQrCode &&
+                          supplier.accountNumber != null &&
+                          supplier.accountNumber!.isNotEmpty)
+                        _row(supplier.type.supplementaryReferenceLabel, supplier.accountNumber!),
                       if (supplier.accountName != null) _row('Titulaire', supplier.accountName!),
                       if (supplier.bankName != null) _row('Banque', supplier.bankName!),
                       if (supplier.bankBranch != null) _row('Agence', supplier.bankBranch!),
@@ -162,6 +171,59 @@ class _SupplierDetailView extends StatelessWidget {
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _qrCodeRow(BuildContext context, SupplierDetailController controller, SupplierDetail supplier) {
+    if (!supplier.qrCodeUploaded) {
+      return Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.sm),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.warningSurface,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          ),
+          child: Text(
+            'Code QR manquant : ce fournisseur ne peut pas encore etre utilise pour un nouveau paiement. '
+            'Modifiez-le pour en ajouter un.',
+            style: AppTypography.body.copyWith(color: AppColors.warning),
+          ),
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(supplier.type.identifierLabel.toUpperCase(), style: AppTypography.caption),
+                Row(
+                  children: [
+                    const Icon(Icons.check_circle, size: 16, color: AppColors.positive),
+                    const SizedBox(width: AppSpacing.xs),
+                    Flexible(
+                      child: Text(
+                        supplier.qrCodeFileName ?? 'Enregistre',
+                        style: AppTypography.bodyStrong,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: controller.openingQrCode ? null : controller.viewQrCode,
+            child: Text(controller.openingQrCode ? 'Ouverture...' : 'Voir'),
+          ),
+        ],
       ),
     );
   }

@@ -18,6 +18,8 @@ export interface SupplierSummary {
   favorite: boolean;
   status: SupplierStatus;
   createdAt: string;
+  /** `false` pour un ALIPAY/WECHAT_PAY sans code QR encore televerse. */
+  readyForPayment: boolean;
 }
 
 /** Detail complet — numero de compte en clair, reserve a une consultation deliberee du proprietaire. */
@@ -34,7 +36,7 @@ export interface SupplierDetail {
   bankName: string | null;
   bankBranch: string | null;
   accountName: string | null;
-  accountNumber: string;
+  accountNumber: string | null;
   bankAddress: string | null;
   swiftCode: string | null;
   currency: Currency;
@@ -44,6 +46,10 @@ export interface SupplierDetail {
   status: SupplierStatus;
   createdAt: string;
   updatedAt: string;
+  qrCodeUploaded: boolean;
+  qrCodeFileName: string | null;
+  /** `false` pour un ALIPAY/WECHAT_PAY sans code QR encore televerse. */
+  readyForPayment: boolean;
 }
 
 /** Corps de `POST` / `PUT /api/v1/suppliers` — meme forme pour la creation et la mise a jour. */
@@ -59,7 +65,7 @@ export interface SupplierRequest {
   bankName: string | null;
   bankBranch: string | null;
   accountName: string | null;
-  accountNumber: string;
+  accountNumber: string | null;
   bankAddress: string | null;
   swiftCode: string | null;
   currency: Currency;

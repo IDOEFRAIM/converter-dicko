@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,12 +11,7 @@ import { SupplierService } from '../../../core/services/supplier.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { extractErrorMessage } from '../../../core/services/api-error.util';
 import { SupplierDetail, SupplierRequest } from '../../../core/models/supplier.model';
-import {
-  BeneficiaryType,
-  BENEFICIARY_IDENTIFIER_HINTS,
-  BENEFICIARY_IDENTIFIER_LABELS,
-  BENEFICIARY_TYPE_OPTIONS,
-} from '../../../core/models/order.model';
+import { BeneficiaryType, BENEFICIARY_IDENTIFIER_LABELS, BENEFICIARY_TYPE_OPTIONS } from '../../../core/models/order.model';
 import { Currency, PURPOSE_OPTIONS } from '../../../core/models/common.model';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
@@ -41,7 +36,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './supplier-form.page.html',
 })
-export class SupplierFormPage implements OnInit {
+export class SupplierFormPage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly supplierService = inject(SupplierService);
@@ -56,6 +51,18 @@ export class SupplierFormPage implements OnInit {
   readonly saving = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
+  /** Code QR nouvellement choisi (pas encore televerse). */
+  readonly qrCodeFile = signal<File | null>(null);
+  readonly qrCodePreviewUrl = signal<string | null>(null);
+  readonly existingQrCodeFileName = signal<string | null>(null);
+
+  /**
+   * Rempli des qu'un premier essai de {@link submit} cree reellement le fournisseur -- si seul
+   * l'envoi du QR echoue ensuite (reseau...), un nouvel essai met a jour ce MEME fournisseur au
+   * lieu d'en creer un second en double.
+   */
+  private createdSupplierId: string | null = null;
+
   readonly isEdit = computed(() => this.supplierId() !== null);
   readonly title = computed(() => (this.isEdit() ? 'Modifier le fournisseur' : 'Nouveau fournisseur'));
 
@@ -65,7 +72,7 @@ export class SupplierFormPage implements OnInit {
       validators: [Validators.required],
     }),
     displayName: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    accountNumber: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    accountNumber: new FormControl(''),
     accountName: new FormControl(''),
     legalName: new FormControl(''),
     phone: new FormControl(''),
@@ -86,12 +93,17 @@ export class SupplierFormPage implements OnInit {
     return this.form.controls.type.value === 'CHINESE_BANK_ACCOUNT';
   }
 
+  get requiresQrCode(): boolean {
+    const type = this.form.controls.type.value;
+    return type === 'ALIPAY' || type === 'WECHAT_PAY';
+  }
+
   get identifierLabel(): string {
     return BENEFICIARY_IDENTIFIER_LABELS[this.form.controls.type.value as BeneficiaryType];
   }
 
-  get identifierHint(): string | null {
-    return BENEFICIARY_IDENTIFIER_HINTS[this.form.controls.type.value as BeneficiaryType] ?? null;
+  get hasAnyQrCode(): boolean {
+    return this.qrCodeFile() !== null || this.existingQrCodeFileName() !== null;
   }
 
   ngOnInit(): void {
@@ -117,10 +129,11 @@ export class SupplierFormPage implements OnInit {
   }
 
   private patchFrom(supplier: SupplierDetail): void {
+    this.existingQrCodeFileName.set(supplier.qrCodeFileName);
     this.form.patchValue({
       type: supplier.type,
       displayName: supplier.displayName,
-      accountNumber: supplier.accountNumber,
+      accountNumber: supplier.accountNumber ?? '',
       accountName: supplier.accountName ?? '',
       legalName: supplier.legalName ?? '',
       phone: supplier.phone ?? '',
@@ -138,6 +151,22 @@ export class SupplierFormPage implements OnInit {
     });
   }
 
+  /** Un QR est une IMAGE, jamais un texte : selection via un `<input type="file">` masque. */
+  onQrCodeFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    if (!file) {
+      return;
+    }
+    this.qrCodeFile.set(file);
+    const previousUrl = this.qrCodePreviewUrl();
+    if (previousUrl) {
+      URL.revokeObjectURL(previousUrl);
+    }
+    this.qrCodePreviewUrl.set(URL.createObjectURL(file));
+    input.value = '';
+  }
+
   submit(): void {
     if (this.saving() || this.loading()) {
       return;
@@ -146,8 +175,19 @@ export class SupplierFormPage implements OnInit {
       this.form.controls.bankName.setErrors({ required: true });
       this.form.controls.bankName.markAsTouched();
     }
+    if (this.isBankAccount && !this.form.controls.accountNumber.value) {
+      this.form.controls.accountNumber.setErrors({ required: true });
+      this.form.controls.accountNumber.markAsTouched();
+    }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      return;
+    }
+    // Le code QR est l'identifiant reel d'un Alipay/WeChat Pay (jamais un texte) : un fournisseur
+    // qu'on vient de creer sans QR ne pourrait servir a aucun ordre (Supplier#isReadyForPayment
+    // cote backend) -- on l'exige donc a la creation. En edition, un QR deja televerse suffit.
+    if (this.requiresQrCode && !this.hasAnyQrCode) {
+      this.errorMessage.set(`Le code QR ${this.identifierLabel.replace('Code QR ', '')} est obligatoire.`);
       return;
     }
 
@@ -155,7 +195,7 @@ export class SupplierFormPage implements OnInit {
     const payload: SupplierRequest = {
       type: v.type,
       displayName: v.displayName.trim(),
-      accountNumber: v.accountNumber.trim(),
+      accountNumber: v.accountNumber?.trim() || null,
       accountName: v.accountName?.trim() || null,
       legalName: v.legalName?.trim() || null,
       phone: v.phone?.trim() || null,
@@ -174,16 +214,32 @@ export class SupplierFormPage implements OnInit {
 
     this.saving.set(true);
     this.errorMessage.set(null);
-    const id = this.supplierId();
-    const request$ = id
-      ? this.supplierService.update(id, payload)
+    const targetId = this.supplierId() ?? this.createdSupplierId;
+    const request$ = targetId
+      ? this.supplierService.update(targetId, payload)
       : this.supplierService.create(payload);
 
     request$.subscribe({
       next: (response) => {
-        this.saving.set(false);
-        this.notification.success(id ? 'Fournisseur mis a jour.' : 'Fournisseur enregistre.');
-        this.router.navigate(['/suppliers', response.data.id]);
+        this.createdSupplierId = response.data.id;
+        const qrCodeFile = this.qrCodeFile();
+        if (!qrCodeFile) {
+          this.saving.set(false);
+          this.notification.success(targetId ? 'Fournisseur mis a jour.' : 'Fournisseur enregistre.');
+          this.router.navigate(['/suppliers', response.data.id]);
+          return;
+        }
+        this.supplierService.uploadQrCode(response.data.id, qrCodeFile).subscribe({
+          next: () => {
+            this.saving.set(false);
+            this.notification.success(targetId ? 'Fournisseur mis a jour.' : 'Fournisseur enregistre.');
+            this.router.navigate(['/suppliers', response.data.id]);
+          },
+          error: (error) => {
+            this.saving.set(false);
+            this.errorMessage.set(extractErrorMessage(error));
+          },
+        });
       },
       error: (error) => {
         this.saving.set(false);
@@ -195,5 +251,12 @@ export class SupplierFormPage implements OnInit {
   cancel(): void {
     const id = this.supplierId();
     this.router.navigate(id ? ['/suppliers', id] : ['/suppliers']);
+  }
+
+  ngOnDestroy(): void {
+    const url = this.qrCodePreviewUrl();
+    if (url) {
+      URL.revokeObjectURL(url);
+    }
   }
 }

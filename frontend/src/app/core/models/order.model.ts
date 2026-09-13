@@ -74,13 +74,13 @@ export const BENEFICIARY_IDENTIFIER_LABELS: Record<BeneficiaryType, string> = {
 };
 
 /**
- * Precision affichee sous le champ — le formulaire reste un champ texte
- * (aucune photo/scan de code QR) : le client saisit l'identifiant associe a
- * son code QR, jamais l'image elle-meme.
+ * Precision affichee sous le champ — saisie manuelle ponctuelle (sans fournisseur enregistre),
+ * ce formulaire reste un champ texte : aucun televersement de code QR ici. Pour joindre le vrai
+ * code QR (une image, jamais un texte), voir le carnet de fournisseurs (`SupplierFormPage`).
  */
 export const BENEFICIARY_IDENTIFIER_HINTS: Partial<Record<BeneficiaryType, string>> = {
-  ALIPAY: 'Identifiant associe a votre code QR, pas une image.',
-  WECHAT_PAY: 'Identifiant associe a votre code QR, pas une image.',
+  ALIPAY: 'Alias, numero de telephone ou identifiant associe a ce compte.',
+  WECHAT_PAY: 'Alias, numero de telephone ou identifiant associe a ce compte.',
 };
 
 export interface Beneficiary {

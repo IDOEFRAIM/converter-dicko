@@ -143,6 +143,10 @@ class _SupplierTile extends StatelessWidget {
                 children: [
                   Text(supplier.displayName, style: AppTypography.bodyStrong),
                   Text('${supplier.type.label} · ${supplier.maskedAccountNumber}', style: AppTypography.caption),
+                  if (!supplier.readyForPayment) ...[
+                    const SizedBox(height: 2),
+                    Text('Code QR manquant', style: AppTypography.caption.copyWith(color: AppColors.warning)),
+                  ],
                 ],
               ),
             ),

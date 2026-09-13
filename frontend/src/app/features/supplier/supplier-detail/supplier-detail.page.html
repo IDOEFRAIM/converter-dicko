@@ -19,8 +19,32 @@
   }
 
   <mat-card class="page-card">
+    @if (requiresQrCode() && !s.qrCodeUploaded) {
+      <p class="form-notice form-notice--warn">
+        Code QR manquant : ce fournisseur ne peut pas encore etre utilise pour un nouveau paiement.
+        Modifiez-le pour en ajouter un.
+      </p>
+    }
     <dl class="detail-list">
-      <div><dt>Identifiant de compte</dt><dd>{{ s.accountNumber }}</dd></div>
+      @if (requiresQrCode()) {
+        @if (s.qrCodeUploaded) {
+          <div>
+            <dt>Code QR</dt>
+            <dd class="qr-code-cell">
+              <mat-icon class="qr-code-cell__check">check_circle</mat-icon>
+              <span>{{ s.qrCodeFileName || 'Enregistre' }}</span>
+              <button mat-button (click)="viewQrCode()" [disabled]="openingQrCode()">
+                {{ openingQrCode() ? 'Ouverture...' : 'Voir' }}
+              </button>
+            </dd>
+          </div>
+        }
+        @if (s.accountNumber) {
+          <div><dt>Reference complementaire</dt><dd>{{ s.accountNumber }}</dd></div>
+        }
+      } @else if (s.accountNumber) {
+        <div><dt>Identifiant de compte</dt><dd>{{ s.accountNumber }}</dd></div>
+      }
       @if (s.accountName) { <div><dt>Titulaire</dt><dd>{{ s.accountName }}</dd></div> }
       <div><dt>Devise</dt><dd>{{ s.currency }}</dd></div>
       @if (s.bankName) { <div><dt>Banque</dt><dd>{{ s.bankName }}</dd></div> }
