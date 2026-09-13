@@ -23,6 +23,9 @@ public record SupplierSummaryResponse(
         Purpose purpose,
         boolean favorite,
         SupplierStatus status,
-        Instant createdAt
+        Instant createdAt,
+
+        @Schema(description = "false pour un ALIPAY/WECHAT_PAY sans code QR encore televerse")
+        boolean readyForPayment
 ) {
 }

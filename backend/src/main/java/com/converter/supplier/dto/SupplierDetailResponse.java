@@ -37,6 +37,12 @@ public record SupplierDetailResponse(
         boolean favorite,
         SupplierStatus status,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        @Schema(description = "true si un code QR a ete televerse (ALIPAY/WECHAT_PAY)")
+        boolean qrCodeUploaded,
+        String qrCodeFileName,
+        @Schema(description = "false pour un ALIPAY/WECHAT_PAY sans code QR encore televerse -- "
+                + "ce fournisseur ne peut pas encore etre utilise pour creer un ordre")
+        boolean readyForPayment
 ) {
 }

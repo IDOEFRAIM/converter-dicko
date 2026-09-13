@@ -121,6 +121,29 @@ class PdfBoxReceiptPdfGeneratorTest {
     }
 
     @Test
+    void generate_withChineseBeneficiaryName_neverThrowsAndRendersTheCharacters() throws IOException {
+        // Bug reel corrige ici : Helvetica/WinAnsiEncoding (police standard PDF) ne couvre aucun
+        // caractere CJK -- `PDPageContentStream.showText` levait une IllegalArgumentException
+        // (jamais rattrapee : le code ne capturait qu'IOException), cassant la generation du
+        // justificatif pour TOUT beneficiaire chinois dont le nom est saisi en caracteres CJK --
+        // le cas courant sur ce corridor, pas un cas rare. Police embarquee Noto Sans SC
+        // (PdfBrand) desormais utilisee : le rendu doit reussir et preserver les caracteres.
+        ReceiptBeneficiary beneficiary = new ReceiptBeneficiary("张三", BeneficiaryType.ALIPAY,
+                "******6789", null, null);
+        TransferReceiptModel model = new TransferReceiptModel(
+                UUID.randomUUID(), "ORD-2026-000456",
+                Instant.parse("2026-09-01T10:00:00Z"), Instant.parse("2026-09-02T15:30:00Z"),
+                OrderStatus.COMPLETED, "Ido Efraim",
+                new BigDecimal("500000.00"), new BigDecimal("6000.00"), new BigDecimal("494000.00"),
+                new BigDecimal("84.200000"), new BigDecimal("5867.00"), "XOF/CNY",
+                beneficiary, null, null, null, null, null, null, null);
+
+        String text = extractText(generator.generate(model));
+
+        assertThat(text).contains("张三");
+    }
+
+    @Test
     void formatAmount_appliesAsciiThousandsGroupingAndTwoDecimals() {
         assertThat(PdfBoxReceiptPdfGenerator.formatAmount(new BigDecimal("1000000")))
                 .isEqualTo("1 000 000.00");

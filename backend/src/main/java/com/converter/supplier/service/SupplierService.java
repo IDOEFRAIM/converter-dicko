@@ -5,7 +5,14 @@ import com.converter.audit.service.AuditService;
 import com.converter.common.api.PageResponse;
 import com.converter.common.exception.BusinessException;
 import com.converter.common.exception.ErrorCode;
+import com.converter.order.domain.BeneficiaryType;
 import com.converter.security.OwnershipService;
+import com.converter.settings.domain.SettingKey;
+import com.converter.settings.service.SettingsService;
+import com.converter.storage.FileStorageService;
+import com.converter.storage.FileValidator;
+import com.converter.storage.ProofDownload;
+import com.converter.storage.StoredFile;
 import com.converter.supplier.domain.Supplier;
 import com.converter.supplier.domain.SupplierStatus;
 import com.converter.supplier.dto.CreateSupplierRequest;
@@ -37,16 +44,27 @@ public class SupplierService {
 
     private static final Logger log = LoggerFactory.getLogger(SupplierService.class);
 
+    private static final String QR_CODE_DIRECTORY = "supplier-qr-codes";
+
     private final SupplierRepository supplierRepository;
     private final OwnershipService ownershipService;
     private final AuditService auditService;
+    private final FileStorageService fileStorageService;
+    private final FileValidator fileValidator;
+    private final SettingsService settingsService;
 
     public SupplierService(SupplierRepository supplierRepository,
                            OwnershipService ownershipService,
-                           AuditService auditService) {
+                           AuditService auditService,
+                           FileStorageService fileStorageService,
+                           FileValidator fileValidator,
+                           SettingsService settingsService) {
         this.supplierRepository = supplierRepository;
         this.ownershipService = ownershipService;
         this.auditService = auditService;
+        this.fileStorageService = fileStorageService;
+        this.fileValidator = fileValidator;
+        this.settingsService = settingsService;
     }
 
     @Transactional
@@ -128,6 +146,44 @@ public class SupplierService {
         return loadOwned(id, ownerUserId);
     }
 
+    /**
+     * Televerse (ou remplace) le code QR Alipay/WeChat d'un fournisseur — jamais un champ texte
+     * (voir {@link Supplier#attachQrCode}). Un remplacement n'efface jamais l'ancien fichier :
+     * un {@code Beneficiary} deja cree a partir de ce fournisseur peut encore le referencer.
+     */
+    @Transactional
+    public SupplierDetailResponse attachQrCode(UUID id, String originalFileName, String declaredContentType,
+                                               byte[] content, UUID ownerUserId) {
+        Supplier supplier = loadOwned(id, ownerUserId);
+        if (supplier.getType() == BeneficiaryType.CHINESE_BANK_ACCOUNT) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR,
+                    "Un compte bancaire chinois n'utilise pas de code QR (identifiant textuel uniquement).");
+        }
+
+        long maxSize = settingsService.getLong(SettingKey.MAX_PROOF_FILE_SIZE_BYTES);
+        fileValidator.validate(declaredContentType, content, maxSize);
+
+        StoredFile stored = fileStorageService.store(QR_CODE_DIRECTORY, originalFileName, declaredContentType, content);
+        supplier.attachQrCode(stored.storageKey(), stored.fileName(), stored.contentType(), stored.sizeBytes());
+
+        auditService.record(ownerUserId, null, AuditAction.SUPPLIER_UPDATED, "Supplier", id.toString(),
+                "{\"qrCodeAttached\":true}");
+        log.info("Code QR televerse pour le fournisseur {} par {}", id, ownerUserId);
+
+        return toDetail(supplier);
+    }
+
+    @Transactional(readOnly = true)
+    public ProofDownload getQrCode(UUID id, UUID ownerUserId) {
+        Supplier supplier = loadOwned(id, ownerUserId);
+        if (supplier.getQrCodeStorageKey() == null) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND,
+                    "Ce fournisseur n'a pas encore de code QR televerse.");
+        }
+        return new ProofDownload(fileStorageService.load(supplier.getQrCodeStorageKey()),
+                supplier.getQrCodeContentType(), supplier.getQrCodeFileName());
+    }
+
     // -----------------------------------------------------------------
 
     private Supplier loadOwned(UUID id, UUID ownerUserId) {
@@ -146,13 +202,15 @@ public class SupplierService {
                 s.getId(), s.getType(), s.getDisplayName(), s.getLegalName(), s.getPhone(), s.getEmail(),
                 s.getCountry(), s.getCity(), s.getProvince(), s.getBankName(), s.getBankBranch(),
                 s.getAccountName(), s.getAccountNumber(), s.getBankAddress(), s.getSwiftCode(), s.getCurrency(),
-                s.getPurpose(), s.getNotes(), s.isFavorite(), s.getStatus(), s.getCreatedAt(), s.getUpdatedAt());
+                s.getPurpose(), s.getNotes(), s.isFavorite(), s.getStatus(), s.getCreatedAt(), s.getUpdatedAt(),
+                s.getQrCodeStorageKey() != null, s.getQrCodeFileName(), s.isReadyForPayment());
     }
 
     private static SupplierSummaryResponse toSummary(Supplier s) {
         return new SupplierSummaryResponse(
                 s.getId(), s.getType(), s.getDisplayName(), s.getCountry(), s.getCity(),
-                mask(s.getAccountNumber()), s.getPurpose(), s.isFavorite(), s.getStatus(), s.getCreatedAt());
+                mask(s.getAccountNumber()), s.getPurpose(), s.isFavorite(), s.getStatus(), s.getCreatedAt(),
+                s.isReadyForPayment());
     }
 
     /** Ne conserve que les 4 derniers caracteres, ex. {@code ******1234} — voir section 18. */

@@ -1,6 +1,8 @@
 package com.converter.supplier.domain;
 
 import com.converter.common.domain.AuditableEntity;
+import com.converter.common.exception.BusinessException;
+import com.converter.common.exception.ErrorCode;
 import com.converter.order.domain.BeneficiaryType;
 import com.converter.treasury.domain.Currency;
 import jakarta.persistence.Column;
@@ -70,9 +72,26 @@ public class Supplier extends AuditableEntity {
     @Column(name = "account_name", length = 120)
     private String accountName;
 
-    /** Compte Alipay / WeChat ou numero de compte bancaire — equivalent de {@code Beneficiary.identifier}. */
-    @Column(name = "account_number", nullable = false, length = 120)
+    /**
+     * Numero de compte bancaire (CHINESE_BANK_ACCOUNT, obligatoire) — pour ALIPAY/WECHAT_PAY,
+     * l'identifiant reel est le CODE QR ({@link #qrCodeStorageKey}, une image), jamais un texte :
+     * ce champ y reste optionnel, simple reference libre si le fournisseur en communique une en
+     * plus du QR (nom de compte, alias...).
+     */
+    @Column(name = "account_number", length = 120)
     private String accountNumber;
+
+    @Column(name = "qr_code_storage_key")
+    private String qrCodeStorageKey;
+
+    @Column(name = "qr_code_file_name")
+    private String qrCodeFileName;
+
+    @Column(name = "qr_code_content_type", length = 100)
+    private String qrCodeContentType;
+
+    @Column(name = "qr_code_size_bytes")
+    private Long qrCodeSizeBytes;
 
     @Column(name = "bank_address", length = 255)
     private String bankAddress;
@@ -109,6 +128,7 @@ public class Supplier extends AuditableEntity {
                     String bankAddress, String swiftCode, Currency currency, Purpose purpose,
                     String notes) {
         requireBankNameForBankAccount(type, bankName);
+        requireAccountNumberForBankAccount(type, accountNumber);
         this.ownerUserId = ownerUserId;
         this.type = type;
         this.displayName = displayName;
@@ -137,6 +157,7 @@ public class Supplier extends AuditableEntity {
                        String accountName, String accountNumber, String bankAddress, String swiftCode,
                        Currency currency, Purpose purpose, String notes) {
         requireBankNameForBankAccount(type, bankName);
+        requireAccountNumberForBankAccount(type, accountNumber);
         this.type = type;
         this.displayName = displayName;
         this.legalName = legalName;
@@ -164,9 +185,49 @@ public class Supplier extends AuditableEntity {
         this.status = SupplierStatus.INACTIVE;
     }
 
+    /**
+     * Remplace le code QR (upload initial ou remplacement). L'ancien fichier n'est jamais
+     * supprime du stockage ({@link com.converter.storage.FileStorageService#store} genere
+     * toujours une nouvelle cle) : un {@code Beneficiary} deja cree a partir de ce fournisseur
+     * peut avoir copie l'ancienne cle dans son propre snapshot immuable, qui doit rester
+     * telechargeable meme apres un remplacement ulterieur ici.
+     */
+    public void attachQrCode(String storageKey, String fileName, String contentType, long sizeBytes) {
+        if (type == BeneficiaryType.CHINESE_BANK_ACCOUNT) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR,
+                    "Un compte bancaire chinois n'utilise pas de code QR (identifiant textuel uniquement).");
+        }
+        this.qrCodeStorageKey = storageKey;
+        this.qrCodeFileName = fileName;
+        this.qrCodeContentType = contentType;
+        this.qrCodeSizeBytes = sizeBytes;
+    }
+
+    /**
+     * Un fournisseur ALIPAY/WECHAT_PAY n'est utilisable pour creer un ordre qu'une fois son code
+     * QR televerse -- un compte bancaire chinois, lui, n'a jamais besoin de QR (identifiant texte
+     * obligatoire des la creation, deja garanti par {@link #requireAccountNumberForBankAccount}).
+     */
+    public boolean isReadyForPayment() {
+        return type == BeneficiaryType.CHINESE_BANK_ACCOUNT || qrCodeStorageKey != null;
+    }
+
+    /**
+     * {@link BusinessException} (jamais {@code IllegalArgumentException}, qui n'est capturee par
+     * aucun {@code @ExceptionHandler} specifique et retombait donc en 500 opaque au lieu d'un 400
+     * exploitable par le client) : meme correction appliquee aux deux invariants CHINESE_BANK_ACCOUNT.
+     */
     private static void requireBankNameForBankAccount(BeneficiaryType type, String bankName) {
         if (type == BeneficiaryType.CHINESE_BANK_ACCOUNT && (bankName == null || bankName.isBlank())) {
-            throw new IllegalArgumentException("bankName est obligatoire pour un CHINESE_BANK_ACCOUNT.");
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR,
+                    "bankName est obligatoire pour un CHINESE_BANK_ACCOUNT.");
+        }
+    }
+
+    private static void requireAccountNumberForBankAccount(BeneficiaryType type, String accountNumber) {
+        if (type == BeneficiaryType.CHINESE_BANK_ACCOUNT && (accountNumber == null || accountNumber.isBlank())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR,
+                    "accountNumber est obligatoire pour un CHINESE_BANK_ACCOUNT.");
         }
     }
 
@@ -220,6 +281,22 @@ public class Supplier extends AuditableEntity {
 
     public String getAccountNumber() {
         return accountNumber;
+    }
+
+    public String getQrCodeStorageKey() {
+        return qrCodeStorageKey;
+    }
+
+    public String getQrCodeFileName() {
+        return qrCodeFileName;
+    }
+
+    public String getQrCodeContentType() {
+        return qrCodeContentType;
+    }
+
+    public Long getQrCodeSizeBytes() {
+        return qrCodeSizeBytes;
     }
 
     public String getBankAddress() {

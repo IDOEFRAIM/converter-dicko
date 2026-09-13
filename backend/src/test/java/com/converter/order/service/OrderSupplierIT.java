@@ -53,7 +53,10 @@ class OrderSupplierIT extends AbstractOrderPipelineIT {
         CreateSupplierRequest request = new CreateSupplierRequest(BeneficiaryType.ALIPAY, displayName,
                 "Legal " + displayName, null, null, "China", "Shenzhen", null, null, null, null, accountNumber,
                 null, null, Currency.CNY, Purpose.IMPORT_GOODS, null);
-        return supplierService.create(request, ownerUserId);
+        SupplierDetailResponse created = supplierService.create(request, ownerUserId);
+        // ALIPAY ne peut plus creer d'ordre sans code QR televerse (Supplier#isReadyForPayment) :
+        // ce helper reste utilisable tel quel par tous les tests existants de cette classe.
+        return supplierService.attachQrCode(created.id(), "qr.jpg", "image/jpeg", FAKE_JPEG, ownerUserId);
     }
 
     // ---- 1 / 9 : comportement historique inchange, sans supplier ni purpose ----
@@ -156,6 +159,53 @@ class OrderSupplierIT extends AbstractOrderPipelineIT {
                 });
         assertThat(stillReadable.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(stillReadable.getBody().data().supplierId()).isEqualTo(supplier.id());
+    }
+
+    // ---- QR code obligatoire pour ALIPAY/WECHAT_PAY avant de pouvoir creer un ordre ----
+
+    @Test
+    void createOrder_withAlipaySupplierWithoutQrCode_isRejected() {
+        String admin = adminToken();
+        publishRate(admin, "85.000000");
+        depositCny(admin, "1000000");
+        User userEntity = createUser(RoleCode.USER);
+        UUID userId = userEntity.getId();
+        String user = tokenFor(userEntity);
+        CreateSupplierRequest request = new CreateSupplierRequest(BeneficiaryType.ALIPAY, "No QR yet",
+                "Legal No QR yet", null, null, "China", "Shenzhen", null, null, null, null, null,
+                null, null, Currency.CNY, Purpose.IMPORT_GOODS, null);
+        SupplierDetailResponse supplier = supplierService.create(request, userId);
+        assertThat(supplier.readyForPayment()).isFalse();
+        QuoteResponse quote = createAcceptedQuote(user, "50000");
+
+        ResponseEntity<ApiResponse<OrderDetailResponse>> response =
+                createOrderWithSupplierRaw(user, quote.id(), supplier.id());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void createOrder_afterQrCodeUploaded_succeedsAndSnapshotsTheQrReference() {
+        String admin = adminToken();
+        publishRate(admin, "85.000000");
+        depositCny(admin, "1000000");
+        User userEntity = createUser(RoleCode.USER);
+        UUID userId = userEntity.getId();
+        String user = tokenFor(userEntity);
+        CreateSupplierRequest request = new CreateSupplierRequest(BeneficiaryType.ALIPAY, "Gets QR later",
+                "Legal Gets QR later", null, null, "China", "Shenzhen", null, null, null, null, null,
+                null, null, Currency.CNY, Purpose.IMPORT_GOODS, null);
+        SupplierDetailResponse created = supplierService.create(request, userId);
+        SupplierDetailResponse withQrCode =
+                supplierService.attachQrCode(created.id(), "qr.jpg", "image/jpeg", FAKE_JPEG, userId);
+        assertThat(withQrCode.readyForPayment()).isTrue();
+        assertThat(withQrCode.qrCodeUploaded()).isTrue();
+        QuoteResponse quote = createAcceptedQuote(user, "50000");
+
+        ResponseEntity<ApiResponse<OrderDetailResponse>> response =
+                createOrderWithSupplierRaw(user, quote.id(), created.id());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     }
 
     // ---- 6 : fournisseur d'un autre utilisateur -> refuse, niveau service ET HTTP ----

@@ -48,9 +48,10 @@ public record CreateSupplierRequest(
         @Size(max = 120)
         String accountName,
 
-        @NotBlank(message = "L'identifiant de compte est obligatoire")
         @Size(max = 120)
-        @Schema(description = "Compte Alipay / WeChat ou numero de compte bancaire")
+        @Schema(description = "Obligatoire si type = CHINESE_BANK_ACCOUNT (numero de compte). "
+                + "Optionnel pour ALIPAY/WECHAT_PAY -- l'identifiant reel y est le code QR, "
+                + "televerse separement via POST /api/v1/suppliers/{id}/qr-code")
         String accountNumber,
 
         @Size(max = 255)

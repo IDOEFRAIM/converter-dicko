@@ -6,6 +6,9 @@ import ch.qos.logback.core.read.ListAppender;
 import com.converter.audit.service.AuditService;
 import com.converter.order.domain.BeneficiaryType;
 import com.converter.security.OwnershipService;
+import com.converter.settings.service.SettingsService;
+import com.converter.storage.FileStorageService;
+import com.converter.storage.FileValidator;
 import com.converter.supplier.domain.Purpose;
 import com.converter.supplier.domain.Supplier;
 import com.converter.supplier.dto.CreateSupplierRequest;
@@ -43,13 +46,23 @@ class SupplierServiceLoggingTest {
     @Mock
     private AuditService auditService;
 
+    @Mock
+    private FileStorageService fileStorageService;
+
+    @Mock
+    private FileValidator fileValidator;
+
+    @Mock
+    private SettingsService settingsService;
+
     private SupplierService service;
     private ListAppender<ILoggingEvent> appender;
     private Logger logbackLogger;
 
     @BeforeEach
     void setUp() {
-        service = new SupplierService(supplierRepository, new OwnershipService(), auditService);
+        service = new SupplierService(supplierRepository, new OwnershipService(), auditService,
+                fileStorageService, fileValidator, settingsService);
 
         logbackLogger = (Logger) LoggerFactory.getLogger(SupplierService.class);
         appender = new ListAppender<>();

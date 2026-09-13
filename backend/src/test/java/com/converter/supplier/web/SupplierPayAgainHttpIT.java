@@ -47,7 +47,9 @@ class SupplierPayAgainHttpIT extends AbstractOrderPipelineIT {
         CreateSupplierRequest request = new CreateSupplierRequest(BeneficiaryType.ALIPAY,
                 "Guangzhou Electronics Ltd.", null, null, null, "China", "Guangzhou", null, null, null, null,
                 "alipay-http-" + UUID.randomUUID(), null, null, Currency.CNY, Purpose.IMPORT_GOODS, null);
-        return supplierService.create(request, ownerUserId);
+        SupplierDetailResponse created = supplierService.create(request, ownerUserId);
+        // ALIPAY ne peut plus creer d'ordre sans code QR televerse (Supplier#isReadyForPayment).
+        return supplierService.attachQrCode(created.id(), "qr.jpg", "image/jpeg", FAKE_JPEG, ownerUserId);
     }
 
     private ResponseEntity<ApiResponse<OrderDetailResponse>> payAgainRaw(

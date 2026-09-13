@@ -39,7 +39,7 @@ import java.util.UUID;
  */
 public abstract class AbstractOrderPipelineIT extends AbstractRateQuoteIT {
 
-    private static final byte[] FAKE_JPEG = {
+    protected static final byte[] FAKE_JPEG = {
             (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F',
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
     };

@@ -48,8 +48,8 @@ public record UpdateSupplierRequest(
         @Size(max = 120)
         String accountName,
 
-        @NotBlank(message = "L'identifiant de compte est obligatoire")
         @Size(max = 120)
+        @Schema(description = "Obligatoire si type = CHINESE_BANK_ACCOUNT. Optionnel pour ALIPAY/WECHAT_PAY.")
         String accountNumber,
 
         @Size(max = 255)

@@ -26,6 +26,18 @@ public record BeneficiaryRequest(
         String bankName,
 
         @Size(max = 120)
-        String bankBranch
+        String bankBranch,
+
+        @Schema(hidden = true, description = "Rempli uniquement en interne, depuis le code QR d'un "
+                + "fournisseur enregistre — jamais fourni par le client (saisie manuelle sans QR).")
+        String qrCodeStorageKey,
+        String qrCodeFileName,
+        String qrCodeContentType,
+        Long qrCodeSizeBytes
 ) {
+    /** Saisie manuelle sans fournisseur enregistre : jamais de code QR associe. */
+    public BeneficiaryRequest(BeneficiaryType type, String fullName, String identifier, String bankName,
+                              String bankBranch) {
+        this(type, fullName, identifier, bankName, bankBranch, null, null, null, null);
+    }
 }

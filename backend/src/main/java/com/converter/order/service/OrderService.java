@@ -185,7 +185,9 @@ public class OrderService {
 
         Beneficiary beneficiary = new Beneficiary(saved.getId(), beneficiaryRequest.type(),
                 beneficiaryRequest.fullName(), beneficiaryRequest.identifier(),
-                beneficiaryRequest.bankName(), beneficiaryRequest.bankBranch(), now);
+                beneficiaryRequest.bankName(), beneficiaryRequest.bankBranch(),
+                beneficiaryRequest.qrCodeStorageKey(), beneficiaryRequest.qrCodeFileName(),
+                beneficiaryRequest.qrCodeContentType(), beneficiaryRequest.qrCodeSizeBytes(), now);
         beneficiaryRepository.save(beneficiary);
 
         recordHistory(saved.getId(), null, OrderStatus.AWAITING_PAYMENT, userId, null, now);
@@ -233,10 +235,17 @@ public class OrderService {
                 throw new BusinessException(ErrorCode.SUPPLIER_INACTIVE,
                         "Ce fournisseur est desactive et ne peut plus etre utilise pour un nouvel ordre.");
             }
+            if (!supplier.isReadyForPayment()) {
+                // ALIPAY/WECHAT_PAY sans code QR encore televerse (voir Supplier#isReadyForPayment) :
+                // jamais creer un ordre dont le Beneficiary snapshote un moyen de paiement inutilisable.
+                throw new BusinessException(ErrorCode.SUPPLIER_QR_CODE_MISSING,
+                        "Ce fournisseur n'a pas encore de code QR televerse -- impossible de creer un ordre.");
+            }
             // Nom legal si disponible (traçabilite financiere), sinon le nom d'affichage du carnet.
             String fullName = supplier.getLegalName() != null ? supplier.getLegalName() : supplier.getDisplayName();
             return new BeneficiaryRequest(supplier.getType(), fullName, supplier.getAccountNumber(),
-                    supplier.getBankName(), supplier.getBankBranch());
+                    supplier.getBankName(), supplier.getBankBranch(), supplier.getQrCodeStorageKey(),
+                    supplier.getQrCodeFileName(), supplier.getQrCodeContentType(), supplier.getQrCodeSizeBytes());
         }
         if (request.beneficiary() == null) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR,

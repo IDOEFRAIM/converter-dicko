@@ -2,6 +2,7 @@ package com.converter.order.receipt.pdf;
 
 import com.converter.common.exception.BusinessException;
 import com.converter.common.exception.ErrorCode;
+import com.converter.common.pdf.PdfDocumentWriter;
 import com.converter.order.domain.BeneficiaryType;
 import com.converter.order.domain.OrderStatus;
 import com.converter.order.receipt.model.ReceiptBeneficiary;
@@ -10,12 +11,6 @@ import com.converter.order.receipt.model.TransferReceiptModel;
 import com.converter.refund.domain.RefundStatus;
 import com.converter.supplier.domain.Purpose;
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.pdfbox.pdmodel.font.PDFont;
-import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -27,81 +22,79 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Rendu texte simple (pas de HTML/CSS) via Apache PDFBox — voir {@link ReceiptPdfGenerator} pour la
- * garantie "aucun recalcul". Un seul document A4, sections separees par des lignes horizontales,
- * fidele a la structure minimale de la specification (section 18).
+ * Rendu du justificatif via {@link PdfDocumentWriter} (bandeau navy/or, sections, encart montant
+ * -- voir {@link ReceiptPdfGenerator} pour la garantie "aucun recalcul"). Un seul document A4,
+ * pagine automatiquement si un champ optionnel deborde (remboursement, motif detaille).
+ *
+ * <p>Police embarquee Unicode (Noto Sans SC, {@code PdfBrand}) plutot que Helvetica/WinAnsi :
+ * un nom de beneficiaire chinois saisi en caracteres CJK faisait echouer la generation de TOUT
+ * justificatif le concernant (voir {@code PdfBrand} pour le detail du bug).
  *
  * <p>Arrondi d'affichage a 2 decimales pour tous les montants/taux (ex. {@code customerRate}
- * persiste avec 6 decimales s'affiche {@code 84.20}) : concerne <b>uniquement</b> le rendu texte de
+ * persiste avec 6 decimales s'affiche {@code 84.20}) : concerne <b>uniquement</b> le rendu de
  * cette classe, jamais la valeur elle-meme, qui reste celle du modele, inchangee.
  */
 @Component
 public class PdfBoxReceiptPdfGenerator implements ReceiptPdfGenerator {
 
-    private static final float MARGIN = 50f;
-    private static final float LINE_HEIGHT = 16f;
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm 'UTC'").withZone(ZoneOffset.UTC);
 
     @Override
     public byte[] generate(TransferReceiptModel receipt) {
         try (PDDocument document = new PDDocument()) {
-            PDPage page = new PDPage(PDRectangle.A4);
-            document.addPage(page);
+            try (PdfDocumentWriter writer = new PdfDocumentWriter(document)) {
+                writer.header("Converter", "Justificatif de transfert", "Ref. " + receipt.transactionReference(),
+                        format(receipt.createdAt()));
 
-            PDFont regular = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
-            PDFont bold = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
-
-            try (PDPageContentStream stream = new PDPageContentStream(document, page)) {
-                Writer writer = new Writer(stream, regular, bold, page.getMediaBox().getHeight() - MARGIN);
-
-                writer.title("JUSTIFICATIF DE TRANSFERT");
+                writer.highlight("Montant recu par le beneficiaire",
+                        formatAmount(receipt.amountCny()) + " CNY",
+                        "au taux de " + formatAmount(receipt.customerRate()) + " " + receipt.currencyPair());
                 writer.blank();
 
-                writer.section("TRANSACTION");
-                writer.line("Numero d'ordre", receipt.orderId().toString());
-                writer.line("Reference", receipt.transactionReference());
-                writer.line("Date", format(receipt.createdAt()));
-                writer.line("Statut", statusLabel(receipt.orderStatus()));
+                writer.section("Transaction");
+                writer.row("Numero d'ordre", receipt.orderId().toString());
+                writer.row("Reference", receipt.transactionReference());
+                writer.row("Date", format(receipt.createdAt()));
+                writer.row("Statut", statusLabel(receipt.orderStatus()));
 
-                writer.section("CLIENT");
-                writer.line("Client", receipt.customerName());
+                writer.section("Client");
+                writer.row("Client", receipt.customerName());
 
-                writer.section("TRANSFERT");
-                writer.line("Envoye", formatAmount(receipt.amountXof()) + " XOF");
-                writer.line("Frais", formatAmount(receipt.feeXof()) + " XOF");
-                writer.line("Net", formatAmount(receipt.netAmountXof()) + " XOF");
-                writer.line("Taux client", formatAmount(receipt.customerRate()) + " " + receipt.currencyPair());
-                writer.line("Recu", formatAmount(receipt.amountCny()) + " CNY");
+                writer.section("Transfert");
+                writer.row("Envoye", formatAmount(receipt.amountXof()) + " XOF");
+                writer.row("Frais", formatAmount(receipt.feeXof()) + " XOF");
+                writer.row("Net", formatAmount(receipt.netAmountXof()) + " XOF");
+                writer.row("Taux client", formatAmount(receipt.customerRate()) + " " + receipt.currencyPair());
+                writer.row("Recu", formatAmount(receipt.amountCny()) + " CNY");
 
-                writer.section("BENEFICIAIRE");
+                writer.section("Beneficiaire");
                 writeBeneficiary(writer, receipt.beneficiary());
 
                 if (receipt.purpose() != null || receipt.purposeDetails() != null) {
-                    writer.section("MOTIF");
+                    writer.section("Motif");
                     if (receipt.purpose() != null) {
-                        writer.line("Motif", purposeLabel(receipt.purpose()));
+                        writer.row("Motif", purposeLabel(receipt.purpose()));
                     }
                     if (receipt.purposeDetails() != null && !receipt.purposeDetails().isBlank()) {
-                        writer.line("Details", receipt.purposeDetails());
+                        writer.row("Details", receipt.purposeDetails());
                     }
                 }
 
-                writer.section("PAIEMENT");
-                writer.line("Reference", nullSafe(receipt.paymentReference()));
-                writer.line("Verifie le", receipt.paymentVerifiedAt() == null ? "-" : format(receipt.paymentVerifiedAt()));
+                writer.section("Paiement");
+                writer.row("Reference", receipt.paymentReference());
+                writer.row("Verifie le", receipt.paymentVerifiedAt() == null ? null : format(receipt.paymentVerifiedAt()));
 
-                writer.section("REGLEMENT");
-                writer.line("Reference", nullSafe(receipt.settlementReference()));
-                writer.line("Execute le", receipt.settlementExecutedAt() == null ? "-" : format(receipt.settlementExecutedAt()));
+                writer.section("Reglement");
+                writer.row("Reference", receipt.settlementReference());
+                writer.row("Execute le", receipt.settlementExecutedAt() == null ? null : format(receipt.settlementExecutedAt()));
 
                 if (receipt.refund() != null) {
-                    writer.section("REMBOURSEMENT");
+                    writer.section("Remboursement");
                     writeRefund(writer, receipt.refund());
                 }
 
-                writer.blank();
-                writer.footer("Document genere automatiquement -- Converter");
+                writer.footer("Document genere automatiquement -- Converter -- " + format(Instant.now()));
             }
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -112,27 +105,23 @@ public class PdfBoxReceiptPdfGenerator implements ReceiptPdfGenerator {
         }
     }
 
-    private void writeBeneficiary(Writer writer, ReceiptBeneficiary beneficiary) throws IOException {
-        writer.line("Nom", beneficiary.fullName());
-        writer.line("Type", beneficiaryTypeLabel(beneficiary.type()));
+    private void writeBeneficiary(PdfDocumentWriter writer, ReceiptBeneficiary beneficiary) throws IOException {
+        writer.row("Nom", beneficiary.fullName());
+        writer.row("Type", beneficiaryTypeLabel(beneficiary.type()));
         if (beneficiary.bankName() != null) {
-            writer.line("Banque", beneficiary.bankName());
+            writer.row("Banque", beneficiary.bankName());
         }
         if (beneficiary.bankBranch() != null) {
-            writer.line("Agence", beneficiary.bankBranch());
+            writer.row("Agence", beneficiary.bankBranch());
         }
-        writer.line("Compte", beneficiary.maskedIdentifier());
+        writer.row("Compte", beneficiary.maskedIdentifier());
     }
 
-    private void writeRefund(Writer writer, ReceiptRefund refund) throws IOException {
-        writer.line("Statut", refundStatusLabel(refund.status()));
-        writer.line("Montant", formatAmount(refund.amountXof()) + " XOF");
-        writer.line("Date", format(refund.date()));
-        writer.line("Reference", nullSafe(refund.reference()));
-    }
-
-    private static String nullSafe(String value) {
-        return value == null || value.isBlank() ? "-" : value;
+    private void writeRefund(PdfDocumentWriter writer, ReceiptRefund refund) throws IOException {
+        writer.row("Statut", refundStatusLabel(refund.status()));
+        writer.row("Montant", formatAmount(refund.amountXof()) + " XOF");
+        writer.row("Date", format(refund.date()));
+        writer.row("Reference", refund.reference());
     }
 
     private static String format(Instant instant) {
@@ -189,7 +178,7 @@ public class PdfBoxReceiptPdfGenerator implements ReceiptPdfGenerator {
         };
     }
 
-    private static String beneficiaryTypeLabel(BeneficiaryType type) {
+    public static String beneficiaryTypeLabel(BeneficiaryType type) {
         return switch (type) {
             case ALIPAY -> "Alipay";
             case WECHAT_PAY -> "WeChat Pay";
@@ -197,7 +186,7 @@ public class PdfBoxReceiptPdfGenerator implements ReceiptPdfGenerator {
         };
     }
 
-    private static String purposeLabel(Purpose purpose) {
+    public static String purposeLabel(Purpose purpose) {
         return switch (purpose) {
             case PERSONAL -> "Personnel";
             case EDUCATION -> "Education";
@@ -207,52 +196,5 @@ public class PdfBoxReceiptPdfGenerator implements ReceiptPdfGenerator {
             case BUSINESS -> "Affaires";
             case OTHER -> "Autre";
         };
-    }
-
-    /** Curseur d'ecriture texte simple : position Y geree manuellement, aucune pagination (recu court, une page). */
-    private static final class Writer {
-        private final PDPageContentStream stream;
-        private final PDFont regular;
-        private final PDFont bold;
-        private float y;
-
-        Writer(PDPageContentStream stream, PDFont regular, PDFont bold, float startY) {
-            this.stream = stream;
-            this.regular = regular;
-            this.bold = bold;
-            this.y = startY;
-        }
-
-        void title(String text) throws IOException {
-            write(bold, 16, text);
-            y -= LINE_HEIGHT;
-        }
-
-        void section(String text) throws IOException {
-            y -= LINE_HEIGHT / 2;
-            write(bold, 11, text);
-            y -= 2;
-        }
-
-        void line(String label, String value) throws IOException {
-            write(regular, 10, label + " : " + value);
-        }
-
-        void footer(String text) throws IOException {
-            write(regular, 8, text);
-        }
-
-        void blank() {
-            y -= LINE_HEIGHT / 2;
-        }
-
-        private void write(PDFont font, int size, String text) throws IOException {
-            stream.beginText();
-            stream.setFont(font, size);
-            stream.newLineAtOffset(MARGIN, y);
-            stream.showText(text);
-            stream.endText();
-            y -= LINE_HEIGHT;
-        }
     }
 }

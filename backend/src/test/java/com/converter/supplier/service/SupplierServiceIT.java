@@ -55,7 +55,7 @@ class SupplierServiceIT extends AbstractRateQuoteIT {
         UUID userId = createUser(RoleCode.USER).getId();
 
         assertThatThrownBy(() -> supplierService.create(bankSupplier("No Bank", null), userId))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(BusinessException.class);
     }
 
     @Test
