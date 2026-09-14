@@ -56,7 +56,7 @@ class OrderSupplierIT extends AbstractOrderPipelineIT {
         SupplierDetailResponse created = supplierService.create(request, ownerUserId);
         // ALIPAY ne peut plus creer d'ordre sans code QR televerse (Supplier#isReadyForPayment) :
         // ce helper reste utilisable tel quel par tous les tests existants de cette classe.
-        return supplierService.attachQrCode(created.id(), "qr.jpg", "image/jpeg", FAKE_JPEG, ownerUserId);
+        return supplierService.attachQrCode(created.id(), "qr.png", "image/png", REAL_QR_CODE_PNG, ownerUserId);
     }
 
     // ---- 1 / 9 : comportement historique inchange, sans supplier ni purpose ----
@@ -197,7 +197,7 @@ class OrderSupplierIT extends AbstractOrderPipelineIT {
                 null, null, Currency.CNY, Purpose.IMPORT_GOODS, null);
         SupplierDetailResponse created = supplierService.create(request, userId);
         SupplierDetailResponse withQrCode =
-                supplierService.attachQrCode(created.id(), "qr.jpg", "image/jpeg", FAKE_JPEG, userId);
+                supplierService.attachQrCode(created.id(), "qr.png", "image/png", REAL_QR_CODE_PNG, userId);
         assertThat(withQrCode.readyForPayment()).isTrue();
         assertThat(withQrCode.qrCodeUploaded()).isTrue();
         QuoteResponse quote = createAcceptedQuote(user, "50000");

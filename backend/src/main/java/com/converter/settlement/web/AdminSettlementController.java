@@ -36,6 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -62,12 +63,21 @@ public class AdminSettlementController {
     @PostMapping("/orders/{orderId}/settlement")
     @Operation(summary = "Creer le reglement d'un ordre",
             description = "Requiert un ordre au statut PAYMENT_VERIFIED. Fait passer l'ordre en "
-                    + "PROCESSING dans la meme operation (\"Payment CONFIRMED -> Settlement cree\").")
+                    + "PROCESSING dans la meme operation (\"Payment CONFIRMED -> Settlement cree\"). "
+                    + "En-tete Idempotency-Key optionnel : un rejeu avec la meme cle (reponse perdue, "
+                    + "double clic) renvoie le reglement deja cree au lieu du 409 \"existe deja\".")
     public ResponseEntity<ApiResponse<SettlementResponse>> create(
             @PathVariable UUID orderId,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @AuthenticatedUser CurrentUser actor) {
-        SettlementResponse response = settlementService.create(orderId, actor.getId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(response, "Reglement cree."));
+        String endpoint = "POST /api/admin/orders/" + orderId + "/settlement";
+        return idempotencyGuard.guard(actor.getId(), endpoint, idempotencyKey, Map.of("action", "create"),
+                new TypeReference<ApiResponse<SettlementResponse>>() {
+                },
+                () -> {
+                    SettlementResponse response = settlementService.create(orderId, actor.getId());
+                    return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(response, "Reglement cree."));
+                });
     }
 
     @GetMapping("/settlements/pending")

@@ -139,7 +139,8 @@ class PaymentConcurrencyIT extends AbstractOrderPipelineIT {
                                                              String receivedAmountXof, String reference) {
         HttpHeaders headers = auth(userToken);
         String body = "{\"method\":\"MOBILE_MONEY\",\"receivedAmountXof\":" + receivedAmountXof
-                + ",\"transactionReference\":\"" + reference + "\"}";
+                + ",\"transactionReference\":\"" + reference
+                + "\",\"payerPhone\":\"+2250700000000\",\"payerName\":\"Payeur Test\"}";
         headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
         return restTemplate.exchange("/api/v1/orders/" + orderId + "/payments", HttpMethod.POST,
                 new HttpEntity<>(body, headers), String.class);

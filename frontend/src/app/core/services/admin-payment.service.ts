@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse, PageResponse } from '../models/api-response.model';
 import { Payment, RejectPaymentRequest } from '../models/payment.model';
+import { idempotencyHeaders } from './idempotency.util';
 
 @Injectable({ providedIn: 'root' })
 export class AdminPaymentService {
@@ -20,12 +21,27 @@ export class AdminPaymentService {
     return this.http.get<ApiResponse<Payment>>(`${this.baseUrl}/${id}`);
   }
 
-  confirm(id: string): Observable<ApiResponse<Payment>> {
-    return this.http.post<ApiResponse<Payment>>(`${this.baseUrl}/${id}/confirm`, {});
+  /**
+   * En-tete Idempotency-Key fortement recommande : sans elle, une reponse perdue (timeout,
+   * coupure reseau) puis un nouvel essai renvoie 409 "deja traite" au lieu de la confirmation
+   * deja effectuee par le premier essai (voir {@code AdminPaymentController#confirm}).
+   */
+  confirm(id: string, idempotencyKey?: string | null): Observable<ApiResponse<Payment>> {
+    return this.http.post<ApiResponse<Payment>>(
+      `${this.baseUrl}/${id}/confirm`,
+      {},
+      { headers: idempotencyHeaders(idempotencyKey) },
+    );
   }
 
-  reject(id: string, request: RejectPaymentRequest): Observable<ApiResponse<Payment>> {
-    return this.http.post<ApiResponse<Payment>>(`${this.baseUrl}/${id}/reject`, request);
+  reject(
+    id: string,
+    request: RejectPaymentRequest,
+    idempotencyKey?: string | null,
+  ): Observable<ApiResponse<Payment>> {
+    return this.http.post<ApiResponse<Payment>>(`${this.baseUrl}/${id}/reject`, request, {
+      headers: idempotencyHeaders(idempotencyKey),
+    });
   }
 
   /** Le jeton JWT doit accompagner la requete : voir {@code resolveBlobTab}. */

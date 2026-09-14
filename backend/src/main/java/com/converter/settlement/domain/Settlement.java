@@ -45,7 +45,13 @@ public class Settlement extends BaseEntity {
     @Column(name = "beneficiary_full_name", nullable = false, length = 120)
     private String beneficiaryFullName;
 
-    @Column(name = "beneficiary_identifier", nullable = false, length = 120)
+    /**
+     * Nullable (V38, ajoutee apres coup) : un beneficiaire ALIPAY/WECHAT_PAY s'identifie par un
+     * code QR (image, voir {@code Beneficiary.qrCodeStorageKey}), pas par un texte -- cette
+     * colonne peut donc legitimement etre vide pour ce type, exactement comme {@code
+     * beneficiaries.identifier} (V36).
+     */
+    @Column(name = "beneficiary_identifier", length = 120)
     private String beneficiaryIdentifier;
 
     @Column(name = "beneficiary_bank_name", length = 120)

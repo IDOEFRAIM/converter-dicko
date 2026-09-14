@@ -116,10 +116,19 @@ public class SettlementService {
         try {
             saved = settlementRepository.saveAndFlush(settlement);
         } catch (DataIntegrityViolationException ex) {
-            // uq_settlements_order : deux creations concurrentes ; l'une gagne. Code metier
-            // precis plutot que le DUPLICATE_RESOURCE generique (passe 2, P2-6).
-            throw new BusinessException(ErrorCode.INVALID_SETTLEMENT_STATE,
-                    "Un reglement existe deja pour cet ordre.");
+            // Bug reel deja rencontre en production : ce catch supposait a tort que la SEULE
+            // violation possible ici etait uq_settlements_order (deux creations concurrentes),
+            // et rapportait systematiquement "un reglement existe deja" -- y compris pour une
+            // toute AUTRE violation (ex. NOT NULL sur beneficiary_identifier, V38) qui n'a rien a
+            // voir avec un doublon, laissant l'admin durablement bloque sur un message trompeur.
+            // On reverifie donc explicitement avant d'affirmer un doublon ; sinon, l'exception
+            // reelle est journalisee (jamais avalee en silence) et remontee telle quelle.
+            if (settlementRepository.existsByOrderId(orderId)) {
+                throw new BusinessException(ErrorCode.INVALID_SETTLEMENT_STATE,
+                        "Un reglement existe deja pour cet ordre.");
+            }
+            log.error("Echec de creation du reglement pour l'ordre {} (cause non liee a un doublon)", orderId, ex);
+            throw ex;
         }
 
         orderService.transitionToProcessing(orderId, actorId);

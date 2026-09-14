@@ -8,6 +8,7 @@ import { AdminOrderService } from '../../../core/services/admin-order.service';
 import { AdminSettlementService } from '../../../core/services/admin-settlement.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { extractErrorMessage } from '../../../core/services/api-error.util';
+import { IdempotencyAttempt } from '../../../core/services/idempotency.util';
 import { OrderDetail } from '../../../core/models/order.model';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { MoneyPipe } from '../../../shared/pipes/money.pipe';
@@ -38,6 +39,7 @@ export class AdminOrderDetailPage implements OnInit {
   readonly order = signal<OrderDetail | null>(null);
   readonly loading = signal(true);
   readonly creatingSettlement = signal(false);
+  private readonly settlementIdempotency = new IdempotencyAttempt();
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -66,9 +68,11 @@ export class AdminOrderDetailPage implements OnInit {
       return;
     }
     this.creatingSettlement.set(true);
-    this.adminSettlementService.createForOrder(order.id).subscribe({
+    const idempotencyKey = this.settlementIdempotency.keyFor({ orderId: order.id });
+    this.adminSettlementService.createForOrder(order.id, idempotencyKey).subscribe({
       next: (response) => {
         this.creatingSettlement.set(false);
+        this.settlementIdempotency.complete();
         this.notification.success('Reglement cree.');
         this.router.navigate(['/admin/settlements', response.data.id]);
       },

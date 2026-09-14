@@ -51,6 +51,7 @@ public class SupplierService {
     private final AuditService auditService;
     private final FileStorageService fileStorageService;
     private final FileValidator fileValidator;
+    private final QrCodeValidator qrCodeValidator;
     private final SettingsService settingsService;
 
     public SupplierService(SupplierRepository supplierRepository,
@@ -58,12 +59,14 @@ public class SupplierService {
                            AuditService auditService,
                            FileStorageService fileStorageService,
                            FileValidator fileValidator,
+                           QrCodeValidator qrCodeValidator,
                            SettingsService settingsService) {
         this.supplierRepository = supplierRepository;
         this.ownershipService = ownershipService;
         this.auditService = auditService;
         this.fileStorageService = fileStorageService;
         this.fileValidator = fileValidator;
+        this.qrCodeValidator = qrCodeValidator;
         this.settingsService = settingsService;
     }
 
@@ -162,6 +165,10 @@ public class SupplierService {
 
         long maxSize = settingsService.getLong(SettingKey.MAX_PROOF_FILE_SIZE_BYTES);
         fileValidator.validate(declaredContentType, content, maxSize);
+        // FileValidator ne verifie que le TYPE de fichier (signature binaire) -- il faut aussi
+        // s'assurer que l'image contient reellement un code QR lisible, pas n'importe quelle
+        // photo (retour client).
+        qrCodeValidator.validate(content);
 
         StoredFile stored = fileStorageService.store(QR_CODE_DIRECTORY, originalFileName, declaredContentType, content);
         supplier.attachQrCode(stored.storageKey(), stored.fileName(), stored.contentType(), stored.sizeBytes());

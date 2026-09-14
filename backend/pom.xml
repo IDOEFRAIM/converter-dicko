@@ -28,6 +28,10 @@
         <jjwt.version>0.12.7</jjwt.version>
         <springdoc.version>2.8.17</springdoc.version>
         <pdfbox.version>3.0.3</pdfbox.version>
+        <!-- Decodage reel du contenu QR a l'upload (retour client : verifier que l'image
+             televersee contient effectivement un code QR lisible, pas seulement une image
+             valide) : ZXing est la reference du domaine, pas de reimplementation maison. -->
+        <zxing.version>3.5.3</zxing.version>
         <!-- Verification officielle des jetons d'identite Google (connexion mobile) :
              GoogleIdTokenVerifier gere lui-meme la recuperation/rotation des cles
              publiques (JWKS) et les verifications iss/aud/exp ; reimplementer cela a
@@ -136,6 +140,17 @@
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
             <version>${pdfbox.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>${zxing.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>${zxing.version}</version>
         </dependency>
 
         <!-- ====================== Supervision ========================== -->

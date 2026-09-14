@@ -20,6 +20,11 @@ import com.converter.settlement.dto.SettlementResponse;
 import com.converter.treasury.domain.Currency;
 import com.converter.treasury.dto.TreasuryAccountResponse;
 import com.converter.treasury.dto.TreasuryAdjustmentRequest;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -29,6 +34,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -43,6 +52,44 @@ public abstract class AbstractOrderPipelineIT extends AbstractRateQuoteIT {
             (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F',
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
     };
+
+    /**
+     * Un vrai code QR PNG, genere par ZXing lui-meme (jamais une simple image bidon) : contrairement
+     * a {@link #FAKE_JPEG} (magic bytes suffisants pour {@code FileValidator}), {@code
+     * QrCodeValidator} decode reellement le contenu -- il faut un fichier qui contienne un
+     * veritable code QR pour passer cette verification dans les tests.
+     */
+    protected static final byte[] REAL_QR_CODE_PNG = generateQrCodePng("alipay://example/pay?id=test-supplier");
+
+    /** Une vraie image PNG (decodable), mais SANS aucun code QR -- pour verifier le rejet. */
+    protected static final byte[] REAL_NON_QR_IMAGE_PNG = generatePlainPng();
+
+    private static byte[] generateQrCodePng(String content) {
+        try {
+            BitMatrix matrix = new QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, 200, 200);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            MatrixToImageWriter.writeToStream(matrix, "PNG", out);
+            return out.toByteArray();
+        } catch (WriterException | IOException e) {
+            throw new IllegalStateException("Echec de generation du code QR de test", e);
+        }
+    }
+
+    private static byte[] generatePlainPng() {
+        try {
+            BufferedImage image = new BufferedImage(64, 64, BufferedImage.TYPE_INT_RGB);
+            for (int x = 0; x < image.getWidth(); x++) {
+                for (int y = 0; y < image.getHeight(); y++) {
+                    image.setRGB(x, y, 0x336699);
+                }
+            }
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ImageIO.write(image, "PNG", out);
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new IllegalStateException("Echec de generation de l'image de test", e);
+        }
+    }
 
     protected QuoteResponse createAcceptedQuote(String userToken, String amountXof) {
         QuoteResponse quote = createQuote(userToken,

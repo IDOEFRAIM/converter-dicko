@@ -71,7 +71,8 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         ResponseEntity<ErrorResponse> response = restTemplate.exchange(
                 "/api/v1/orders/" + order.id() + "/payments", HttpMethod.POST,
                 new HttpEntity<>("{\"method\":\"MOBILE_MONEY\",\"receivedAmountXof\":1,"
-                        + "\"transactionReference\":\"MM-REF-SHORT-1\"}", headers),
+                        + "\"transactionReference\":\"MM-REF-SHORT-1\","
+                        + "\"payerPhone\":\"+2250700000000\",\"payerName\":\"Payeur Test\"}", headers),
                 ErrorResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -186,6 +187,69 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
      * uq_treasury_tx_resolution_per_order} (V16, P2-4 : au plus une reservation/resolution par
      * ordre). Seuls CANCELLED/EXPIRED (veritablement terminaux) liberent encore la CNY.
      */
+    /**
+     * Regression : {@code confirm} n'utilisait aucune protection d'idempotence -- une reponse
+     * perdue (timeout reseau) puis un nouvel essai de l'admin heurtait {@code requireSubmitted()}
+     * et renvoyait 409 "deja traite", alors que l'admin n'avait jamais vu de succes.
+     */
+    @Test
+    void confirm_replayedWithSameIdempotencyKey_returnsTheSameConfirmationInsteadOfConflict() {
+        String admin = adminToken();
+        publishRate(admin, "85.000000");
+        depositCny(admin, "1000000");
+        String user = tokenFor(createUser(RoleCode.USER));
+        QuoteResponse quote = createAcceptedQuote(user, "50000");
+        OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
+        PaymentResponse payment = submitPayment(user, order.id(), "50000", "MM-REF-IDEMP-CONFIRM");
+        uploadProof(user, payment.id());
+
+        HttpHeaders headers = auth(admin);
+        headers.set("Idempotency-Key", "confirm-" + payment.id());
+        ResponseEntity<ApiResponse<PaymentResponse>> first = restTemplate.exchange(
+                "/api/admin/payments/" + payment.id() + "/confirm", HttpMethod.POST, new HttpEntity<>(headers),
+                new ParameterizedTypeReference<ApiResponse<PaymentResponse>>() {
+                });
+        ResponseEntity<ApiResponse<PaymentResponse>> replay = restTemplate.exchange(
+                "/api/admin/payments/" + payment.id() + "/confirm", HttpMethod.POST, new HttpEntity<>(headers),
+                new ParameterizedTypeReference<ApiResponse<PaymentResponse>>() {
+                });
+
+        assertThat(first.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(replay.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(replay.getBody().data().status()).isEqualTo(PaymentStatus.CONFIRMED);
+    }
+
+    /** Meme regression que {@link #confirm_replayedWithSameIdempotencyKey_returnsTheSameConfirmationInsteadOfConflict}, cote rejet. */
+    @Test
+    void reject_replayedWithSameIdempotencyKey_returnsTheSameRejectionInsteadOfConflict() {
+        String admin = adminToken();
+        publishRate(admin, "85.000000");
+        depositCny(admin, "1000000");
+        String user = tokenFor(createUser(RoleCode.USER));
+        QuoteResponse quote = createAcceptedQuote(user, "50000");
+        OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
+        PaymentResponse payment = submitPayment(user, order.id(), "50000", "MM-REF-IDEMP-REJECT");
+        uploadProof(user, payment.id());
+
+        HttpHeaders headers = auth(admin);
+        headers.set("Idempotency-Key", "reject-" + payment.id());
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<com.converter.payment.dto.RejectPaymentRequest> request =
+                new HttpEntity<>(new com.converter.payment.dto.RejectPaymentRequest("preuve illisible"), headers);
+        ResponseEntity<ApiResponse<PaymentResponse>> first = restTemplate.exchange(
+                "/api/admin/payments/" + payment.id() + "/reject", HttpMethod.POST, request,
+                new ParameterizedTypeReference<ApiResponse<PaymentResponse>>() {
+                });
+        ResponseEntity<ApiResponse<PaymentResponse>> replay = restTemplate.exchange(
+                "/api/admin/payments/" + payment.id() + "/reject", HttpMethod.POST, request,
+                new ParameterizedTypeReference<ApiResponse<PaymentResponse>>() {
+                });
+
+        assertThat(first.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(replay.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(replay.getBody().data().status()).isEqualTo(PaymentStatus.REJECTED);
+    }
+
     @Test
     void reject_setsOrderToRejectedButKeepsTreasuryReservedForAPossibleResubmission() {
         String admin = adminToken();

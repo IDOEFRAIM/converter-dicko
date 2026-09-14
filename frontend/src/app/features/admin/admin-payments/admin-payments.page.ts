@@ -9,6 +9,7 @@ import { AdminPaymentService } from '../../../core/services/admin-payment.servic
 import { NotificationService } from '../../../core/services/notification.service';
 import { extractErrorMessage } from '../../../core/services/api-error.util';
 import { openPendingTab, resolveBlobTab } from '../../../core/services/file-download.util';
+import { IdempotencyAttempt } from '../../../core/services/idempotency.util';
 import { Payment } from '../../../core/models/payment.model';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
@@ -41,6 +42,8 @@ export class AdminPaymentsPage implements OnInit {
   readonly loading = signal(true);
   readonly processingId = signal<string | null>(null);
   readonly displayedColumns = ['reference', 'method', 'payer', 'receivedAmountXof', 'submittedAt', 'proofs', 'actions'];
+  private readonly confirmIdempotency = new IdempotencyAttempt();
+  private readonly rejectIdempotency = new IdempotencyAttempt();
 
   ngOnInit(): void {
     this.load();
@@ -81,9 +84,11 @@ export class AdminPaymentsPage implements OnInit {
       return;
     }
     this.processingId.set(payment.id);
-    this.adminPaymentService.confirm(payment.id).subscribe({
+    const idempotencyKey = this.confirmIdempotency.keyFor({ paymentId: payment.id });
+    this.adminPaymentService.confirm(payment.id, idempotencyKey).subscribe({
       next: () => {
         this.processingId.set(null);
+        this.confirmIdempotency.complete();
         this.notification.success('Paiement confirme.');
         this.load();
       },
@@ -108,9 +113,11 @@ export class AdminPaymentsPage implements OnInit {
         return;
       }
       this.processingId.set(payment.id);
-      this.adminPaymentService.reject(payment.id, { reason }).subscribe({
+      const idempotencyKey = this.rejectIdempotency.keyFor({ paymentId: payment.id, reason });
+      this.adminPaymentService.reject(payment.id, { reason }, idempotencyKey).subscribe({
         next: () => {
           this.processingId.set(null);
+          this.rejectIdempotency.complete();
           this.notification.success('Paiement rejete.');
           this.load();
         },

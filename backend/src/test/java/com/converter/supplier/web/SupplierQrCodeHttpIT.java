@@ -54,11 +54,16 @@ class SupplierQrCodeHttpIT extends AbstractOrderPipelineIT {
     }
 
     private ResponseEntity<ApiResponse<SupplierDetailResponse>> uploadQrCodeRaw(String userToken, UUID supplierId) {
+        return uploadFileRaw(userToken, supplierId, REAL_QR_CODE_PNG, "qr.png");
+    }
+
+    private ResponseEntity<ApiResponse<SupplierDetailResponse>> uploadFileRaw(
+            String userToken, UUID supplierId, byte[] content, String fileName) {
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("file", new ByteArrayResource(FAKE_JPEG) {
+        body.add("file", new ByteArrayResource(content) {
             @Override
             public String getFilename() {
-                return "qr.jpg";
+                return fileName;
             }
         });
         HttpHeaders headers = auth(userToken);
@@ -81,8 +86,25 @@ class SupplierQrCodeHttpIT extends AbstractOrderPipelineIT {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         SupplierDetailResponse updated = response.getBody().data();
         assertThat(updated.qrCodeUploaded()).isTrue();
-        assertThat(updated.qrCodeFileName()).isEqualTo("qr.jpg");
+        assertThat(updated.qrCodeFileName()).isEqualTo("qr.png");
         assertThat(updated.readyForPayment()).isTrue();
+    }
+
+    /**
+     * Regression cible : {@code FileValidator} verifie seulement le TYPE de fichier (signature
+     * binaire) -- avant {@code QrCodeValidator}, n'importe quelle photo passait pour un "code QR"
+     * (retour client : "au niveau du qrcode qu'on upload, on doit verifier qu'il est valide").
+     */
+    @Test
+    void uploadQrCode_withAValidImageThatIsNotAQrCode_isRejected() {
+        User userEntity = createUser(RoleCode.USER);
+        String user = tokenFor(userEntity);
+        SupplierDetailResponse supplier = createAlipaySupplier(userEntity.getId());
+
+        ResponseEntity<ApiResponse<SupplierDetailResponse>> response =
+                uploadFileRaw(user, supplier.id(), REAL_NON_QR_IMAGE_PNG, "not-a-qr.png");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -119,8 +141,8 @@ class SupplierQrCodeHttpIT extends AbstractOrderPipelineIT {
                 new HttpEntity<>(auth(user)), byte[].class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.IMAGE_JPEG);
-        assertThat(response.getBody()).isEqualTo(FAKE_JPEG);
+        assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.IMAGE_PNG);
+        assertThat(response.getBody()).isEqualTo(REAL_QR_CODE_PNG);
     }
 
     @Test

@@ -55,6 +55,9 @@ class SupplierServiceLoggingTest {
     @Mock
     private SettingsService settingsService;
 
+    @Mock
+    private QrCodeValidator qrCodeValidator;
+
     private SupplierService service;
     private ListAppender<ILoggingEvent> appender;
     private Logger logbackLogger;
@@ -62,7 +65,7 @@ class SupplierServiceLoggingTest {
     @BeforeEach
     void setUp() {
         service = new SupplierService(supplierRepository, new OwnershipService(), auditService,
-                fileStorageService, fileValidator, settingsService);
+                fileStorageService, fileValidator, qrCodeValidator, settingsService);
 
         logbackLogger = (Logger) LoggerFactory.getLogger(SupplierService.class);
         appender = new ListAppender<>();

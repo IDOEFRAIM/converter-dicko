@@ -11,6 +11,7 @@ import { AdminSettlementService } from '../../../core/services/admin-settlement.
 import { NotificationService } from '../../../core/services/notification.service';
 import { extractErrorMessage } from '../../../core/services/api-error.util';
 import { openPendingTab, resolveBlobTab } from '../../../core/services/file-download.util';
+import { IdempotencyAttempt } from '../../../core/services/idempotency.util';
 import { Settlement } from '../../../core/models/settlement.model';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { MoneyPipe } from '../../../shared/pipes/money.pipe';
@@ -43,6 +44,7 @@ export class AdminSettlementDetailPage implements OnInit {
   readonly loading = signal(true);
   readonly uploading = signal(false);
   readonly executing = signal(false);
+  private readonly executeIdempotency = new IdempotencyAttempt();
 
   readonly executeForm = new FormGroup({
     settlementReference: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -115,19 +117,20 @@ export class AdminSettlementDetailPage implements OnInit {
     }
     this.executing.set(true);
     const value = this.executeForm.getRawValue();
+    const request = { settlementReference: value.settlementReference, notes: value.notes || null };
+    const idempotencyKey = this.executeIdempotency.keyFor(request);
 
-    this.adminSettlementService
-      .execute(settlement.id, { settlementReference: value.settlementReference, notes: value.notes || null })
-      .subscribe({
-        next: (response) => {
-          this.executing.set(false);
-          this.settlement.set(response.data);
-          this.notification.success('Reglement execute.');
-        },
-        error: (error) => {
-          this.executing.set(false);
-          this.notification.error(extractErrorMessage(error));
-        },
-      });
+    this.adminSettlementService.execute(settlement.id, request, idempotencyKey).subscribe({
+      next: (response) => {
+        this.executing.set(false);
+        this.executeIdempotency.complete();
+        this.settlement.set(response.data);
+        this.notification.success('Reglement execute.');
+      },
+      error: (error) => {
+        this.executing.set(false);
+        this.notification.error(extractErrorMessage(error));
+      },
+    });
   }
 }
