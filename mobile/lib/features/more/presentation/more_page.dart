@@ -17,6 +17,16 @@ import '../../auth/data/auth_repository.dart';
 /// ne le permettait pas. Chaque tuile porte l'icone coloree de sa famille,
 /// meme grammaire que [QuickActionsRow] (accueil) et les cartes de detail
 /// de transfert.
+///
+/// Reorganisation retour client sept. 2026 : la messagerie/reclamation et
+/// les notifications etaient noyees en bas d'une liste de tuiles identiques
+/// -- "on voit pas du premier coup". La messagerie a sa propre bannniere en
+/// tete de page (meme grammaire que [_KycBanner] sur l'accueil) et les
+/// notifications passent d'une tuile enfouie a une cloche dans l'AppBar,
+/// visible immediatement. Taux preferentiel et Espace professionnel sont
+/// retires de cette page (peu utilises, encombraient la vue) -- routes et
+/// pages conservees pour reactivation future, meme convention que
+/// Portefeuille sur l'accueil.
 class MorePage extends StatelessWidget {
   const MorePage({super.key});
 
@@ -24,10 +34,18 @@ class MorePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final authSession = context.watch<AuthSession>();
     final user = authSession.currentUser;
-    final profile = authSession.experienceProfile;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Plus')),
+      appBar: AppBar(
+        title: const Text('Plus'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            tooltip: 'Notifications',
+            onPressed: () => context.push('/more/notifications'),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
@@ -56,26 +74,22 @@ class MorePage extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xl),
           ],
+          _SupportBanner(onTap: () => context.push('/more/support')),
+          const SizedBox(height: AppSpacing.xl),
           _MoreSection(
             title: 'TAUX',
             tiles: [
               _MoreTile(
                 icon: Icons.show_chart,
-                color: ExperiencePalette.accentFor(profile, AccentRole.rate).color,
+                color: ExperiencePalette.accentFor(authSession.experienceProfile, AccentRole.rate).color,
                 label: 'Historique',
                 onTap: () => context.push('/more/rates'),
               ),
               _MoreTile(
                 icon: Icons.notifications_active_outlined,
-                color: ExperiencePalette.accentFor(profile, AccentRole.rate).color,
+                color: ExperiencePalette.accentFor(authSession.experienceProfile, AccentRole.rate).color,
                 label: 'Alertes',
                 onTap: () => context.push('/more/rate-alerts'),
-              ),
-              _MoreTile(
-                icon: Icons.trending_up,
-                color: ExperiencePalette.accentFor(profile, AccentRole.rate).color,
-                label: 'Taux preferentiel',
-                onTap: () => context.push('/more/preferred-rate'),
               ),
             ],
           ),
@@ -90,24 +104,6 @@ class MorePage extends StatelessWidget {
                 color: AppColors.ochre,
                 label: "Verification d'identite",
                 onTap: () => context.push('/more/kyc'),
-              ),
-              _MoreTile(
-                icon: Icons.notifications_outlined,
-                color: Theme.of(context).colorScheme.primary,
-                label: 'Notifications',
-                onTap: () => context.push('/more/notifications'),
-              ),
-              _MoreTile(
-                icon: Icons.business_center_outlined,
-                color: ExperiencePalette.accentFor(profile, AccentRole.group).color,
-                label: 'Espace professionnel',
-                onTap: () => context.push('/more/business'),
-              ),
-              _MoreTile(
-                icon: Icons.forum_outlined,
-                color: Theme.of(context).colorScheme.primary,
-                label: 'Messagerie / Reclamation',
-                onTap: () => context.push('/more/support'),
               ),
             ],
           ),
@@ -126,6 +122,51 @@ class MorePage extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Bannniere en tete de page (retour client : la messagerie/reclamation
+/// doit se voir "du premier coup") -- meme grammaire que [_KycBanner] sur
+/// l'accueil, plus visible qu'une tuile parmi d'autres.
+class _SupportBanner extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _SupportBanner({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: AppSurfaces.paper(),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: primary.withValues(alpha: 0.14), shape: BoxShape.circle),
+              child: Icon(Icons.forum_outlined, color: primary, size: 20),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Messagerie / Reclamation', style: AppTypography.bodyStrong),
+                  const SizedBox(height: 2),
+                  Text('Une question, un probleme ? Ecrivez-nous.', style: AppTypography.caption),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.inkFaint),
+          ],
+        ),
       ),
     );
   }
