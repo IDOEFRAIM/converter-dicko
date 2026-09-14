@@ -359,11 +359,23 @@ class _QrCodePicker extends StatelessWidget {
                                 children: [
                                   const Icon(Icons.check_circle, size: 16, color: AppColors.positive),
                                   const SizedBox(width: AppSpacing.xs),
-                                  Text('Nouveau code QR pret', style: AppTypography.bodyStrong),
+                                  Expanded(
+                                    child: Text(
+                                      'Nouveau code QR pret',
+                                      style: AppTypography.bodyStrong,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: 2),
-                              Text('Touchez pour changer', style: AppTypography.caption),
+                              Text(
+                                'Touchez pour changer',
+                                style: AppTypography.caption,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ],
                           ),
                         ),

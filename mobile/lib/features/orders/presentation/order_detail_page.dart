@@ -147,11 +147,11 @@ class _OrderDetailView extends StatelessWidget {
                   ],
                   if (order.status == OrderStatus.awaitingPayment) _buildAwaitingPaymentActions(context, controller),
                   if (order.status == OrderStatus.rejected) _buildRejectedActions(context, controller),
-                  if (order.status == OrderStatus.completed) ...[
-                    _buildReceiptPanel(context, controller, profile),
-                    const SizedBox(height: AppSpacing.lg),
-                    _buildMemoryPanel(context, controller, order, profile),
-                  ],
+                  // "Livre memoire" (selfie souvenir) retire de l'ecran (retour client :
+                  // "ce n'est pas une fonctionnalite utile pour le moment, on va voir ca
+                  // apres") -- _buildMemoryPanel/captureSelfie/MemoryBookStore conserves
+                  // pour reactivation future, meme convention que Portefeuille (accueil).
+                  if (order.status == OrderStatus.completed) _buildReceiptPanel(context, controller, profile),
                   const SizedBox(height: AppSpacing.md),
                   _buildTrackingLink(context, order),
                   const SizedBox(height: AppSpacing.lg),
@@ -334,6 +334,11 @@ class _OrderDetailView extends StatelessWidget {
 
   /// Livre memoire (remarque produit #5) : un selfie souvenir apres un
   /// transfert termine, stocke **uniquement sur cet appareil**.
+  ///
+  /// Temporairement retire de l'ecran (retour client sept. 2026 : "ce n'est
+  /// pas une fonctionnalite utile pour le moment") -- plus aucun appelant,
+  /// conserve tel quel pour reactivation rapide.
+  // ignore: unused_element
   Widget _buildMemoryPanel(
     BuildContext context,
     OrderDetailController controller,

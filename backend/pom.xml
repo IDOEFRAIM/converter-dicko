@@ -32,6 +32,13 @@
              televersee contient effectivement un code QR lisible, pas seulement une image
              valide) : ZXing est la reference du domaine, pas de reimplementation maison. -->
         <zxing.version>3.5.3</zxing.version>
+        <!-- ImageIO n'a AUCUN lecteur WebP integre au JDK : un QR code en WebP (screenshot
+             Android par defaut sur de nombreux appareils, WhatsApp, etc.) fait echouer
+             ImageIO.read (retourne null) et etait donc a tort rejete comme "QR illisible".
+             TwelveMonkeys est pur Java (pas de lib native, contrairement a
+             org.sejda.imageio:webp-imageio, abandonne depuis 2020) et s'enregistre tout
+             seul via le SPI ImageIO des sa presence sur le classpath. -->
+        <twelvemonkeys.version>3.15.0</twelvemonkeys.version>
         <!-- Verification officielle des jetons d'identite Google (connexion mobile) :
              GoogleIdTokenVerifier gere lui-meme la recuperation/rotation des cles
              publiques (JWKS) et les verifications iss/aud/exp ; reimplementer cela a
@@ -151,6 +158,11 @@
             <groupId>com.google.zxing</groupId>
             <artifactId>javase</artifactId>
             <version>${zxing.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-webp</artifactId>
+            <version>${twelvemonkeys.version}</version>
         </dependency>
 
         <!-- ====================== Supervision ========================== -->

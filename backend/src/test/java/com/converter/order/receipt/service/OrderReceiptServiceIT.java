@@ -13,8 +13,10 @@ import com.converter.supplier.dto.SupplierDetailResponse;
 import com.converter.supplier.dto.UpdateSupplierRequest;
 import com.converter.supplier.domain.Purpose;
 import com.converter.support.AbstractOrderPipelineIT;
+import com.converter.supplier.service.SupplierService;
 import com.converter.treasury.domain.Currency;
 import com.converter.user.domain.RoleCode;
+import com.converter.user.domain.User;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
@@ -39,6 +41,9 @@ class OrderReceiptServiceIT extends AbstractOrderPipelineIT {
 
     @Autowired
     private OrderReceiptService orderReceiptService;
+
+    @Autowired
+    private SupplierService supplierService;
 
     private String extractText(byte[] pdf) throws IOException {
         try (PDDocument document = Loader.loadPDF(pdf)) {
@@ -182,6 +187,42 @@ class OrderReceiptServiceIT extends AbstractOrderPipelineIT {
 
         assertThat(text).contains("REMBOURSEMENT");
         assertThat(text).contains("Rejete");
+    }
+
+    /**
+     * Regression reelle (retour client, ordres deployes en production) : un beneficiaire
+     * ALIPAY/WECHAT_PAY identifie par un code QR (V36/V38) n'a pas d'identifiant texte --
+     * {@code Beneficiary#identifier} est {@code null}, exactement le cas des 3 ordres reels
+     * bloques par le bug de reglement corrige plus haut dans cette meme session, qui viennent
+     * eux-memes d'etre completes. Le justificatif doit se generer normalement (voir
+     * OrderReceiptService#mask, deja null-safe) pour ce chemin, le seul reel en production pour
+     * Alipay/WeChat -- jamais lever d'exception ni bloquer le telechargement.
+     */
+    @Test
+    void receipt_forSupplierBeneficiaryIdentifiedByQrCodeWithoutTextIdentifier_neverThrows() throws IOException {
+        resetMarginToZero();
+        String admin = adminToken();
+        publishRate(admin, "84.200000");
+        depositCny(admin, "1000000");
+        User userEntity = createUser(RoleCode.USER);
+        String user = tokenFor(userEntity);
+
+        CreateSupplierRequest request = new CreateSupplierRequest(BeneficiaryType.ALIPAY, "QR Only Supplier",
+                null, null, null, "China", "Shenzhen", null, null, null, null, null, null, null,
+                Currency.CNY, Purpose.IMPORT_GOODS, null);
+        SupplierDetailResponse supplier = supplierService.create(request, userEntity.getId());
+        supplierService.attachQrCode(supplier.id(), "qr.png", "image/png", REAL_QR_CODE_PNG, userEntity.getId());
+
+        QuoteResponse quote = createAcceptedQuote(user, "500000");
+        OrderDetailResponse order = createOrderWithSupplierRaw(user, quote.id(), supplier.id()).getBody().data();
+        assertThat(order.beneficiary().identifier()).isNull();
+        UUID orderId = completeOrder(admin, user, order.id(), order.amountXof().toPlainString(),
+                "MM-QR-RECEIPT-001", "CNY-QR-RECEIPT-001");
+
+        ReceiptDocument document = orderReceiptService.generate(orderId, extractUserId(user));
+        String text = extractText(document.content());
+
+        assertThat(text).contains("QR Only Supplier");
     }
 
     // ---- Utilitaires locaux ----

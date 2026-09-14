@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.util.Base64;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -41,6 +42,29 @@ class QrCodeValidatorTest {
     @Test
     void validate_withARealQrCode_neverThrows() throws Exception {
         assertThatCode(() -> validator.validate(realQrCodePng())).doesNotThrowAnyException();
+    }
+
+    /**
+     * Bug reel (retour client) : de nombreux telephones Android enregistrent captures d'ecran
+     * et images de galerie en WebP par defaut -- un format qu'ImageIO ne sait PAS decoder de
+     * base (JDK sans plugin). {@code ImageIO.read} retournait alors {@code null} sur un code QR
+     * pourtant parfaitement valide, rejete a tort comme "illisible". Fixe par l'ajout du plugin
+     * TwelveMonkeys (voir pom.xml) qui s'enregistre lui-meme via le SPI ImageIO.
+     *
+     * <p>Octets reels (pas une simple signature) : QR "https://example.com/pay" encode en WebP
+     * sans perte via Pillow, pour verifier un vrai decodage de bout en bout, pas seulement la
+     * reconnaissance du format.
+     */
+    @Test
+    void validate_withARealQrCodeInWebpFormat_neverThrows() {
+        byte[] webp = Base64.getDecoder().decode(
+                "UklGRlIBAABXRUJQVlA4TEYBAAAvx8AxAA8w//M///MfeJDcSJIcSU7UI58UITVpKkagCFCxKk1ShHzOQTBm9r5yr1dE"
+                + "/ydA/0kbMOSXpji0AFmKpKnQeitOTanX4uQ0ndqeJE1jr0fRueVXZaazIElTTi5Eyyn1WoBhvuc033MBSvmk6dT2"
+                + "FKe+/pdn7IB6bk/RGfKrFHFIisZt0XMqetZCLjg55ZcWnFIsWm5P7PDEzm06VYmkdcgPTYvGULQsJRqPJz7yax2K"
+                + "Xoo5DHGt90cPopXzgEPbE/B4ilOlRAN8TwkYipaVyA9tT9G4TZ0h9lLMyQW1nAqtw9RKETu3qQPsuRGnKjEnFzi0"
+                + "EA3Q52v4pPmhKUiZk5UYMIxrvU0tp0WrRdK0OLURPWXRa3FymnpK0QEVpGjcFp3bnHrMySn13Ihei6Rp6gxBTulU"
+                + "KcAwnZqKlhtqWcl/3A==");
+        assertThatCode(() -> validator.validate(webp)).doesNotThrowAnyException();
     }
 
     @Test

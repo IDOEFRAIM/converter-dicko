@@ -23,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import java.util.Base64;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -105,6 +106,35 @@ class SupplierQrCodeHttpIT extends AbstractOrderPipelineIT {
                 uploadFileRaw(user, supplier.id(), REAL_NON_QR_IMAGE_PNG, "not-a-qr.png");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Regression cible (retour client, capture d'ecran a l'appui) : de nombreux telephones
+     * Android enregistrent les captures d'ecran/images de galerie en WebP par defaut -- un vrai
+     * code QR dans ce format etait rejete a tort ("Ce fichier ne contient pas de code QR
+     * lisible.") car {@code ImageIO} n'a aucun lecteur WebP integre au JDK (voir QrCodeValidator,
+     * pom.xml). Bout en bout HTTP, pas seulement {@code QrCodeValidatorTest} (unitaire) : verifie
+     * aussi que {@code FileValidator} (deja au courant du type WebP) laisse bien passer le fichier
+     * jusqu'a QrCodeValidator.
+     */
+    @Test
+    void uploadQrCode_withARealQrCodeInWebpFormat_succeeds() {
+        User userEntity = createUser(RoleCode.USER);
+        String user = tokenFor(userEntity);
+        SupplierDetailResponse supplier = createAlipaySupplier(userEntity.getId());
+        byte[] webpQr = Base64.getDecoder().decode(
+                "UklGRlIBAABXRUJQVlA4TEYBAAAvx8AxAA8w//M///MfeJDcSJIcSU7UI58UITVpKkagCFCxKk1ShHzOQTBm9r5yr1dE"
+                + "/ydA/0kbMOSXpji0AFmKpKnQeitOTanX4uQ0ndqeJE1jr0fRueVXZaazIElTTi5Eyyn1WoBhvuc033MBSvmk6dT2"
+                + "FKe+/pdn7IB6bk/RGfKrFHFIisZt0XMqetZCLjg55ZcWnFIsWm5P7PDEzm06VYmkdcgPTYvGULQsJRqPJz7yax2K"
+                + "Xoo5DHGt90cPopXzgEPbE/B4ilOlRAN8TwkYipaVyA9tT9G4TZ0h9lLMyQW1nAqtw9RKETu3qQPsuRGnKjEnFzi0"
+                + "EA3Q52v4pPmhKUiZk5UYMIxrvU0tp0WrRdK0OLURPWXRa3FymnpK0QEVpGjcFp3bnHrMySn13Ihei6Rp6gxBTulU"
+                + "KcAwnZqKlhtqWcl/3A==");
+
+        ResponseEntity<ApiResponse<SupplierDetailResponse>> response =
+                uploadFileRaw(user, supplier.id(), webpQr, "qr.webp");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().data().readyForPayment()).isTrue();
     }
 
     @Test
