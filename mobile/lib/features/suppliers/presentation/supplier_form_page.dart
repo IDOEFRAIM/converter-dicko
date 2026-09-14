@@ -355,10 +355,10 @@ class _QrCodePicker extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Row(
+                              Row(
                                 children: [
-                                  Icon(Icons.check_circle, size: 16, color: AppColors.positive),
-                                  SizedBox(width: AppSpacing.xs),
+                                  const Icon(Icons.check_circle, size: 16, color: AppColors.positive),
+                                  const SizedBox(width: AppSpacing.xs),
                                   Text('Nouveau code QR pret', style: AppTypography.bodyStrong),
                                 ],
                               ),
