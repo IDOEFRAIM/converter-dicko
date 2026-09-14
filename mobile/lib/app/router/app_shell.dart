@@ -3,8 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/achievements/presentation/badge_unlock_overlay.dart';
 
-/// Coquille de navigation persistante — 5 destinations principales +
-/// "Plus" pour les fonctionnalites secondaires (mission section 19).
+/// Coquille de navigation persistante — 5 onglets fonctionnels + "Plus" pour
+/// les fonctionnalites secondaires (mission section 19).
 /// Chaque branche garde sa propre pile de navigation (`StatefulShellRoute`),
 /// donc revenir sur un onglet retrouve son etat de defilement/formulaire.
 ///
@@ -31,6 +31,13 @@ class AppShell extends StatelessWidget {
           // navigue dans cet onglet).
           initialLocation: index == navigationShell.currentIndex,
         ),
+        // onlyShowSelected (retour client : "le navbar n'est pas responsif") :
+        // avec le libelle TOUJOURS visible sous chaque icone (comportement par
+        // defaut), 6 destinations -- dont "Fournisseurs" -- se compriment ou
+        // debordent sur un ecran de telephone etroit. Seul l'onglet actif
+        // garde son libelle ; les autres restent identifiables a leur icone
+        // seule, comme la plupart des apps a 5-6 onglets sur mobile.
+        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Accueil'),
           NavigationDestination(icon: Icon(Icons.send_outlined), selectedIcon: Icon(Icons.send), label: 'Payer'),

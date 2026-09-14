@@ -9,6 +9,7 @@ import '../../../core/theme/app_surfaces.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/experience_theme.dart';
 import '../../../shared/widgets/icon_badge.dart';
+import '../../../shared/widgets/notification_bell_button.dart';
 import '../../auth/data/auth_repository.dart';
 
 /// Menu "Plus" : fonctionnalites secondaires, regroupees par theme (retour
@@ -25,12 +26,13 @@ import '../../auth/data/auth_repository.dart';
 /// niveau plus haut : l'utilisateur devait deja savoir qu'il fallait ouvrir
 /// "Plus" pour les trouver. La messagerie est donc passee a un onglet de
 /// premier niveau (voir [AppShell]) -- plus de bannniere ici, un seul
-/// endroit ou la chercher. Les notifications restent une cloche dans
-/// l'AppBar (visible immediatement, mais rattachee a "Plus" car secondaire
-/// au quotidien). Taux preferentiel et Espace professionnel sont retires de
-/// cette page (peu utilises, encombraient la vue) -- routes et pages
-/// conservees pour reactivation future, meme convention que Portefeuille
-/// sur l'accueil.
+/// endroit ou la chercher. La cloche [NotificationBellButton] a eu le meme
+/// probleme (retour client : "le bouton doit etre sur toutes les pages, pas
+/// seulement sur Plus") -- elle est donc posee dans l'AppBar de CHAQUE onglet
+/// racine, celle-ci n'etant qu'un des six. Taux preferentiel et Espace
+/// professionnel sont retires de cette page (peu utilises, encombraient la
+/// vue) -- routes et pages conservees pour reactivation future, meme
+/// convention que Portefeuille sur l'accueil.
 class MorePage extends StatelessWidget {
   const MorePage({super.key});
 
@@ -40,16 +42,7 @@ class MorePage extends StatelessWidget {
     final user = authSession.currentUser;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Plus'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            tooltip: 'Notifications',
-            onPressed: () => context.push('/more/notifications'),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Plus'), actions: const [NotificationBellButton()]),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [

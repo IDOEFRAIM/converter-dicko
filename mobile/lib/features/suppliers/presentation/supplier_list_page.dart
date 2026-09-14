@@ -8,6 +8,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_view.dart';
+import '../../../shared/widgets/notification_bell_button.dart';
 import '../application/supplier_list_controller.dart';
 import '../data/supplier_api.dart';
 import '../models/supplier_models.dart';
@@ -53,6 +54,7 @@ class _SupplierListView extends StatelessWidget {
             icon: const Icon(Icons.add),
             tooltip: 'Ajouter un fournisseur',
           ),
+          const NotificationBellButton(),
         ],
       ),
       body: SafeArea(

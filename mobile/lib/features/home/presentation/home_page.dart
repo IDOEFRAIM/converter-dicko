@@ -17,6 +17,7 @@ import '../../../shared/widgets/count_up_text.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_view.dart';
+import '../../../shared/widgets/notification_bell_button.dart';
 import '../../../shared/widgets/pressable.dart';
 import '../../../shared/widgets/quick_actions_row.dart';
 import '../../../shared/widgets/rank_seal.dart';
@@ -64,13 +65,23 @@ class _HomePageState extends State<HomePage> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.xxxl),
             children: [
-              Text(
-                // profile reste PRO tant que user est null (voir AuthSession.experienceProfile),
-                // donc le fallback "Bonjour" plus bas ne correspond jamais a un habillage etudiant.
-                user == null
-                    ? 'Bonjour ${ExperienceCopy.greetingEmoji(profile)}'
-                    : '${ExperienceCopy.greeting(profile, user.firstName)} ${ExperienceCopy.greetingEmoji(profile)}',
-                style: AppTypography.titleLarge(Theme.of(context).colorScheme.primary),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      // profile reste PRO tant que user est null (voir AuthSession.experienceProfile),
+                      // donc le fallback "Bonjour" plus bas ne correspond jamais a un habillage etudiant.
+                      user == null
+                          ? 'Bonjour ${ExperienceCopy.greetingEmoji(profile)}'
+                          : '${ExperienceCopy.greeting(profile, user.firstName)} ${ExperienceCopy.greetingEmoji(profile)}',
+                      style: AppTypography.titleLarge(Theme.of(context).colorScheme.primary),
+                    ),
+                  ),
+                  // Home n'a pas d'AppBar (hero direct) -- la cloche vit donc ici,
+                  // au meme niveau que sur les autres onglets (retour client : "le
+                  // bouton doit etre sur toutes les pages, pas seulement sur Plus").
+                  const NotificationBellButton(),
+                ],
               ),
               const SizedBox(height: AppSpacing.lg),
               if (user != null && !user.kycVerified) ...[

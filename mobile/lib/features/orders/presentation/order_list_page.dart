@@ -10,6 +10,7 @@ import '../../../shared/utils/date_formatting.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_view.dart';
+import '../../../shared/widgets/notification_bell_button.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../application/order_list_controller.dart';
 import '../data/order_api.dart';
@@ -35,7 +36,7 @@ class _OrderListView extends StatelessWidget {
     final controller = context.watch<OrderListController>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Activite')),
+      appBar: AppBar(title: const Text('Activite'), actions: const [NotificationBellButton()]),
       body: SafeArea(
         child: Builder(
           builder: (context) {

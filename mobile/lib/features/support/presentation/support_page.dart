@@ -6,6 +6,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_view.dart';
+import '../../../shared/widgets/notification_bell_button.dart';
 import '../application/support_controller.dart';
 import '../data/support_api.dart';
 import '../models/support_models.dart';
@@ -70,7 +71,7 @@ class _SupportViewState extends State<_SupportView> {
     _scrollToBottomIfGrew(controller.messages.length);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Messagerie')),
+      appBar: AppBar(title: const Text('Messagerie'), actions: const [NotificationBellButton()]),
       body: SafeArea(
         child: Builder(
           builder: (context) {

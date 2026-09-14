@@ -13,6 +13,7 @@ import '../../../shared/utils/date_formatting.dart';
 import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/corridor.dart';
 import '../../../shared/widgets/icon_badge.dart';
+import '../../../shared/widgets/notification_bell_button.dart';
 import '../../../shared/widgets/primary_action.dart';
 import '../../../shared/widgets/transfer_ticket.dart';
 import '../../orders/presentation/order_create_page.dart';
@@ -96,6 +97,7 @@ class _QuoteCreateViewState extends State<_QuoteCreateView> {
               icon: const Icon(Icons.groups_outlined),
               tooltip: 'Mes Ruees',
             ),
+          const NotificationBellButton(),
         ],
       ),
       body: SafeArea(
