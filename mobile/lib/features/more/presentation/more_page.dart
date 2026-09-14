@@ -20,13 +20,17 @@ import '../../auth/data/auth_repository.dart';
 ///
 /// Reorganisation retour client sept. 2026 : la messagerie/reclamation et
 /// les notifications etaient noyees en bas d'une liste de tuiles identiques
-/// -- "on voit pas du premier coup". La messagerie a sa propre bannniere en
-/// tete de page (meme grammaire que [_KycBanner] sur l'accueil) et les
-/// notifications passent d'une tuile enfouie a une cloche dans l'AppBar,
-/// visible immediatement. Taux preferentiel et Espace professionnel sont
-/// retires de cette page (peu utilises, encombraient la vue) -- routes et
-/// pages conservees pour reactivation future, meme convention que
-/// Portefeuille sur l'accueil.
+/// -- "on voit pas du premier coup". Un premier essai leur donnait une
+/// bannniere/une cloche sur CETTE page, mais le vrai probleme etait un
+/// niveau plus haut : l'utilisateur devait deja savoir qu'il fallait ouvrir
+/// "Plus" pour les trouver. La messagerie est donc passee a un onglet de
+/// premier niveau (voir [AppShell]) -- plus de bannniere ici, un seul
+/// endroit ou la chercher. Les notifications restent une cloche dans
+/// l'AppBar (visible immediatement, mais rattachee a "Plus" car secondaire
+/// au quotidien). Taux preferentiel et Espace professionnel sont retires de
+/// cette page (peu utilises, encombraient la vue) -- routes et pages
+/// conservees pour reactivation future, meme convention que Portefeuille
+/// sur l'accueil.
 class MorePage extends StatelessWidget {
   const MorePage({super.key});
 
@@ -74,8 +78,6 @@ class MorePage extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xl),
           ],
-          _SupportBanner(onTap: () => context.push('/more/support')),
-          const SizedBox(height: AppSpacing.xl),
           _MoreSection(
             title: 'TAUX',
             tiles: [
@@ -112,61 +114,24 @@ class MorePage extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             child: Container(
               decoration: AppSurfaces.paper(raised: false),
-              child: _MoreTile(
-                icon: Icons.logout,
-                color: AppColors.negative,
-                label: 'Se deconnecter',
-                showChevron: false,
-                onTap: () => context.read<AuthRepository>().logout(),
+              // Material transparent : le ListTile peint son splash/highlight
+              // sur le Material le plus proche -- sans lui, le fond colore de
+              // ce Container (peint APRES par son propre DecoratedBox) le
+              // cacherait entierement (avertissement Flutter "ListTile
+              // background color or ink splashes may be invisible").
+              child: Material(
+                type: MaterialType.transparency,
+                child: _MoreTile(
+                  icon: Icons.logout,
+                  color: AppColors.negative,
+                  label: 'Se deconnecter',
+                  showChevron: false,
+                  onTap: () => context.read<AuthRepository>().logout(),
+                ),
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Bannniere en tete de page (retour client : la messagerie/reclamation
-/// doit se voir "du premier coup") -- meme grammaire que [_KycBanner] sur
-/// l'accueil, plus visible qu'une tuile parmi d'autres.
-class _SupportBanner extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _SupportBanner({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: AppSurfaces.paper(),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(color: primary.withValues(alpha: 0.14), shape: BoxShape.circle),
-              child: Icon(Icons.forum_outlined, color: primary, size: 20),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Messagerie / Reclamation', style: AppTypography.bodyStrong),
-                  const SizedBox(height: 2),
-                  Text('Une question, un probleme ? Ecrivez-nous.', style: AppTypography.caption),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: AppColors.inkFaint),
-          ],
-        ),
       ),
     );
   }
@@ -189,13 +154,19 @@ class _MoreSection extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           child: Container(
             decoration: AppSurfaces.paper(raised: false),
-            child: Column(
-              children: [
-                for (var i = 0; i < tiles.length; i++) ...[
-                  tiles[i],
-                  if (i < tiles.length - 1) const Divider(height: 1, indent: AppSpacing.lg + 40 + AppSpacing.md),
+            // Voir la meme note dans MorePage.build() (bouton deconnexion) :
+            // sans ce Material transparent, le splash des ListTile serait
+            // cache par le fond colore de ce Container.
+            child: Material(
+              type: MaterialType.transparency,
+              child: Column(
+                children: [
+                  for (var i = 0; i < tiles.length; i++) ...[
+                    tiles[i],
+                    if (i < tiles.length - 1) const Divider(height: 1, indent: AppSpacing.lg + 40 + AppSpacing.md),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

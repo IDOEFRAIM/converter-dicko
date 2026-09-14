@@ -3,10 +3,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/achievements/presentation/badge_unlock_overlay.dart';
 
-/// Coquille de navigation persistante — 4 destinations principales +
+/// Coquille de navigation persistante — 5 destinations principales +
 /// "Plus" pour les fonctionnalites secondaires (mission section 19).
 /// Chaque branche garde sa propre pile de navigation (`StatefulShellRoute`),
 /// donc revenir sur un onglet retrouve son etat de defilement/formulaire.
+///
+/// "Messagerie" est un onglet de premier niveau, pas une entree dans "Plus"
+/// (retour client sept. 2026 : la reclamation doit se voir "du premier
+/// coup", sans que l'utilisateur ait a deviner ou elle se trouve).
 class AppShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
@@ -39,6 +43,11 @@ class AppShell extends StatelessWidget {
             icon: Icon(Icons.receipt_long_outlined),
             selectedIcon: Icon(Icons.receipt_long),
             label: 'Activite',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.forum_outlined),
+            selectedIcon: Icon(Icons.forum),
+            label: 'Messages',
           ),
           NavigationDestination(icon: Icon(Icons.more_horiz), selectedIcon: Icon(Icons.more_horiz), label: 'Plus'),
         ],

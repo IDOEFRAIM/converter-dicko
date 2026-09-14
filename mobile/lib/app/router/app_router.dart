@@ -190,6 +190,15 @@ GoRouter buildAppRouter(AuthSession authSession) {
               ),
             ],
           ),
+          // Onglet dedie (retour client : la messagerie/reclamation ne doit
+          // pas se meriter en fouillant dans "Plus" -- un onglet de premier
+          // niveau est le seul endroit ou un utilisateur est garanti de la
+          // voir sans avoir a se demander ou elle se trouve).
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: '/support', builder: (context, state) => const SupportPage()),
+            ],
+          ),
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -202,7 +211,6 @@ GoRouter buildAppRouter(AuthSession authSession) {
                   GoRoute(path: 'wallet', builder: (context, state) => const WalletPage()),
                   GoRoute(path: 'notifications', builder: (context, state) => const NotificationsPage()),
                   GoRoute(path: 'business', builder: (context, state) => const BusinessPage()),
-                  GoRoute(path: 'support', builder: (context, state) => const SupportPage()),
                   GoRoute(path: 'kyc', builder: (context, state) => const KycPage()),
                 ],
               ),
