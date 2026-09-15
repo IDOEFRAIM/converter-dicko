@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { AdminOrderService } from '../../../core/services/admin-order.service';
 import { AdminSettlementService } from '../../../core/services/admin-settlement.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { extractErrorMessage } from '../../../core/services/api-error.util';
@@ -38,6 +39,7 @@ import { MoneyPipe } from '../../../shared/pipes/money.pipe';
 export class AdminSettlementDetailPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly adminSettlementService = inject(AdminSettlementService);
+  private readonly adminOrderService = inject(AdminOrderService);
   private readonly notification = inject(NotificationService);
 
   readonly settlement = signal<Settlement | null>(null);
@@ -101,6 +103,26 @@ export class AdminSettlementDetailPage implements OnInit {
     }
     const tab = openPendingTab();
     this.adminSettlementService.downloadProof(settlement.id, proof.id).subscribe({
+      next: (blob) => resolveBlobTab(tab, blob),
+      error: (error) => {
+        tab?.close();
+        this.notification.error(extractErrorMessage(error));
+      },
+    });
+  }
+
+  /**
+   * Retour client : "cote admin, on doit pouvoir voir les fournisseurs de chaque user, c'est ca
+   * qui permet de pouvoir faire les transferts" -- sans ceci, aucun moyen de savoir ou envoyer
+   * les fonds pour un beneficiaire Alipay/WeChat (identifiant texte toujours vide pour ce type).
+   */
+  viewBeneficiaryQrCode(): void {
+    const settlement = this.settlement();
+    if (!settlement) {
+      return;
+    }
+    const tab = openPendingTab();
+    this.adminOrderService.beneficiaryQrCode(settlement.orderId).subscribe({
       next: (blob) => resolveBlobTab(tab, blob),
       error: (error) => {
         tab?.close();

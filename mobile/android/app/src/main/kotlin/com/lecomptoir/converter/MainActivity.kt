@@ -1,4 +1,4 @@
-package com.example.mobile
+package com.lecomptoir.converter
 
 import io.flutter.embedding.android.FlutterActivity
 

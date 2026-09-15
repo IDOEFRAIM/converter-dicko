@@ -27,11 +27,22 @@
     <dl class="detail-list">
       <div><dt>Type</dt><dd>{{ o.beneficiary.type }}</dd></div>
       <div><dt>Nom</dt><dd>{{ o.beneficiary.fullName }}</dd></div>
-      <div><dt>Identifiant</dt><dd>{{ o.beneficiary.identifier }}</dd></div>
+      @if (o.beneficiary.type !== 'ALIPAY' && o.beneficiary.type !== 'WECHAT_PAY') {
+        <div><dt>Identifiant</dt><dd>{{ o.beneficiary.identifier }}</dd></div>
+      }
       @if (o.beneficiary.bankName) {
         <div><dt>Banque</dt><dd>{{ o.beneficiary.bankName }}</dd></div>
       }
     </dl>
+    @if (o.beneficiary.type === 'ALIPAY' || o.beneficiary.type === 'WECHAT_PAY') {
+      <!-- Alipay/WeChat s'identifie par un code QR, jamais par un texte -- identifier est
+           toujours vide pour ce type (voir V38). Retour client : "cote admin, on doit pouvoir
+           voir les fournisseurs de chaque user, c'est ca qui permet de faire les transferts". -->
+      <button mat-stroked-button (click)="viewBeneficiaryQrCode()">
+        <mat-icon>qr_code_2</mat-icon>
+        Voir le code QR du beneficiaire
+      </button>
+    }
   </mat-card>
 
   <mat-card class="page-card">

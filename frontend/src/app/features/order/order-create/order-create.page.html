@@ -37,14 +37,17 @@
       </mat-form-field>
       <a routerLink="/suppliers/new" class="form-footer">+ Enregistrer un nouveau fournisseur</a>
     } @else {
-      <mat-form-field appearance="outline" class="form__field">
-        <mat-label>Type de beneficiaire</mat-label>
-        <mat-select formControlName="type">
-          @for (option of beneficiaryTypes; track option.value) {
-            <mat-option [value]="option.value">{{ option.label }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+      <!-- Alipay/WeChat Pay retires de la saisie manuelle (retour client : "pour alipay et
+           wechat on doit forcement avoir un qrcode") -- cette requete ne peut joindre aucune
+           image, donc aucun texte ne doit jamais tenir lieu de code QR. Seul le fournisseur
+           enregistre permet de televerser et valider le vrai code QR. -->
+      <p class="form-notice form-notice--warn">
+        <mat-icon aria-hidden="true">qr_code_2</mat-icon>
+        Un compte Alipay ou WeChat Pay s'identifie par son code QR, jamais par un texte.
+        Enregistrez ce beneficiaire comme fournisseur pour y joindre le vrai code QR — ce
+        formulaire ne concerne que les comptes bancaires chinois.
+        <a routerLink="/suppliers/new">Ajouter un fournisseur Alipay/WeChat</a>
+      </p>
 
       <mat-form-field appearance="outline" class="form__field">
         <mat-label>Nom complet du beneficiaire</mat-label>
@@ -57,28 +60,23 @@
       <mat-form-field appearance="outline" class="form__field">
         <mat-label>{{ identifierLabel }}</mat-label>
         <input matInput formControlName="identifier" autocomplete="off" />
-        @if (identifierHint) {
-          <mat-hint>{{ identifierHint }}</mat-hint>
-        }
         @if (form.controls.identifier.invalid && form.controls.identifier.touched) {
           <mat-error>L'identifiant du beneficiaire est obligatoire.</mat-error>
         }
       </mat-form-field>
 
-      @if (isBankAccount) {
-        <mat-form-field appearance="outline" class="form__field">
-          <mat-label>Nom de la banque</mat-label>
-          <input matInput formControlName="bankName" autocomplete="off" />
-          @if (form.controls.bankName.invalid && form.controls.bankName.touched) {
-            <mat-error>Obligatoire pour un compte bancaire.</mat-error>
-          }
-        </mat-form-field>
+      <mat-form-field appearance="outline" class="form__field">
+        <mat-label>Nom de la banque</mat-label>
+        <input matInput formControlName="bankName" autocomplete="off" />
+        @if (form.controls.bankName.invalid && form.controls.bankName.touched) {
+          <mat-error>Obligatoire pour un compte bancaire.</mat-error>
+        }
+      </mat-form-field>
 
-        <mat-form-field appearance="outline" class="form__field">
-          <mat-label>Agence (optionnel)</mat-label>
-          <input matInput formControlName="bankBranch" autocomplete="off" />
-        </mat-form-field>
-      }
+      <mat-form-field appearance="outline" class="form__field">
+        <mat-label>Agence (optionnel)</mat-label>
+        <input matInput formControlName="bankBranch" autocomplete="off" />
+      </mat-form-field>
     }
 
     <mat-form-field appearance="outline" class="form__field">

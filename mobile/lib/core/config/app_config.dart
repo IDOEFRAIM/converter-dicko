@@ -67,5 +67,11 @@ class AppConfig {
 
   bool get isProduction => environment == AppEnvironment.production;
 
-  bool get googleSignInAvailable => googleServerClientId.isNotEmpty;
+  /// Desactive volontairement (retour client sept. 2026 : les ANR observes
+  /// pendant les tests -- dus a la machine de dev sursollicitee, pas a la
+  /// config Google elle-meme -- ont pousse a retirer le bouton plutot que
+  /// continuer a s'en inquieter). `GoogleAuthClient`/`GOOGLE_SERVER_CLIENT_ID`
+  /// restent en place tels quels pour une reactivation en changeant
+  /// uniquement cette ligne, sans autre travail de configuration.
+  bool get googleSignInAvailable => false;
 }

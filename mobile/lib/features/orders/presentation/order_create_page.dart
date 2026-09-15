@@ -69,7 +69,10 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
   final _bankBranchController = TextEditingController();
   final _purposeDetailsController = TextEditingController();
 
-  BeneficiaryType _manualType = BeneficiaryType.alipay;
+  // La saisie manuelle ponctuelle ne peut jamais joindre de code QR (voir
+  // BeneficiaryType.manualEntryOptions) -- seul le compte bancaire chinois
+  // y a sa place, c'est donc l'unique valeur possible ici.
+  final BeneficiaryType _manualType = BeneficiaryType.chineseBankAccount;
   Purpose? _purpose;
 
   @override
@@ -263,14 +266,13 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
       autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         children: [
-          DropdownButtonFormField<BeneficiaryType>(
-            initialValue: _manualType,
-            decoration: const InputDecoration(labelText: 'Type de compte'),
-            items: BeneficiaryType.selectableOptions
-                .map((type) => DropdownMenuItem(value: type, child: Text(type.label)))
-                .toList(growable: false),
-            onChanged: (value) => setState(() => _manualType = value!),
-          ),
+          // Alipay/WeChat Pay retires de la saisie manuelle (retour client :
+          // "pour alipay et wechat on doit forcement avoir un qrcode") -- cette
+          // requete ne peut joindre aucune image, donc aucun texte ne doit
+          // jamais tenir lieu de code QR. Le seul chemin correct passe par un
+          // fournisseur enregistre (le vrai code QR y est televerse et
+          // valide -- voir SupplierFormPage).
+          _QrRequiredNotice(onAddSupplier: () => context.push('/suppliers/new')),
           const SizedBox(height: AppSpacing.md),
           TextFormField(
             controller: _fullNameController,
@@ -282,35 +284,70 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
           TextFormField(
             controller: _identifierController,
             maxLength: 120,
-            decoration: InputDecoration(
-              // Saisie manuelle ponctuelle (sans fournisseur enregistre) : jamais de
-              // televersement de code QR ici -- pour Alipay/WeChat Pay, enregistrer
-              // ce contact comme fournisseur permet d'y joindre le vrai code QR.
-              labelText: _manualType == BeneficiaryType.chineseBankAccount
-                  ? 'Numero de compte bancaire'
-                  : 'Identifiant ${_manualType.label}',
-              helperText: _manualType == BeneficiaryType.chineseBankAccount
-                  ? null
-                  : 'Alias, numero de telephone ou identifiant associe a ce compte.',
-            ),
+            decoration: const InputDecoration(labelText: 'Numero de compte bancaire'),
             validator: (v) => Validators.requiredMaxLength(v, 120, label: 'Ce champ'),
           ),
-          if (_manualType == BeneficiaryType.chineseBankAccount) ...[
-            const SizedBox(height: AppSpacing.md),
-            TextFormField(
-              controller: _bankNameController,
-              maxLength: 120,
-              decoration: const InputDecoration(labelText: 'Nom de la banque'),
-              validator: (v) => Validators.requiredMaxLength(v, 120, label: 'La banque'),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextFormField(
-              controller: _bankBranchController,
-              maxLength: 120,
-              decoration: const InputDecoration(labelText: 'Agence (optionnel)'),
-              validator: (v) => Validators.optionalMaxLength(v, 120, label: "L'agence"),
-            ),
-          ],
+          const SizedBox(height: AppSpacing.md),
+          TextFormField(
+            controller: _bankNameController,
+            maxLength: 120,
+            decoration: const InputDecoration(labelText: 'Nom de la banque'),
+            validator: (v) => Validators.requiredMaxLength(v, 120, label: 'La banque'),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          TextFormField(
+            controller: _bankBranchController,
+            maxLength: 120,
+            decoration: const InputDecoration(labelText: 'Agence (optionnel)'),
+            validator: (v) => Validators.optionalMaxLength(v, 120, label: "L'agence"),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Alipay/WeChat Pay retires de la saisie manuelle ponctuelle (voir
+/// `_buildManualForm`) : le vrai code QR n'a nulle part ou etre televerse
+/// dans cette requete. Oriente explicitement vers le fournisseur enregistre,
+/// seul chemin ou le QR est reellement demande et valide.
+class _QrRequiredNotice extends StatelessWidget {
+  final VoidCallback onAddSupplier;
+
+  const _QrRequiredNotice({required this.onAddSupplier});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.warningSurface,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.qr_code_2, size: 18, color: AppColors.warning),
+              const SizedBox(width: AppSpacing.xs),
+              Text('Alipay et WeChat Pay ?', style: AppTypography.bodyStrong.copyWith(color: AppColors.warning)),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Un compte Alipay ou WeChat Pay s\'identifie par son code QR, jamais par un texte. '
+            'Enregistrez ce beneficiaire comme fournisseur pour y joindre le vrai code QR '
+            '-- ce formulaire ne concerne que les comptes bancaires chinois.',
+            style: AppTypography.body.copyWith(color: AppColors.warning),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          OutlinedButton.icon(
+            onPressed: onAddSupplier,
+            icon: const Icon(Icons.qr_code_2, size: 18),
+            label: const Text('Ajouter un fournisseur Alipay/WeChat'),
+            style: OutlinedButton.styleFrom(foregroundColor: AppColors.warning),
+          ),
         ],
       ),
     );

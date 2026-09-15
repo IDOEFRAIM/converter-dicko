@@ -27,6 +27,8 @@ import com.converter.quote.repository.QuoteRepository;
 import com.converter.security.OwnershipService;
 import com.converter.settings.domain.SettingKey;
 import com.converter.settings.service.SettingsService;
+import com.converter.storage.FileStorageService;
+import com.converter.storage.ProofDownload;
 import com.converter.supplier.domain.Supplier;
 import com.converter.supplier.domain.SupplierStatus;
 import com.converter.supplier.repository.SupplierRepository;
@@ -79,6 +81,7 @@ public class OrderService {
     private final PoolService poolService;
     private final AchievementService achievementService;
     private final Clock clock;
+    private final FileStorageService fileStorageService;
 
     public OrderService(OrderRepository orderRepository,
                         BeneficiaryRepository beneficiaryRepository,
@@ -93,7 +96,8 @@ public class OrderService {
                         AuditService auditService,
                         PoolService poolService,
                         AchievementService achievementService,
-                        Clock clock) {
+                        Clock clock,
+                        FileStorageService fileStorageService) {
         this.orderRepository = orderRepository;
         this.beneficiaryRepository = beneficiaryRepository;
         this.historyRepository = historyRepository;
@@ -103,6 +107,7 @@ public class OrderService {
         this.stateMachine = stateMachine;
         this.treasuryService = treasuryService;
         this.settingsService = settingsService;
+        this.fileStorageService = fileStorageService;
         this.ownershipService = ownershipService;
         this.auditService = auditService;
         this.poolService = poolService;
@@ -306,6 +311,30 @@ public class OrderService {
                 ? orderRepository.findAll(pageable)
                 : orderRepository.findByStatusOrderByCreatedAtDesc(status, pageable);
         return PageResponse.from(page, OrderService::toSummary);
+    }
+
+    /**
+     * Code QR Alipay/WeChat du beneficiaire de cet ordre (retour client : "cote admin, on doit
+     * pouvoir voir les fournisseurs de chaque user, c'est ca qui permet de pouvoir faire les
+     * transferts") -- sans cet acces, l'admin n'avait litteralement aucun moyen de savoir ou
+     * envoyer les fonds pour un beneficiaire QR-only (l'identifiant texte, seul champ jusque-la
+     * visible cote admin sur le reglement, est justement toujours vide pour ce type ; voir V38).
+     * Le QR vient du SNAPSHOT {@link Beneficiary} de CET ordre (copie a la creation, voir
+     * {@link Beneficiary#getQrCodeStorageKey()}), jamais du fournisseur courant -- une
+     * modification ulterieure de celui-ci n'affecte donc jamais un ordre deja cree, meme invariant
+     * que partout ailleurs sur ce snapshot.
+     */
+    @Transactional(readOnly = true)
+    public ProofDownload adminGetBeneficiaryQrCode(UUID orderId) {
+        Beneficiary beneficiary = beneficiaryRepository.findByOrderId(orderId)
+                .orElseThrow(() -> notFound(orderId));
+        if (beneficiary.getQrCodeStorageKey() == null) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND,
+                    "Ce beneficiaire n'a pas de code QR (pas un fournisseur Alipay/WeChat, ou "
+                            + "saisie manuelle ponctuelle sans QR).");
+        }
+        return new ProofDownload(fileStorageService.load(beneficiary.getQrCodeStorageKey()),
+                beneficiary.getQrCodeContentType(), beneficiary.getQrCodeFileName());
     }
 
     // -----------------------------------------------------------------

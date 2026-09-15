@@ -108,10 +108,16 @@ class _HomePageState extends State<HomePage> {
                   ),
                   QuickAction(
                     icon: Icons.trending_up,
-                    label: 'Taux pref.',
+                    // "Taux pref." pointait vers le Taux preferentiel (retire de "Plus" --
+                    // retour client, cette fonctionnalite n'est plus utilisee pour le
+                    // moment). Ce raccourci redevient un acces generique a l'historique
+                    // des taux, seule fonctionnalite "taux" encore active pour le client
+                    // (retour client : "c'est plutot TAUX pour lui permettre de voir les
+                    // taux").
+                    label: 'Taux',
                     background: ExperiencePalette.accentFor(profile, AccentRole.rate).surface,
                     foreground: ExperiencePalette.accentFor(profile, AccentRole.rate).color,
-                    onTap: () => context.push('/more/preferred-rate'),
+                    onTap: () => context.push('/more/rates'),
                   ),
                   // Portefeuille retire des raccourcis (retour client) : aucun canal
                   // de rechargement n'existe encore cote client (WalletService.deposit

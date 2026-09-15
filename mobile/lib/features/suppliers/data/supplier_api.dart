@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../shared/models/page_response.dart';
+import '../../../shared/utils/image_content_type.dart';
 import '../../orders/models/order_models.dart';
 import '../models/supplier_models.dart';
 
@@ -58,7 +61,13 @@ class SupplierApi {
   /// separement de create/update (l'ID du fournisseur doit deja exister).
   /// Remplace le code QR precedent s'il en existait deja un.
   Future<SupplierDetail> uploadQrCode(String id, String filePath, String fileName) async {
-    final formData = FormData.fromMap({'file': await MultipartFile.fromFile(filePath, filename: fileName)});
+    // Content-Type devine des OCTETS reels, jamais du nom de fichier (retour
+    // client : "format non valide, il veut juste png") -- voir
+    // sniffImageContentType.
+    final bytes = await File(filePath).readAsBytes();
+    final formData = FormData.fromMap({
+      'file': MultipartFile.fromBytes(bytes, filename: fileName, contentType: sniffImageContentType(bytes)),
+    });
     final body = await _client.postMultipart('/v1/suppliers/$id/qr-code', formData);
     return SupplierDetail.fromJson(body['data'] as Map<String, dynamic>);
   }

@@ -3,11 +3,13 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AdminOrderService } from '../../../core/services/admin-order.service';
 import { AdminSettlementService } from '../../../core/services/admin-settlement.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { extractErrorMessage } from '../../../core/services/api-error.util';
+import { openPendingTab, resolveBlobTab } from '../../../core/services/file-download.util';
 import { IdempotencyAttempt } from '../../../core/services/idempotency.util';
 import { OrderDetail } from '../../../core/models/order.model';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
@@ -21,6 +23,7 @@ import { MoneyPipe } from '../../../shared/pipes/money.pipe';
     DatePipe,
     MatButtonModule,
     MatCardModule,
+    MatIconModule,
     MatProgressSpinnerModule,
     StatusBadgeComponent,
     MoneyPipe,
@@ -78,6 +81,26 @@ export class AdminOrderDetailPage implements OnInit {
       },
       error: (error) => {
         this.creatingSettlement.set(false);
+        this.notification.error(extractErrorMessage(error));
+      },
+    });
+  }
+
+  /**
+   * Retour client : "cote admin, on doit pouvoir voir les fournisseurs de chaque user, c'est ca
+   * qui permet de pouvoir faire les transferts" -- sans ceci, aucun moyen de savoir ou envoyer
+   * les fonds pour un beneficiaire Alipay/WeChat (identifiant texte toujours vide pour ce type).
+   */
+  viewBeneficiaryQrCode(): void {
+    const order = this.order();
+    if (!order) {
+      return;
+    }
+    const tab = openPendingTab();
+    this.adminOrderService.beneficiaryQrCode(order.id).subscribe({
+      next: (blob) => resolveBlobTab(tab, blob),
+      error: (error) => {
+        tab?.close();
         this.notification.error(extractErrorMessage(error));
       },
     });

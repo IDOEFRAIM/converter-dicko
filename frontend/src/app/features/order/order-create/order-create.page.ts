@@ -14,9 +14,7 @@ import { extractErrorMessage } from '../../../core/services/api-error.util';
 import { IdempotencyAttempt } from '../../../core/services/idempotency.util';
 import {
   BeneficiaryType,
-  BENEFICIARY_IDENTIFIER_HINTS,
   BENEFICIARY_IDENTIFIER_LABELS,
-  BENEFICIARY_TYPE_OPTIONS,
   CreateOrderRequest,
 } from '../../../core/models/order.model';
 import { Purpose, PURPOSE_OPTIONS } from '../../../core/models/common.model';
@@ -59,7 +57,6 @@ export class OrderCreatePage implements OnInit {
   /** null tant que non vérifié ; false = liquidité CNY actuellement insuffisante pour ce devis. */
   readonly liquiditySufficient = signal<boolean | null>(null);
 
-  readonly beneficiaryTypes = BENEFICIARY_TYPE_OPTIONS;
   readonly purposeOptions = PURPOSE_OPTIONS;
 
   readonly hasSuppliers = computed(() => this.suppliers().length > 0);
@@ -69,7 +66,7 @@ export class OrderCreatePage implements OnInit {
   readonly form = new FormGroup({
     source: new FormControl<BeneficiarySource>('MANUAL', { nonNullable: true }),
     supplierId: new FormControl<string>(''),
-    type: new FormControl<BeneficiaryType>('ALIPAY', { nonNullable: true }),
+    type: new FormControl<BeneficiaryType>('CHINESE_BANK_ACCOUNT', { nonNullable: true }),
     fullName: new FormControl('', { nonNullable: true }),
     identifier: new FormControl('', { nonNullable: true }),
     bankName: new FormControl(''),
@@ -89,10 +86,6 @@ export class OrderCreatePage implements OnInit {
 
   get identifierLabel(): string {
     return BENEFICIARY_IDENTIFIER_LABELS[this.form.controls.type.value as BeneficiaryType];
-  }
-
-  get identifierHint(): string | null {
-    return BENEFICIARY_IDENTIFIER_HINTS[this.form.controls.type.value as BeneficiaryType] ?? null;
   }
 
   ngOnInit(): void {

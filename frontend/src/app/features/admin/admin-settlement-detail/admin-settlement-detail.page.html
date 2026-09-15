@@ -11,12 +11,23 @@
 
   <mat-card class="page-card">
     <p class="section-heading">Beneficiaire</p>
-    <dl class="detail-list">
-      <div><dt>Identifiant</dt><dd>{{ s.beneficiaryIdentifier }}</dd></div>
-      @if (s.beneficiaryBankName) {
-        <div><dt>Banque</dt><dd>{{ s.beneficiaryBankName }}</dd></div>
-      }
-    </dl>
+    @if (s.method === 'ALIPAY' || s.method === 'WECHAT_PAY') {
+      <!-- Alipay/WeChat s'identifie par un code QR, jamais par un texte -- beneficiaryIdentifier
+           est toujours vide pour ce type (voir V38). Le QR vient du snapshot de CET ordre, pas du
+           fournisseur courant (retour client : "on doit pouvoir voir les fournisseurs de chaque
+           user, c'est ca qui permet de faire les transferts"). -->
+      <button mat-stroked-button (click)="viewBeneficiaryQrCode()">
+        <mat-icon>qr_code_2</mat-icon>
+        Voir le code QR du beneficiaire
+      </button>
+    } @else {
+      <dl class="detail-list">
+        <div><dt>Identifiant</dt><dd>{{ s.beneficiaryIdentifier }}</dd></div>
+        @if (s.beneficiaryBankName) {
+          <div><dt>Banque</dt><dd>{{ s.beneficiaryBankName }}</dd></div>
+        }
+      </dl>
+    }
   </mat-card>
 
   @if (s.status === 'PENDING') {

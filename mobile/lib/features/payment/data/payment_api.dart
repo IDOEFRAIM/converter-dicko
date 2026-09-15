@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../../shared/utils/image_content_type.dart';
 import '../models/payment_models.dart';
 
 /// Acces a `/api/v1/orders/{orderId}/payments` (declaration) et
@@ -24,7 +27,12 @@ class PaymentApi {
   }
 
   Future<PaymentProof> uploadProof(String paymentId, String filePath, String fileName) async {
-    final formData = FormData.fromMap({'file': await MultipartFile.fromFile(filePath, filename: fileName)});
+    // Content-Type devine des OCTETS reels, jamais du nom de fichier -- meme
+    // discipline que SupplierApi.uploadQrCode (voir sniffImageContentType).
+    final bytes = await File(filePath).readAsBytes();
+    final formData = FormData.fromMap({
+      'file': MultipartFile.fromBytes(bytes, filename: fileName, contentType: sniffImageContentType(bytes)),
+    });
     final body = await _client.postMultipart('/v1/payments/$paymentId/proofs', formData);
     return PaymentProof.fromJson(body['data'] as Map<String, dynamic>);
   }
