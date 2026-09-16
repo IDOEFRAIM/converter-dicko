@@ -5,6 +5,7 @@ import '../../features/achievements/presentation/my_gains_page.dart';
 import '../../features/auth/application/google_sign_in_flow.dart';
 import '../../features/auth/presentation/complete_google_signup_page.dart';
 import '../../features/auth/presentation/login_page.dart';
+import '../../features/auth/presentation/onboarding_page.dart';
 import '../../features/auth/presentation/register_page.dart';
 import '../../features/auth/presentation/splash_page.dart';
 import '../../features/business/presentation/business_page.dart';
@@ -55,6 +56,7 @@ GoRouter buildAppRouter(AuthSession authSession) {
     redirect: (context, state) {
       final location = state.matchedLocation;
       final onSplash = location == SplashPage.routePath;
+      final onOnboarding = location == OnboardingPage.routePath;
       // /complete-google-signup fait partie des pages "non authentifie" :
       // on y arrive APRES verification Google mais AVANT l'ouverture de la
       // session Converter (voir CompleteGoogleSignupPage) -- sans cette
@@ -67,16 +69,26 @@ GoRouter buildAppRouter(AuthSession authSession) {
         return onSplash ? null : SplashPage.routePath;
       }
       if (!authSession.isAuthenticated) {
+        // Introduction imposee UNE SEULE FOIS avant la toute premiere connexion/inscription
+        // (voir AuthSession.onboardingSeen) -- jamais reimposee ensuite, meme apres une
+        // deconnexion explicite (rien ne la reinitialise). Des qu'elle est marquee vue
+        // (dernier slide ou "Passer"), rester sur /onboarding n'a plus de sens : on retombe
+        // sur la regle normale (redirection vers /login) exactement comme pour /home ou toute
+        // autre page non listee ci-dessous.
+        if (!authSession.onboardingSeen) {
+          return onOnboarding ? null : OnboardingPage.routePath;
+        }
         return onAuthPages ? null : LoginPage.routePath;
       }
-      // Authentifie : ne jamais rester sur le splash/login/register.
-      if (onSplash || onAuthPages) {
+      // Authentifie : ne jamais rester sur le splash/onboarding/login/register.
+      if (onSplash || onOnboarding || onAuthPages) {
         return '/home';
       }
       return null;
     },
     routes: [
       GoRoute(path: SplashPage.routePath, builder: (context, state) => const SplashPage()),
+      GoRoute(path: OnboardingPage.routePath, builder: (context, state) => const OnboardingPage()),
       GoRoute(
         path: LoginPage.routePath,
         name: LoginPage.routeName,

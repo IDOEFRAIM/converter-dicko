@@ -262,7 +262,7 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
               if (controller.source == BeneficiarySource.supplier)
                 _buildSupplierPicker(controller)
               else
-                _buildManualForm(),
+                _buildManualForm(controller),
             ],
             const SizedBox(height: AppSpacing.xl),
             Text('MOTIF', style: AppTypography.eyebrow),
@@ -333,7 +333,7 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
     );
   }
 
-  Widget _buildManualForm() {
+  Widget _buildManualForm(OrderCreateController controller) {
     return Form(
       key: _formKey,
       autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -345,7 +345,20 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
           // jamais tenir lieu de code QR. Le seul chemin correct passe par un
           // fournisseur enregistre (le vrai code QR y est televerse et
           // valide -- voir SupplierFormPage).
-          _QrRequiredNotice(onAddSupplier: () => context.push('/suppliers/new')),
+          //
+          // Retour beta-testeur sept. 2026 : revenir de "Ajouter un fournisseur" laissait cet
+          // ecran affiche tel quel, sans le nouveau fournisseur nulle part -- l'utilisateur devait
+          // quitter puis recommencer un ordre pour le voir apparaitre. On attend maintenant le
+          // retour (l'id du fournisseur cree, voir SupplierFormPage) pour rafraichir la liste ET
+          // basculer directement sur ce fournisseur, sans quitter cet ecran.
+          _QrRequiredNotice(
+            onAddSupplier: () async {
+              final newSupplierId = await context.push<String>('/suppliers/new');
+              if (newSupplierId != null && context.mounted) {
+                await controller.reloadSuppliers(selectId: newSupplierId);
+              }
+            },
+          ),
           const SizedBox(height: AppSpacing.md),
           TextFormField(
             controller: _fullNameController,

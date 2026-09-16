@@ -70,8 +70,8 @@ class _SupplierDetailView extends StatelessWidget {
           if (supplier != null)
             IconButton(
               onPressed: () async {
-                final updated = await context.push<bool>('/suppliers/${supplier.id}/edit', extra: supplier);
-                if (updated == true) controller.load();
+                final updated = await context.push<String>('/suppliers/${supplier.id}/edit', extra: supplier);
+                if (updated != null) controller.load();
               },
               icon: const Icon(Icons.edit_outlined),
               tooltip: 'Modifier',

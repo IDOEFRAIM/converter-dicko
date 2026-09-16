@@ -46,8 +46,8 @@ class _SupplierListView extends StatelessWidget {
         actions: [
           IconButton(
             onPressed: () async {
-              final created = await context.push<bool>('/suppliers/new');
-              if (created == true) {
+              final created = await context.push<String>('/suppliers/new');
+              if (created != null) {
                 controller.load();
               }
             },

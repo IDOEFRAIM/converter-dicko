@@ -109,6 +109,41 @@ class OrderCreateController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Rafraichit la liste des fournisseurs sans recharger tout l'ecran (feasibilite, devis...).
+  ///
+  /// Retour beta-testeur sept. 2026 : "meme quand il a pu l'ajouter [un fournisseur] et il
+  /// revient, l'app prend du temps avant de se mettre a jour... il est oblige de ressortir, il
+  /// doit encore revenir, refaire un autre ordre pour voir que le fournisseur a ete mis a jour".
+  /// Cause exacte : ce controleur ne chargeait la liste des fournisseurs qu'UNE fois, a la
+  /// creation de l'ecran (voir [load]) -- `_QrRequiredNotice` (order_create_page.dart) poussait
+  /// `/suppliers/new` par-dessus sans jamais reconstruire ce controleur, donc sans jamais
+  /// re-declencher `_loadSuppliers()`, meme apres un retour reussi.
+  ///
+  /// [selectId] (l'identifiant du fournisseur qui vient d'etre cree, transmis par
+  /// `SupplierFormPage` au retour) est automatiquement selectionne s'il est bien present dans
+  /// la liste rafraichie -- l'utilisateur n'a plus a re-choisir un fournisseur qu'il vient tout
+  /// juste de creer pour cet ordre precis.
+  Future<void> reloadSuppliers({String? selectId}) async {
+    try {
+      final page = await _supplierApi.list(size: 50, status: 'ACTIVE');
+      suppliers = page.content;
+      if (selectId != null && suppliers.any((s) => s.id == selectId)) {
+        source = BeneficiarySource.supplier;
+        selectedSupplierId = selectId;
+      } else if (source == BeneficiarySource.supplier &&
+          !suppliers.any((s) => s.id == selectedSupplierId)) {
+        // Le fournisseur precedemment selectionne a disparu (desactive entre-temps...) : retombe
+        // sur le premier disponible plutot que de garder un ID selectionne mais introuvable.
+        selectedSupplierId = suppliers.isNotEmpty ? suppliers.first.id : null;
+      }
+      notifyListeners();
+    } on ApiException {
+      // Echec silencieux : la liste precedente reste affichee plutot que de vider l'ecran sur
+      // une simple erreur reseau de rafraichissement (mission section 2, meme discipline que
+      // _loadFeasibility).
+    }
+  }
+
   void selectSource(BeneficiarySource newSource) {
     source = newSource;
     notifyListeners();

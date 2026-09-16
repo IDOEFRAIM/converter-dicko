@@ -5,6 +5,7 @@ import '../../../core/auth/auth_session.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../shared/models/current_user.dart';
 import '../../../shared/widgets/corridor_flow.dart';
 import '../../../shared/widgets/grain.dart';
 import '../data/auth_repository.dart';
@@ -32,9 +33,12 @@ class _SplashPageState extends State<SplashPage> {
   Future<void> _bootstrap() async {
     final authRepository = context.read<AuthRepository>();
     final authSession = context.read<AuthSession>();
-    final user = await authRepository.restoreSession();
+    final results = await Future.wait([
+      authRepository.restoreSession(),
+      authSession.loadOnboardingSeen(),
+    ]);
     if (!mounted) return;
-    authSession.completeBootstrap(user: user);
+    authSession.completeBootstrap(user: results[0] as CurrentUser?);
   }
 
   @override

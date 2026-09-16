@@ -8,15 +8,22 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
+import 'package:mobile/core/auth/auth_session.dart';
 import 'package:mobile/shared/widgets/corridor.dart';
 
 void main() {
   testWidgets('Corridor renders both flags and labels at every level', (WidgetTester tester) async {
     for (final level in CorridorLevel.values) {
+      // CorridorLevel.hero lit AuthSession.experienceGradient (degrade de marque) --
+      // fourni pour tous les niveaux par simplicite, sans effet sur compact/normal.
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(body: Corridor(level: level)),
+        ChangeNotifierProvider<AuthSession>(
+          create: (_) => AuthSession(),
+          child: MaterialApp(
+            home: Scaffold(body: Corridor(level: level)),
+          ),
         ),
       );
 

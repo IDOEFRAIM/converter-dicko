@@ -143,7 +143,11 @@ class _SupplierFormPageState extends State<SupplierFormPage> {
         await api.uploadQrCode(supplier.id, _pickedQrCode!.path, _pickedQrCode!.name);
       }
       if (!mounted) return;
-      Navigator.of(context).pop(true);
+      // L'identifiant (plutot qu'un simple bool) permet a l'appelant -- notamment la creation
+      // d'ordre, voir order_create_page.dart -- de selectionner directement ce fournisseur au
+      // retour, sans que l'utilisateur ait a le re-chercher dans une liste qu'il vient de faire
+      // grandir lui-meme.
+      Navigator.of(context).pop(supplier.id);
     } on ApiException catch (error) {
       setState(() => _errorMessage = error.message);
     } finally {

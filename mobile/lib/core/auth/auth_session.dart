@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:mobile/core/storage/secure_token_storage.dart';
 import '../../shared/models/current_user.dart';
+import '../storage/onboarding_store.dart';
 import '../theme/experience_theme.dart';
 
 /// Etat de session courant : jeton JWT + utilisateur connecte.
@@ -14,12 +15,16 @@ import '../theme/experience_theme.dart';
 /// verite avec [SecureTokenStorage] — jamais duplique ailleurs.
 class AuthSession extends ChangeNotifier {
   final SecureTokenStorage _storage;
+  final OnboardingStore _onboardingStore;
 
   String? _token;
   CurrentUser? _currentUser;
   bool _initialized = false;
+  bool _onboardingSeen = false;
 
-  AuthSession({SecureTokenStorage? storage}) : _storage = storage ?? const SecureTokenStorage();
+  AuthSession({SecureTokenStorage? storage, OnboardingStore? onboardingStore})
+      : _storage = storage ?? const SecureTokenStorage(),
+        _onboardingStore = onboardingStore ?? const OnboardingStore();
 
   String? get token => _token;
   CurrentUser? get currentUser => _currentUser;
@@ -35,6 +40,12 @@ class AuthSession extends ChangeNotifier {
   /// (jeton persiste -> `GET /api/auth/me`) est terminee, succes ou echec.
   bool get initialized => _initialized;
 
+  /// Vrai si l'introduction de l'application (voir `OnboardingPage`) a deja ete
+  /// vue -- consulte par le routeur pour ne l'imposer qu'une seule fois, avant
+  /// la toute premiere connexion/inscription (retour client sept. 2026 :
+  /// "y'a pas vraiment de systeme pour expliquer comment ca fonctionne").
+  bool get onboardingSeen => _onboardingSeen;
+
   /// A appeler une seule fois au demarrage : charge un jeton deja persiste
   /// (s'il existe) pour permettre l'appel `GET /api/auth/me` de restauration.
   /// Ne marque PAS la session comme authentifiee — seul un `CurrentUser` recu
@@ -42,6 +53,22 @@ class AuthSession extends ChangeNotifier {
   Future<String?> loadPersistedToken() async {
     _token = await _storage.readToken();
     return _token;
+  }
+
+  /// A appeler une seule fois au demarrage, avant [completeBootstrap] --
+  /// determine si le routeur doit imposer `OnboardingPage` avant `/login`.
+  Future<void> loadOnboardingSeen() async {
+    _onboardingSeen = await _onboardingStore.hasSeenOnboarding();
+  }
+
+  /// Fin de l'introduction (dernier slide ou "Passer") : persiste le choix
+  /// avant de notifier (meme ordre que [setSession]) -- si l'ecriture
+  /// echouait apres coup, le routeur aurait deja fait suivre vers /login
+  /// alors que l'introduction reapparaitrait au prochain demarrage.
+  Future<void> markOnboardingSeen() async {
+    _onboardingSeen = true;
+    await _onboardingStore.markSeen();
+    notifyListeners();
   }
 
   /// Fin de la restauration de session (succes ou echec) — debloque les
