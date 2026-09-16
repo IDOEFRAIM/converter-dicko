@@ -130,14 +130,16 @@ cd mobile
 flutter pub get     # requis : open_filex + google_sign_in ont ete ajoutes aux dependances
 flutter build apk --release \
   --dart-define=APP_ENV=production \
-  --dart-define=API_BASE_URL=https://api.mondomaine.com \
   --dart-define=GOOGLE_SERVER_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
 ```
 
 `API_BASE_URL` est l'**origine seule** (schéma + hôte), sans `/api` — `ApiClient`
-l'ajoute. Sans ce define, la valeur de production est volontairement invalide
-(`https://CHANGE_ME.production.invalid`) pour ne jamais pointer par erreur vers un
-mauvais backend. iOS : `flutter build ipa` avec les mêmes `--dart-define`.
+l'ajoute. En profil `production`, la valeur par défaut est déjà
+`https://api.yuanpay.space` (`AppConfig._defaultBaseUrlFor` — sous-domaine
+dédié qui pointe directement sur le backend, voir §7) : pas besoin de
+`--dart-define=API_BASE_URL=...` sauf pour pointer exceptionnellement ailleurs
+(ex. un environnement de recette). iOS : `flutter build ipa` avec les mêmes
+`--dart-define`.
 
 `GOOGLE_SERVER_CLIENT_ID` est **facultatif** : omis, `AppConfig.googleSignInAvailable`
 vaut `false` et le bouton "Continuer avec Google" ne s'affiche pas (pas d'écran

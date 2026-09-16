@@ -10,10 +10,10 @@ import 'app_environment.dart';
 /// (ex. `/v1/rates/history`, `/auth/login`), exactement comme
 /// `environment.apiBaseUrl = '/api'` cote Angular.
 ///
-/// La valeur DEV pointe vers un tunnel ngrok temporaire (backend local
-/// expose pour developpement mobile). Elle est deliberement ISOLEE ici : la
-/// remplacer (changement de tunnel, passage a un backend deploye) ne touche
-/// aucun autre fichier du projet.
+/// Les valeurs DEV/STAGING/PRODUCTION sont deliberement ISOLEES ici (une
+/// seule ligne a changer par environnement, voir [_defaultBaseUrlFor]) :
+/// les remplacer (nouvelle IP, nouveau domaine) ne touche aucun autre
+/// fichier du projet.
 class AppConfig {
   final AppEnvironment environment;
   final String apiBaseUrl;
@@ -53,9 +53,11 @@ class AppConfig {
   static String _defaultBaseUrlFor(AppEnvironment environment) {
     switch (environment) {
       case AppEnvironment.production:
-        // A renseigner lors du deploiement reel — volontairement laisse invalide
-        // pour ne jamais pointer silencieusement vers un mauvais backend.
-        return 'https://CHANGE_ME.production.invalid';
+        // Sous-domaine dedie, en HTTPS, qui pointe directement sur le backend
+        // (jamais via le relai nginx du frontend web) -- voir DEPLOY.md §7 et
+        // docker-compose.prod.yml (backend publie sur 127.0.0.1:8080, Caddy
+        // termine le TLS devant pour ce domaine).
+        return 'https://api.yuanpay.space';
       case AppEnvironment.staging:
         return 'http://178.105.95.145:4300';
       case AppEnvironment.dev:
