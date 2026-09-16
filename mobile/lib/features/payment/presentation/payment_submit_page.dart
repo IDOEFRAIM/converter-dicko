@@ -57,6 +57,20 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
   PaymentMethod? _method;
 
   @override
+  void initState() {
+    super.initState();
+    // Retour beta-testeur sept. 2026 : simplifier le formulaire -- dans l'immense majorite des
+    // cas, le payeur EST le titulaire du compte (pas un tiers). Pre-remplir avec ses propres
+    // nom/numero lui evite de re-taper ce qu'il connait deja ; les champs restent modifiables
+    // pour le cas ou quelqu'un d'autre a effectue le paiement en son nom.
+    final user = context.read<AuthSession>().currentUser;
+    if (user != null) {
+      _payerNameController.text = '${user.firstName} ${user.lastName}'.trim();
+      _phoneController.text = user.phone;
+    }
+  }
+
+  @override
   void dispose() {
     _referenceController.dispose();
     _phoneController.dispose();
@@ -150,12 +164,14 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
   List<Widget> _buildDeclarationStep(PaymentSubmitController controller, List<PaymentMethod> methods) {
     final instructions = controller.settings?.paymentInstructionsText ?? '';
     return [
-      const _StepLabel(number: 1, label: 'Payez'),
-      const SizedBox(height: AppSpacing.md),
       // Retour beta-testeur sept. 2026 : "j'arrive jusqu'a faire l'order... je sais meme pas
-      // comment payer" -- sans ce bloc, rien n'indique au client ou envoyer son argent avant de
-      // remplir le formulaire de declaration ci-dessous (voir PublicSettings.paymentInstructionsText).
-      if (instructions.isNotEmpty) ...[
+      // comment payer", puis "il est oblige de tourner et reflechir" -- fusionner "envoyer
+      // l'argent" et "remplir le formulaire" sous un seul step "Payez" melangeait deux actions
+      // bien distinctes (une externe, une dans l'app). Separees en deux etapes numerotees, la
+      // suite devient evidente sans reflechir : ici -> la-bas -> ici de nouveau.
+      const _StepLabel(number: 1, label: "Envoyez l'argent"),
+      const SizedBox(height: AppSpacing.md),
+      if (instructions.isNotEmpty)
         Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
@@ -172,16 +188,23 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
             ],
           ),
         ),
-        const SizedBox(height: AppSpacing.lg),
-      ],
+      const SizedBox(height: AppSpacing.xl),
+      const _StepLabel(number: 2, label: 'Confirmez votre paiement'),
+      const SizedBox(height: AppSpacing.xs),
+      // Explique le POURQUOI, pas seulement le QUOI (retour beta-testeur : le concept meme de
+      // "declarer" un paiement deja envoye n'etait pas evident) -- personne n'a encore vu que
+      // l'argent est arrive, cette etape est ce qui permet de le verifier et debloquer le transfert.
+      Text(
+        "Deja envoye ? Confirmez ci-dessous pour qu'on verifie et debloque votre transfert.",
+        style: AppTypography.caption,
+      ),
+      const SizedBox(height: AppSpacing.md),
       Form(
         key: _formKey,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Une fois envoye, declarez votre paiement ici :', style: AppTypography.bodyStrong),
-            const SizedBox(height: AppSpacing.md),
             if (methods.length > 1) ...[
               DropdownButtonFormField<PaymentMethod>(
                 initialValue: _method,
@@ -194,10 +217,15 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
             TextFormField(
               controller: _referenceController,
               maxLength: 100,
-              decoration: const InputDecoration(labelText: 'Reference de la transaction *'),
+              decoration: const InputDecoration(
+                labelText: 'Reference de la transaction *',
+                helperText: 'Le code recu par SMS apres votre envoi (ex. MP240916.1234)',
+              ),
               validator: (value) => Validators.requiredMaxLength(value, 100, label: 'La reference de transaction'),
             ),
             const SizedBox(height: AppSpacing.md),
+            // Pre-rempli avec les coordonnees du compte (voir initState) -- rarement a modifier,
+            // seulement si quelqu'un d'autre a effectue le paiement pour ce transfert.
             TextFormField(
               controller: _payerNameController,
               maxLength: 160,
@@ -252,7 +280,7 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
         ),
       ),
       const SizedBox(height: AppSpacing.xl),
-      const _StepLabel(number: 2, label: 'Ajoutez la preuve'),
+      const _StepLabel(number: 3, label: 'Ajoutez la preuve'),
       const SizedBox(height: AppSpacing.md),
       ProofDropzone(
         uploading: controller.uploadingProof,

@@ -113,10 +113,14 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
       }
       if (!mounted) return;
       final poolId = controller.poolId;
-      // Une contribution a une Ruee collective merite de revenir sur son detail (thermometre a
-      // jour, celebration eventuelle) plutot que sur l'ordre lui-meme — l'ordre reste accessible
-      // depuis l'onglet Activite comme d'habitude.
-      context.go(poolId == null ? '/activity/orders/${order.id}' : '/pay/pools/$poolId');
+      // Retour beta-testeur sept. 2026 : "je sais meme pas comment payer" -- atterrir sur le
+      // detail de l'ordre forcait l'utilisateur a chercher lui-meme le bouton "Payer maintenant"
+      // au milieu du reste (statut, beneficiaire...). Un ordre vient toujours de naitre
+      // AWAITING_PAYMENT (voir OrderService.create backend) : l'etape suivante est TOUJOURS payer,
+      // jamais un autre choix -- on y va donc directement, sans detour. Une contribution a une
+      // Ruee collective reste une exception deliberee : son detail (thermometre, celebration
+      // eventuelle) prime, l'ordre restant accessible depuis l'onglet Activite comme d'habitude.
+      context.go(poolId == null ? '/activity/orders/${order.id}/payment' : '/pay/pools/$poolId');
     }
   }
 
