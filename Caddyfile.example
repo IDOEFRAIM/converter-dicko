@@ -1,0 +1,57 @@
+# =====================================================================
+#  Caddy reverse proxy configuration for YUAN PAY BF production
+#
+#  SETUP:
+#  1. Copy this file to Caddyfile (remove .example)
+#  2. Replace yourdomain.com with your actual domain
+#  3. Ensure DNS points to your Hetzner IP
+#  4. Run: caddy run  (or: caddy run --config Caddyfile --watch)
+#
+#  Caddy will:
+#  - Automatically fetch/renew Let's Encrypt SSL/TLS certificate
+#  - Listen on 443 (HTTPS) and redirect 80 (HTTP) -> 443
+#  - Reverse proxy all requests to frontend:4300
+#  - Frontend's nginx will relay /api to backend:8080 (internal)
+#  - Backend connects to postgres:5432 (internal, not exposed)
+#
+#  Logs: /var/log/caddy/ or systemd journal (caddy logs)
+# =====================================================================
+
+yourdomain.com {
+	# Automatic HTTPS and Let's Encrypt certificate
+	encode gzip
+
+	# Reverse proxy to frontend container (port 4300)
+	reverse_proxy localhost:4300 {
+		# Preserve original Host header for the frontend
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto https
+
+		# Timeouts for slow clients (file uploads)
+		transport http {
+			dial_timeout 30s
+			read_timeout 120s
+			write_timeout 120s
+		}
+	}
+
+	# Security headers
+	header X-Content-Type-Options nosniff
+	header X-Frame-Options DENY
+	header X-XSS-Protection "1; mode=block"
+	header Referrer-Policy strict-origin-when-cross-origin
+
+	# Logging (optional)
+	log {
+		output stdout
+		format single_field common_log
+	}
+}
+
+# Optional: alias (www.yourdomain.com -> yourdomain.com)
+# www.yourdomain.com {
+#     redir https://yourdomain.com{uri} permanent
+# }
+

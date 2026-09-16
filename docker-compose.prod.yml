@@ -1,0 +1,58 @@
+# =====================================================================
+#  Production overlay for docker-compose.yml
+#
+#  USAGE (Hetzner/staging/prod):
+#    docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+#  This file overrides/extends docker-compose.yml:
+#  - Removes dev port exposures (PostgreSQL 5432, backend 8080)
+#  - Keeps frontend on 4300 (intended to sit behind Caddy/nginx on 443)
+#  - Adds resource limits and prod-grade logging
+#  - Enforces all services bound to internal network only (except frontend)
+#
+#  Prerequisites:
+#  1. .env file with prod secrets (JWT_SECRET, ADMIN_PASSWORD, DB_PASSWORD)
+#  2. Caddy reverse proxy on 443 -> frontend:80 (see Caddyfile.example)
+# =====================================================================
+
+version: '3.8'
+
+services:
+  postgres:
+    # Remove dev port exposure; rely on internal docker network only
+    ports: []
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          memory: 512M
+
+  backend:
+    # Remove dev port exposure; only accessible via frontend/nginx internal network
+    ports: []
+    restart: always
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          memory: 1G
+
+  frontend:
+    # Keep 4300 for reverse-proxy. Caddy (or nginx) listens on 443 externally,
+    # relays internally to frontend:80, which in turn relays /api to backend:8080.
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          memory: 256M
+

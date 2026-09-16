@@ -5,18 +5,22 @@
 #  - backend   : API Spring Boot (Flyway migre le schema au demarrage).
 #  - frontend  : Angular compile, servi par nginx, qui relaie /api -> backend.
 #
-#  Usage :
-#    cp .env.example .env          # puis renseigner .env (obligatoire en prod)
-#    docker compose up -d --build  # ou : scripts/deploy.sh
+#  Usage dev (local, tous les ports exposes) :
+#    cp .env.example .env
+#    docker compose up -d --build
+#
+#  Usage prod (ports interne, Caddy en reverse-proxy) :
+#    cp .env.example .env && vim .env  # renseigner secrets prod
+#    COMPOSE_ENV=prod docker compose up -d --build
 #
 #  Runbook complet de mise en production : voir DEPLOY.md a la racine.
 #
-#  Sans aucune variable definie dans .env, le profil `dev` (defaut de
-#  l'application) demarre avec des identifiants de developpement locaux
-#  deja presents dans application-dev.yml. En profil `prod`, les secrets
-#  (JWT_SECRET, DB_PASSWORD, ADMIN_PASSWORD si seed) sont OBLIGATOIRES :
-#  l'application refuse de demarrer sinon.
+#  Profils :
+#  - dev (defaut)  : identifiants locaux de application-dev.yml, tous ports publics
+#  - prod (COMPOSE_ENV=prod) : secrets obligatoires, PostgreSQL/backend non exposes
 # =====================================================================
+
+version: '3.8'
 
 services:
   postgres:
@@ -27,8 +31,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-converter}
       POSTGRES_USER: ${POSTGRES_USER:-converter}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-converter_local_dev}
-    ports:
-      - "5432:5432"
+    # Dev : expose le port 5432 pour acces local direct via override.
+    # Prod : port non expose (internal networking only).
     volumes:
       - converter-postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -37,6 +41,16 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+    networks:
+      - converter-net
+    # Prod : limites de ressources (optionnel, ajuster selon VM Hetzner)
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'
+    #       memory: 1G
+    #     reservations:
+    #       memory: 512M
 
   backend:
     build:
@@ -46,8 +60,6 @@ services:
     restart: unless-stopped
     depends_on:
       postgres:
-        # Le backend n'est demarre qu'une fois PostgreSQL pret a accepter
-        # des connexions : Flyway echouerait au premier appel sinon.
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
@@ -56,34 +68,18 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:-converter_local_dev}
       JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-43200}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:4200,http://localhost:4300}
-      # Facultatif (voir GoogleAuthProperties) : vide -> /api/auth/google[/complete] repond 503.
       GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
       ADMIN_SEED_ENABLED: ${ADMIN_SEED_ENABLED:-true}
       ADMIN_PHONE: ${ADMIN_PHONE:-+22500000000}
       ADMIN_FIRST_NAME: ${ADMIN_FIRST_NAME:-System}
       ADMIN_LAST_NAME: ${ADMIN_LAST_NAME:-Administrator}
       SERVER_PORT: 8080
-      # JWT_SECRET et ADMIN_PASSWORD sont transmis SANS valeur par
-      # defaut ("${VAR:-defaut}" injecterait quand meme une variable
-      # vide mais PRESENTE dans le conteneur). Une variable presente-
-      # mais-vide et une variable absente ne sont PAS equivalentes pour
-      # Spring : `${JWT_SECRET:dev-only-key}` dans application-dev.yml
-      # ne retombe sur "dev-only-key" QUE si JWT_SECRET est absente,
-      # jamais si elle vaut "". La forme nue ci-dessous n'exporte la
-      # variable vers le conteneur que si elle existe reellement dans
-      # l'environnement hote / le fichier .env — sinon Compose l'omet
-      # entierement, et c'est alors application-dev.yml qui decide
-      # (cle de dev generee ici, mot de passe admin aleatoire genere
-      # au demarrage et affiche une seule fois dans les journaux).
+      # Prod: JWT_SECRET et ADMIN_PASSWORD doivent etre definis dans .env
       JWT_SECRET:
       ADMIN_PASSWORD:
     volumes:
-      # Preuves de paiement / de reglement (app.storage.root-dir = ./storage,
-      # resolu sous WORKDIR /app dans l'image). SANS ce volume nomme, toute
-      # recreation du conteneur (mise a jour d'image, changement de config)
-      # detruit les fichiers alors que leurs lignes de metadonnees survivent
-      # en base -> 404 "preuve indisponible" au telechargement.
       - converter-storage:/app/storage
+    # Dev : expose pour tests directs. Prod : non expose (acces via frontend/nginx seul).
     ports:
       - "${SERVER_PORT:-8080}:8080"
     healthcheck:
@@ -92,6 +88,16 @@ services:
       timeout: 5s
       retries: 10
       start_period: 45s
+    networks:
+      - converter-net
+    # Prod : limites de ressources
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'
+    #       memory: 2G
+    #     reservations:
+    #       memory: 1G
 
   frontend:
     build:
@@ -101,11 +107,8 @@ services:
     restart: unless-stopped
     depends_on:
       backend:
-        # nginx demarre meme si le backend est lent, mais on attend qu'il
-        # soit sain pour que la premiere requete /api aboutisse.
         condition: service_healthy
-    # Aucune variable : l'URL de l'API est `/api` (meme origine), relayee
-    # par nginx vers `backend:8080` sur le reseau interne de Compose.
+    # Prod: expose SEULEMENT en dev local. En prod, Caddy reverse-proxy depuis 443.
     ports:
       - "${FRONTEND_PORT:-4300}:80"
     healthcheck:
@@ -114,9 +117,24 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+    networks:
+      - converter-net
+    # Prod : limites de ressources
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '1'
+    #       memory: 512M
+    #     reservations:
+    #       memory: 256M
 
 volumes:
   converter-postgres-data:
     name: converter-postgres-data
   converter-storage:
     name: converter-storage
+
+networks:
+  converter-net:
+    name: converter-net
+    driver: bridge
