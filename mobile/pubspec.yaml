@@ -106,6 +106,25 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
+  # Genere les icones de lancement Android/iOS a partir d'une seule image
+  # source (assets/icon/app_icon.png, meme logo que frontend/public/logo.jpeg
+  # cote web) -- outil de build uniquement (dev_dependencies), jamais compile
+  # dans l'application elle-meme. Regenerer apres tout changement de logo :
+  # `dart run flutter_launcher_icons`.
+  flutter_launcher_icons: ^0.14.3
+
+# Genere les mipmap Android (toutes densites + Play Store 512x512) et
+# l'AppIcon.appiconset iOS (toutes tailles requises, y compris 1024x1024 App
+# Store) depuis la meme image source. Pas d'icone adaptative Android
+# (foreground/background separes) : le logo porte deja son propre fond
+# (carre arrondi navy), le decouper en calques necessiterait le fichier
+# source original, indisponible ici.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  remove_alpha_ios: true
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

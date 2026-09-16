@@ -56,7 +56,7 @@ class _SplashPageState extends State<SplashPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'CONVERTER',
+                      'YUAN PAY BF',
                       style: AppTypography.eyebrow.copyWith(color: AppColors.keyline, letterSpacing: 4),
                     ),
                     const SizedBox(height: AppSpacing.lg),
