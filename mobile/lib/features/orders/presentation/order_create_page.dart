@@ -282,6 +282,8 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
               const SizedBox(height: AppSpacing.md),
               if (controller.isKycBlocked)
                 _KycBlockedNotice(message: controller.errorMessage!)
+              else if (controller.isInsufficientTreasury)
+                _MaintenanceDelayNotice(message: controller.errorMessage!)
               else
                 Text(controller.errorMessage!, style: AppTypography.body.copyWith(color: AppColors.negative)),
             ],
@@ -458,6 +460,36 @@ class _KycBlockedNotice extends StatelessWidget {
             label: const Text('Verifier mon identite'),
             style: OutlinedButton.styleFrom(foregroundColor: AppColors.warning),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Traitement visuel distinct pour `INSUFFICIENT_TREASURY` (voir
+/// `OrderCreateController.isInsufficientTreasury`) -- volontairement discret
+/// et non alarmant (pas de rouge, pas d'icone d'erreur) : le blocage reste
+/// reel cote serveur, mais rien ici ne doit inquieter l'utilisateur ni
+/// suggerer un probleme de son cote.
+class _MaintenanceDelayNotice extends StatelessWidget {
+  final String message;
+
+  const _MaintenanceDelayNotice({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.warningSurface,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.schedule_outlined, size: 18, color: AppColors.warning),
+          const SizedBox(width: AppSpacing.xs),
+          Expanded(child: Text(message, style: AppTypography.body.copyWith(color: AppColors.warning))),
         ],
       ),
     );

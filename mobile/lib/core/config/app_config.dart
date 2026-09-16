@@ -59,9 +59,11 @@ class AppConfig {
       case AppEnvironment.staging:
         return 'https://CHANGE_ME.staging.invalid';
       case AppEnvironment.dev:
-        // DEV UNIQUEMENT : tunnel ngrok temporaire vers le backend local. Remplacer
-        // via --dart-define=API_BASE_URL=... quand le tunnel change, sans toucher au code.
-        return 'https://shortness-expensive-fidgety.ngrok-free.dev';
+        // DEV UNIQUEMENT : backend deploye sur Hetzner, en HTTP direct via IP (pas
+        // encore de domaine/Caddy devant). Voir network_security_config.xml (debug)
+        // pour l'autorisation cleartext explicite de cette IP. Remplacer via
+        // --dart-define=API_BASE_URL=... si l'IP ou le port changent.
+        return 'http://178.105.95.145:4300';
     }
   }
 

@@ -96,7 +96,7 @@ abstract final class ExperiencePalette {
 abstract final class ExperienceCopy {
   static String greeting(ExperienceProfile profile, String firstName) => switch (profile) {
         ExperienceProfile.pro => 'Bonjour $firstName',
-        ExperienceProfile.studentMale => 'Pret a en decoudre, $firstName ?',
+        ExperienceProfile.studentMale => 'Pret pour de bonnes affaires, $firstName ?',
         ExperienceProfile.studentFemale => 'Coucou $firstName',
       };
 

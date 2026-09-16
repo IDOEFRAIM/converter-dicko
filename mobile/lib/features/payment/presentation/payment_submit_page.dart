@@ -148,14 +148,39 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
   }
 
   List<Widget> _buildDeclarationStep(PaymentSubmitController controller, List<PaymentMethod> methods) {
+    final instructions = controller.settings?.paymentInstructionsText ?? '';
     return [
+      const _StepLabel(number: 1, label: 'Payez'),
+      const SizedBox(height: AppSpacing.md),
+      // Retour beta-testeur sept. 2026 : "j'arrive jusqu'a faire l'order... je sais meme pas
+      // comment payer" -- sans ce bloc, rien n'indique au client ou envoyer son argent avant de
+      // remplir le formulaire de declaration ci-dessous (voir PublicSettings.paymentInstructionsText).
+      if (instructions.isNotEmpty) ...[
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.ivoryDim,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            border: Border.all(color: AppColors.outline),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.info_outline, size: 18, color: AppColors.navy),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(child: Text(instructions, style: AppTypography.body.copyWith(color: AppColors.navy))),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+      ],
       Form(
         key: _formKey,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _StepLabel(number: 1, label: 'Payez'),
+            Text('Une fois envoye, declarez votre paiement ici :', style: AppTypography.bodyStrong),
             const SizedBox(height: AppSpacing.md),
             if (methods.length > 1) ...[
               DropdownButtonFormField<PaymentMethod>(

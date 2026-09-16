@@ -8,6 +8,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/current_user.dart';
 import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/experience_profile_picker.dart';
+import '../../../shared/widgets/phone_number_field.dart';
 import '../../../shared/widgets/primary_action.dart';
 import '../application/google_sign_in_flow.dart';
 import '../data/auth_repository.dart';
@@ -139,14 +140,9 @@ class _CompleteGoogleSignupPageState extends State<CompleteGoogleSignupPage> {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                TextFormField(
+                PhoneNumberField(
                   controller: _phoneController,
-                  keyboardType: TextInputType.phone,
                   textInputAction: TextInputAction.done,
-                  decoration: const InputDecoration(
-                    labelText: 'Numero de telephone',
-                    hintText: '+2250700000000',
-                  ),
                   validator: Validators.phoneE164,
                 ),
                 const SizedBox(height: AppSpacing.xl),

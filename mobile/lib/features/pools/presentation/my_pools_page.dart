@@ -55,6 +55,8 @@ class _MyPoolsView extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
+              const _PoolExplainer(),
+              const SizedBox(height: AppSpacing.lg),
               PrimaryAction(
                 label: 'Lancer une Ruee',
                 icon: Icons.bolt_outlined,
@@ -98,6 +100,39 @@ class _MyPoolsView extends StatelessWidget {
           ...controller.closed.map((p) => _PoolTile(pool: p)),
         ],
       ],
+    );
+  }
+}
+
+/// Explication breve de la Ruee, visible des l'arrivee sur l'ecran (retour
+/// beta-testeur sept. 2026 : "il faut que ca explique ce que ca permet de
+/// faire et comment ca fonctionne, de facon breve, concise et elegante") --
+/// auparavant, seul un texte equivalent existait sur l'ecran de creation,
+/// jamais vu par qui rejoint une Ruee via un code ou consulte juste la
+/// liste. Volontairement une seule phrase courte, jamais un paragraphe :
+/// retour client anterieur "app trop bavarde" (voir experience_theme.dart).
+class _PoolExplainer extends StatelessWidget {
+  const _PoolExplainer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: AppSurfaces.paper(),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.bolt_outlined, size: 20, color: AppColors.keyline),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              'Groupez vos transferts avec d\'autres : objectif atteint a temps = reduction '
+              'pour chacun sur son prochain transfert.',
+              style: AppTypography.caption,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

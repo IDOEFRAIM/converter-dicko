@@ -2,12 +2,15 @@
 <!--
     DEBUG UNIQUEMENT (dossier src/debug/, jamais merge dans un build release) :
     autorise le HTTP en clair vers le backend local (Docker, sans certificat)
-    via l'alias emulateur Android 10.0.2.2 -> localhost de la machine hote.
-    Voir AppConfig.apiBaseUrl (DEV = dart-define API_BASE_URL=http://10.0.2.2:8080).
+    via l'alias emulateur Android 10.0.2.2 -> localhost de la machine hote,
+    ainsi que vers le backend Hetzner de test (HTTP direct par IP, en
+    attendant que Caddy termine le TLS devant -- voir Caddyfile.example).
+    Voir AppConfig.apiBaseUrl (DEV = http://178.105.95.145:4300 par defaut).
 -->
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">10.0.2.2</domain>
         <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="false">178.105.95.145</domain>
     </domain-config>
 </network-security-config>

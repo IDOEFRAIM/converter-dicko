@@ -57,6 +57,29 @@
 			</array>
 		</dict>
 	</array>
+	<!--
+	  Autorise le HTTP en clair (App Transport Security) vers le backend
+	  Hetzner de test uniquement, en attendant que Caddy termine le TLS
+	  devant (voir Caddyfile.example a la racine du depot). A retirer une
+	  fois AppConfig.apiBaseUrl (dev) reponde en HTTPS via un vrai domaine.
+	  Flutter ne separe pas ce plist par configuration (Debug/Release) :
+	  cette exception est donc active dans tous les builds tant qu'elle
+	  reste ici, contrairement au network_security_config.xml Android
+	  (limite au dossier src/debug/).
+	-->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>178.105.95.145</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<false/>
+			</dict>
+		</dict>
+	</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

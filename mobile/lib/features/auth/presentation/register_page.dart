@@ -11,6 +11,7 @@ import '../../../shared/models/current_user.dart';
 import '../../../shared/utils/validators.dart';
 import '../../../shared/widgets/experience_profile_picker.dart';
 import '../../../shared/widgets/google_sign_in_button.dart';
+import '../../../shared/widgets/phone_number_field.dart';
 import '../../../shared/widgets/primary_action.dart';
 import '../application/google_sign_in_flow.dart';
 import '../data/auth_repository.dart';
@@ -177,14 +178,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                TextFormField(
+                PhoneNumberField(
                   controller: _phoneController,
-                  keyboardType: TextInputType.phone,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Numero de telephone',
-                    hintText: '+2250700000000',
-                  ),
                   validator: Validators.phoneE164,
                 ),
                 const SizedBox(height: AppSpacing.lg),

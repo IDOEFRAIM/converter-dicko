@@ -13,6 +13,11 @@ class PublicSettings {
   final List<String> enabledPaymentMethods;
   final bool requirePaymentProof;
 
+  /// Instructions affichees au client pour savoir ou/comment envoyer son paiement (Mobile
+  /// Money, banque...) avant de le declarer -- voir migration V39 backend. Vide seulement si
+  /// l'administration n'a pas encore configure ce texte.
+  final String paymentInstructionsText;
+
   const PublicSettings({
     required this.minOrderAmountCfa,
     required this.maxOrderAmountCfa,
@@ -21,6 +26,7 @@ class PublicSettings {
     required this.maxProofsPerPayment,
     required this.enabledPaymentMethods,
     required this.requirePaymentProof,
+    required this.paymentInstructionsText,
   });
 
   factory PublicSettings.fromJson(Map<String, dynamic> json) {
@@ -34,6 +40,7 @@ class PublicSettings {
           .map((e) => e as String)
           .toList(growable: false),
       requirePaymentProof: json['requirePaymentProof'] as bool? ?? true,
+      paymentInstructionsText: json['paymentInstructionsText'] as String? ?? '',
     );
   }
 }

@@ -54,6 +54,21 @@ class OrderCreateController extends ChangeNotifier {
   /// "reessayez".
   bool get isKycBlocked => errorCode == 'KYC_VERIFICATION_REQUIRED';
 
+  /// `INSUFFICIENT_TREASURY` (voir `TreasuryService.reserve` backend) reste un
+  /// blocage reel -- la tresorerie CNY ne peut pas honorer plus qu'elle ne
+  /// detient, invariant comptable impossible a assouplir cote client (retour
+  /// beta-testeur sept. 2026 discute avec l'equipe : la RESTRICTION reste,
+  /// seul le TON change). Le message brut backend expose des montants
+  /// internes ("disponible X, demande Y") -- jamais affiche tel quel, on lui
+  /// substitue un message neutre qui n'alarme pas et n'invite pas a
+  /// re-essayer immediatement (le prochain essai echouerait pour la meme
+  /// raison tant que la tresorerie n'est pas reapprovisionnee).
+  bool get isInsufficientTreasury => errorCode == 'INSUFFICIENT_TREASURY';
+
+  static const _insufficientTreasuryMessage =
+      'Pour des raisons de maintenance, ce transfert va prendre un peu plus de temps que prevu. '
+      'Reessayez un peu plus tard.';
+
   Future<void> load() async {
     await Future.wait([_loadFeasibility(), _loadSuppliers()]);
   }
@@ -137,8 +152,8 @@ class OrderCreateController extends ChangeNotifier {
       // beneficiaire doit rejouer la meme cle d'idempotence (mission
       // section 27) plutot que de risquer un doublon si la premiere
       // tentative avait en realite reussi cote serveur.
-      errorMessage = error.message;
       errorCode = error.code;
+      errorMessage = errorCode == 'INSUFFICIENT_TREASURY' ? _insufficientTreasuryMessage : error.message;
       submitting = false;
       notifyListeners();
       return null;
