@@ -25,6 +25,10 @@
   </button>
   <mat-menu #userMenu="matMenu">
     <div class="user-menu__name">{{ currentUser()?.firstName }} {{ currentUser()?.lastName }}</div>
+    <a mat-menu-item routerLink="/privacy" target="_blank">
+      <mat-icon>privacy_tip</mat-icon>
+      <span>Politique de confidentialite</span>
+    </a>
     <button mat-menu-item (click)="logout()">
       <mat-icon>logout</mat-icon>
       <span>Deconnexion</span>

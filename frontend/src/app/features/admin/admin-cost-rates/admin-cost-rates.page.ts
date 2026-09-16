@@ -56,6 +56,7 @@ export class AdminCostRatesPage implements OnInit {
     'rateUsdCny',
     'fees',
     'breakEvenRate',
+    'customerRate',
     'createdAt',
   ];
 
@@ -139,7 +140,8 @@ export class AdminCostRatesPage implements OnInit {
         next: (response) => {
           this.publishing.set(false);
           this.notification.success(
-            `Configuration publiée. Coût de revient : ${response.data.breakEvenRate} XOF / CNY.`,
+            `Configuration publiée. Taux client : ${response.data.customerRate} XOF / CNY `
+              + `(coût de revient ${response.data.breakEvenRate} + marge ${response.data.marginPercentage} %).`,
           );
           this.form.patchValue({ note: '' });
           this.reload();

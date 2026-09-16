@@ -34,6 +34,10 @@ public record PublicSettingsResponse(
         List<String> enabledPaymentMethods,
 
         @Schema(description = "Vrai si une preuve de paiement est exigee")
-        boolean requirePaymentProof
+        boolean requirePaymentProof,
+
+        @Schema(description = "Instructions affichees au client pour savoir ou/comment envoyer son paiement",
+                example = "Envoyez le montant indique par Mobile Money au +226 71 00 25 25, puis declarez votre paiement ci-dessous.")
+        String paymentInstructionsText
 ) {
 }

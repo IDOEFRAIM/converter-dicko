@@ -5,22 +5,26 @@
 #  - backend   : API Spring Boot (Flyway migre le schema au demarrage).
 #  - frontend  : Angular compile, servi par nginx, qui relaie /api -> backend.
 #
-#  Usage dev (local, tous les ports exposes) :
-#    cp .env.example .env
+#  Ce fichier seul est le config PROD-SAFE par defaut : ni PostgreSQL ni le
+#  backend ne publient de port sur l'hote, seul le frontend (4300) est
+#  expose, destine a etre reverse-proxy par Caddy (voir Caddyfile.example).
+#
+#  Usage prod (Hetzner, etc.) :
+#    cp .env.example .env && vim .env  # renseigner secrets (JWT_SECRET, DB_PASSWORD, ADMIN_PASSWORD)
 #    docker compose up -d --build
 #
-#  Usage prod (ports interne, Caddy en reverse-proxy) :
-#    cp .env.example .env && vim .env  # renseigner secrets prod
-#    COMPOSE_ENV=prod docker compose up -d --build
+#  Usage dev (local, ajoute les ports 5432/8080 pour deboguer directement) :
+#    cp .env.example .env
+#    docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 #
 #  Runbook complet de mise en production : voir DEPLOY.md a la racine.
 #
-#  Profils :
-#  - dev (defaut)  : identifiants locaux de application-dev.yml, tous ports publics
-#  - prod (COMPOSE_ENV=prod) : secrets obligatoires, PostgreSQL/backend non exposes
+#  ATTENTION : Compose CONCATENE les listes (ports, volumes...) entre
+#  plusieurs fichiers -f, il ne les remplace pas. Un override avec
+#  `ports: []` ne retire donc JAMAIS un port deja publie ici. C'est
+#  pourquoi ce fichier de base ne publie AUCUN port pour postgres/backend
+#  et docker-compose.dev.yml les AJOUTE plutot que l'inverse.
 # =====================================================================
-
-version: '3.8'
 
 services:
   postgres:
@@ -31,8 +35,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-converter}
       POSTGRES_USER: ${POSTGRES_USER:-converter}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-converter_local_dev}
-    # Dev : expose le port 5432 pour acces local direct via override.
-    # Prod : port non expose (internal networking only).
+    # Aucun port publie ici (voir note en tete de fichier) : acces via
+    # docker-compose.dev.yml en local, sinon reseau interne uniquement.
     volumes:
       - converter-postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -43,14 +47,6 @@ services:
       start_period: 10s
     networks:
       - converter-net
-    # Prod : limites de ressources (optionnel, ajuster selon VM Hetzner)
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '2'
-    #       memory: 1G
-    #     reservations:
-    #       memory: 512M
 
   backend:
     build:
@@ -79,9 +75,8 @@ services:
       ADMIN_PASSWORD:
     volumes:
       - converter-storage:/app/storage
-    # Dev : expose pour tests directs. Prod : non expose (acces via frontend/nginx seul).
-    ports:
-      - "${SERVER_PORT:-8080}:8080"
+    # Aucun port publie ici (voir note en tete de fichier) : acces via
+    # docker-compose.dev.yml en local, sinon uniquement par le frontend/nginx.
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8080/actuator/health"]
       interval: 10s
@@ -90,14 +85,6 @@ services:
       start_period: 45s
     networks:
       - converter-net
-    # Prod : limites de ressources
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '2'
-    #       memory: 2G
-    #     reservations:
-    #       memory: 1G
 
   frontend:
     build:
@@ -108,7 +95,8 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-    # Prod: expose SEULEMENT en dev local. En prod, Caddy reverse-proxy depuis 443.
+    # Seul port publie par defaut. En prod, Caddy fait reverse-proxy depuis 443
+    # vers ce port (voir Caddyfile.example) ; en dev, on l'ouvre directement.
     ports:
       - "${FRONTEND_PORT:-4300}:80"
     healthcheck:
@@ -119,14 +107,6 @@ services:
       start_period: 10s
     networks:
       - converter-net
-    # Prod : limites de ressources
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '1'
-    #       memory: 512M
-    #     reservations:
-    #       memory: 256M
 
 volumes:
   converter-postgres-data:

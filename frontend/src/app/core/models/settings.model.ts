@@ -7,4 +7,7 @@ export interface PublicSettings {
   maxProofsPerPayment: number;
   enabledPaymentMethods: string[];
   requirePaymentProof: boolean;
+  /** Instructions affichees au client pour savoir ou/comment envoyer son paiement (Mobile
+   * Money, banque...) avant de le declarer -- voir migration V39 backend. */
+  paymentInstructionsText: string;
 }

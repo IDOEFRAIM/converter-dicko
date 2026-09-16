@@ -50,7 +50,9 @@ public class AdminCostRateController {
     @PostMapping
     @Operation(summary = "Publier la configuration de cout du jour",
             description = "Calcule et historise le breakEvenRate (XOF/CNY) pour le montant de reference donne. "
-                    + "N'affecte ni le RateSource publie aux clients ni aucun Quote existant ou futur.")
+                    + "N'affecte pas le RateSource (ecran distinct 'Taux preferentiel'), mais EST directement "
+                    + "consomme par la creation de tout nouveau Quote depuis la Phase 3.1 : publier une valeur "
+                    + "erronee affecte immediatement le customerRate propose aux clients suivants.")
     public ResponseEntity<ApiResponse<CostRateConfigurationResponse>> publish(
             @Valid @RequestBody PublishCostRateConfigurationRequest request,
             @AuthenticatedUser CurrentUser actor) {

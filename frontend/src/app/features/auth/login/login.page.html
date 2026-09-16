@@ -8,13 +8,10 @@
 }
 
 <form [formGroup]="form" (ngSubmit)="submit()" class="form">
-  <mat-form-field appearance="outline" class="form__field">
-    <mat-label>Numero de telephone</mat-label>
-    <input matInput formControlName="phone" placeholder="+2250700000000" autocomplete="username" />
-    @if (form.controls.phone.invalid && form.controls.phone.touched) {
-      <mat-error>Le numero de telephone est obligatoire.</mat-error>
-    }
-  </mat-form-field>
+  <app-phone-number-field [control]="form.controls.phone" autocomplete="username" />
+  @if (form.controls.phone.invalid && form.controls.phone.touched) {
+    <p class="form-notice form-notice--error">Le numero de telephone est obligatoire.</p>
+  }
 
   <mat-form-field appearance="outline" class="form__field">
     <mat-label>Mot de passe</mat-label>

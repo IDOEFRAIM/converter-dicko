@@ -26,6 +26,18 @@ export interface CostRateConfiguration {
   referenceAmountXof: string;
   /** Coût de revient calculé, en XOF par CNY. */
   breakEvenRate: string;
+  /**
+   * Marge commerciale actuellement active (`DEFAULT_MARGIN_PERCENTAGE`), recalculée à la
+   * lecture — jamais persistée sur cette configuration elle-même.
+   */
+  marginPercentage: string;
+  /**
+   * `breakEvenRate` après application de `marginPercentage` — exactement le nombre que le
+   * client voit (mobile/web), calculé avec la même formule (`RateEngine.applyMargin`) que celle
+   * utilisée pour un vrai devis. Sert à ne plus confondre cette page avec l'écran distinct
+   * « Taux préférentiel » (RateSource), sans lien avec le pricing des devis.
+   */
+  customerRate: string;
   note: string | null;
   createdAt: string;
 }

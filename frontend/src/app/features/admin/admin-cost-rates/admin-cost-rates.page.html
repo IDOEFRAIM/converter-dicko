@@ -1,25 +1,38 @@
 <app-page-header
-  title="Coût de revient"
+  title="Taux client (pricing)"
   subtitle="Chaîne XOF → USD → CNY. C'est cette configuration qui permet la création de devis côté client."
 />
 
 <div class="cost-notice">
   <mat-icon>info</mat-icon>
   <span>
-    À ne pas confondre avec « Taux de change » (taux préférentiel uniquement). Tant qu'aucune
-    configuration n'est publiée ici, les clients voient « Aucune configuration de coût publiée »
-    et ne peuvent pas obtenir de devis.
+    À ne pas confondre avec « Taux préférentiel » (legacy, sans lien avec le pricing des devis).
+    Tant qu'aucune configuration n'est publiée ici, les clients voient « Aucune configuration de
+    coût publiée » et ne peuvent pas obtenir de devis.
   </span>
 </div>
 
 @if (current(); as c) {
   <mat-card class="page-card current-card">
     <p class="section-title">Configuration courante</p>
-    <p class="current-card__break-even">
-      Coût de revient : <strong>{{ c.breakEvenRate }} XOF</strong> / CNY
-      <span class="current-card__meta">
-        (réf. {{ c.referenceAmountXof }} XOF · publiée le {{ c.createdAt | date: 'dd/MM/yyyy HH:mm' }})
-      </span>
+    <div class="rate-chain">
+      <div class="rate-chain__step">
+        <span class="rate-chain__label">Coût de revient</span>
+        <span class="rate-chain__value">{{ c.breakEvenRate }} XOF/CNY</span>
+      </div>
+      <mat-icon class="rate-chain__arrow">arrow_forward</mat-icon>
+      <div class="rate-chain__step">
+        <span class="rate-chain__label">Marge commerciale</span>
+        <span class="rate-chain__value">+{{ c.marginPercentage }} %</span>
+      </div>
+      <mat-icon class="rate-chain__arrow">arrow_forward</mat-icon>
+      <div class="rate-chain__step rate-chain__step--customer">
+        <span class="rate-chain__label">Taux client (ce que le client voit)</span>
+        <span class="rate-chain__value rate-chain__value--customer">{{ c.customerRate }} XOF/CNY</span>
+      </div>
+    </div>
+    <p class="current-card__meta">
+      Réf. {{ c.referenceAmountXof }} XOF · publiée le {{ c.createdAt | date: 'dd/MM/yyyy HH:mm' }}
     </p>
   </mat-card>
 }
@@ -121,7 +134,11 @@
       </ng-container>
       <ng-container matColumnDef="breakEvenRate">
         <th mat-header-cell *matHeaderCellDef>Coût de revient</th>
-        <td mat-cell *matCellDef="let r"><strong>{{ r.breakEvenRate }}</strong> XOF/CNY</td>
+        <td mat-cell *matCellDef="let r">{{ r.breakEvenRate }} XOF/CNY</td>
+      </ng-container>
+      <ng-container matColumnDef="customerRate">
+        <th mat-header-cell *matHeaderCellDef>Taux client</th>
+        <td mat-cell *matCellDef="let r"><strong>{{ r.customerRate }}</strong> XOF/CNY</td>
       </ng-container>
       <ng-container matColumnDef="createdAt">
         <th mat-header-cell *matHeaderCellDef>Publiée</th>

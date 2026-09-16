@@ -138,7 +138,8 @@ public class SettingsService {
                 getLong(SettingKey.MAX_PROOF_FILE_SIZE_BYTES),
                 getInt(SettingKey.MAX_PROOFS_PER_PAYMENT),
                 getList(SettingKey.ENABLED_PAYMENT_METHODS),
-                getBoolean(SettingKey.REQUIRE_PAYMENT_PROOF));
+                getBoolean(SettingKey.REQUIRE_PAYMENT_PROOF),
+                getString(SettingKey.PAYMENT_INSTRUCTIONS_TEXT));
     }
 
     // -----------------------------------------------------------------

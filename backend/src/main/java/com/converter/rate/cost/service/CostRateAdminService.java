@@ -10,8 +10,11 @@ import com.converter.rate.cost.domain.DailyCostRateConfiguration;
 import com.converter.rate.cost.dto.CostRateConfigurationResponse;
 import com.converter.rate.cost.dto.PublishCostRateConfigurationRequest;
 import com.converter.rate.cost.repository.DailyCostRateConfigurationRepository;
+import com.converter.rate.engine.RateEngine;
 import com.converter.rate.provider.RateProvider;
 import com.converter.rate.publicrate.service.PublicRateSnapshotService;
+import com.converter.settings.domain.SettingKey;
+import com.converter.settings.service.SettingsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -19,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
@@ -46,17 +50,23 @@ public class CostRateAdminService {
     private final PublicRateSnapshotService publicRateSnapshotService;
     private final AuditService auditService;
     private final Clock clock;
+    private final RateEngine rateEngine;
+    private final SettingsService settingsService;
 
     public CostRateAdminService(DailyCostRateConfigurationRepository repository,
                                 CostRateCalculator calculator,
                                 PublicRateSnapshotService publicRateSnapshotService,
                                 AuditService auditService,
-                                Clock clock) {
+                                Clock clock,
+                                RateEngine rateEngine,
+                                SettingsService settingsService) {
         this.repository = repository;
         this.calculator = calculator;
         this.publicRateSnapshotService = publicRateSnapshotService;
         this.auditService = auditService;
         this.clock = clock;
+        this.rateEngine = rateEngine;
+        this.settingsService = settingsService;
     }
 
     @Transactional
@@ -101,17 +111,26 @@ public class CostRateAdminService {
     @Transactional(readOnly = true)
     public CostRateConfigurationResponse current() {
         return repository.findFirstByOrderByCreatedAtDesc()
-                .map(CostRateAdminService::toResponse)
+                .map(this::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.RESOURCE_NOT_FOUND,
                         "Aucune configuration de cout n'a encore ete publiee."));
     }
 
     @Transactional(readOnly = true)
     public Page<CostRateConfigurationResponse> history(Pageable pageable) {
-        return repository.findAllByOrderByCreatedAtDesc(pageable).map(CostRateAdminService::toResponse);
+        return repository.findAllByOrderByCreatedAtDesc(pageable).map(this::toResponse);
     }
 
-    private static CostRateConfigurationResponse toResponse(DailyCostRateConfiguration configuration) {
+    /**
+     * Recalcule {@code marginPercentage}/{@code customerRate} avec la marge
+     * <b>actuellement active</b> (jamais persistes sur la configuration
+     * elle-meme) — meme formule que {@link PublicRateSnapshotService#record},
+     * pour que l'administrateur voie exactement le nombre propose au client
+     * a l'instant present, y compris pour une ligne d'historique ancienne.
+     */
+    private CostRateConfigurationResponse toResponse(DailyCostRateConfiguration configuration) {
+        BigDecimal marginPercentage = settingsService.getDecimal(SettingKey.DEFAULT_MARGIN_PERCENTAGE);
+        BigDecimal customerRate = rateEngine.applyMargin(configuration.getBreakEvenRate(), marginPercentage);
         return new CostRateConfigurationResponse(
                 configuration.getId(),
                 configuration.getBusinessDate(),
@@ -121,6 +140,8 @@ public class CostRateAdminService {
                 configuration.getFeeUsdCnyFixedUsd(),
                 configuration.getReferenceAmountXof(),
                 configuration.getBreakEvenRate(),
+                marginPercentage,
+                customerRate,
                 configuration.getNote(),
                 configuration.getCreatedAt());
     }

@@ -8,7 +8,10 @@ import com.converter.rate.cost.domain.DailyCostRateConfiguration;
 import com.converter.rate.cost.dto.CostRateConfigurationResponse;
 import com.converter.rate.cost.dto.PublishCostRateConfigurationRequest;
 import com.converter.rate.cost.repository.DailyCostRateConfigurationRepository;
+import com.converter.rate.engine.RateEngine;
 import com.converter.rate.publicrate.service.PublicRateSnapshotService;
+import com.converter.settings.domain.SettingKey;
+import com.converter.settings.service.SettingsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,6 +55,10 @@ class CostRateAdminServiceTest {
     @Mock
     private PublicRateSnapshotService publicRateSnapshotService;
 
+    @Mock
+    private SettingsService settingsService;
+
+    private final RateEngine rateEngine = new RateEngine();
     private final Clock clock = Clock.fixed(Instant.parse("2026-09-02T12:00:00Z"), ZoneOffset.UTC);
     private final UUID actorId = UUID.randomUUID();
 
@@ -60,7 +67,7 @@ class CostRateAdminServiceTest {
     @BeforeEach
     void setUp() {
         service = new CostRateAdminService(repository, new CostRateCalculator(), publicRateSnapshotService,
-                auditService, clock);
+                auditService, clock, rateEngine, settingsService);
     }
 
     @Test
@@ -71,6 +78,7 @@ class CostRateAdminServiceTest {
                     configuration.setId(UUID.randomUUID());
                     return configuration;
                 });
+        when(settingsService.getDecimal(SettingKey.DEFAULT_MARGIN_PERCENTAGE)).thenReturn(new BigDecimal("1.5"));
 
         PublishCostRateConfigurationRequest request = new PublishCostRateConfigurationRequest(
                 LocalDate.parse("2026-09-02"), new BigDecimal("583"), new BigDecimal("6.70"),
@@ -81,6 +89,10 @@ class CostRateAdminServiceTest {
         assertThat(response.breakEvenRate()).isEqualByComparingTo("87.971572");
         assertThat(response.referenceAmountXof()).isEqualByComparingTo("1000000");
         assertThat(response.businessDate()).isEqualTo(LocalDate.parse("2026-09-02"));
+        // marginPercentage/customerRate : recalcules a la lecture avec la marge active (voir
+        // toResponse), meme formule que RateEngine.applyMargin utilisee pour un vrai Quote.
+        assertThat(response.marginPercentage()).isEqualByComparingTo("1.5");
+        assertThat(response.customerRate()).isEqualByComparingTo("89.291146");
 
         ArgumentCaptor<DailyCostRateConfiguration> captor = ArgumentCaptor.forClass(DailyCostRateConfiguration.class);
         verify(repository).save(captor.capture());

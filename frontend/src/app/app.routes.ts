@@ -214,6 +214,13 @@ export const routes: Routes = [
       },
     ],
   },
+  {
+    // Publique (aucun guard) : lisible avant meme la creation d'un compte (lien depuis
+    // l'inscription), et depuis le menu utilisateur une fois connecte.
+    path: 'privacy',
+    loadComponent: () =>
+      import('./features/legal/privacy-policy/privacy-policy.page').then((m) => m.PrivacyPolicyPage),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'login' },
   { path: '**', redirectTo: 'login' },
 ];

@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
 import { extractErrorMessage } from '../../../core/services/api-error.util';
+import { PhoneNumberFieldComponent } from '../../../shared/components/phone-number-field/phone-number-field.component';
 
 @Component({
   selector: 'app-login-page',
@@ -18,6 +19,7 @@ import { extractErrorMessage } from '../../../core/services/api-error.util';
     MatFormFieldModule,
     MatInputModule,
     MatProgressSpinnerModule,
+    PhoneNumberFieldComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login.page.html',

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -37,6 +38,8 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
   templateUrl: './supplier-form.page.html',
 })
 export class SupplierFormPage implements OnInit, OnDestroy {
+  private typeSubscription?: Subscription;
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly supplierService = inject(SupplierService);
@@ -112,6 +115,17 @@ export class SupplierFormPage implements OnInit, OnDestroy {
       this.supplierId.set(id);
       this.loadExisting(id);
     }
+    // bankName/accountNumber n'ont aucun Validator statique (obligatoires uniquement pour
+    // CHINESE_BANK_ACCOUNT, impose via setErrors() dans submit()) : sans ce nettoyage, changer
+    // de type APRES un premier submit() en erreur laisse ces erreurs "required" figees pour
+    // toujours sur le FormGroup (jamais reevaluees), qui reste alors invalid en silence -- le
+    // code QR d'un Alipay/WeChat Pay ne pouvait plus jamais etre soumis.
+    this.typeSubscription = this.form.controls.type.valueChanges.subscribe(() => {
+      if (!this.isBankAccount) {
+        this.form.controls.bankName.setErrors(null);
+        this.form.controls.accountNumber.setErrors(null);
+      }
+    });
   }
 
   private loadExisting(id: string): void {
@@ -170,6 +184,10 @@ export class SupplierFormPage implements OnInit, OnDestroy {
   submit(): void {
     if (this.saving() || this.loading()) {
       return;
+    }
+    if (!this.isBankAccount) {
+      this.form.controls.bankName.setErrors(null);
+      this.form.controls.accountNumber.setErrors(null);
     }
     if (this.isBankAccount && !this.form.controls.bankName.value) {
       this.form.controls.bankName.setErrors({ required: true });
@@ -258,5 +276,6 @@ export class SupplierFormPage implements OnInit, OnDestroy {
     if (url) {
       URL.revokeObjectURL(url);
     }
+    this.typeSubscription?.unsubscribe();
   }
 }

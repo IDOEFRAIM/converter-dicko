@@ -1,26 +1,23 @@
 # =====================================================================
-#  Production overlay for docker-compose.yml
+#  Overlay OPTIONNEL pour la production (limites de ressources + logging).
 #
-#  USAGE (Hetzner/staging/prod):
-#    docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#  Le fichier docker-compose.yml de base est DEJA prod-safe par defaut :
+#  ni PostgreSQL ni le backend ne publient de port sur l'hote. Cet
+#  overlay n'a donc PAS besoin de "retirer" des ports (Compose concatene
+#  les listes entre fichiers -f, un override `ports: []` ne les retire
+#  jamais) -- il ajoute seulement les limites de ressources et une
+#  politique de redemarrage plus stricte pour un serveur de production.
 #
-#  This file overrides/extends docker-compose.yml:
-#  - Removes dev port exposures (PostgreSQL 5432, backend 8080)
-#  - Keeps frontend on 4300 (intended to sit behind Caddy/nginx on 443)
-#  - Adds resource limits and prod-grade logging
-#  - Enforces all services bound to internal network only (except frontend)
+#  USAGE (Hetzner/staging/prod) :
+#    docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 #
-#  Prerequisites:
-#  1. .env file with prod secrets (JWT_SECRET, ADMIN_PASSWORD, DB_PASSWORD)
-#  2. Caddy reverse proxy on 443 -> frontend:80 (see Caddyfile.example)
+#  Prerequis :
+#  1. .env avec les secrets de prod (JWT_SECRET, ADMIN_PASSWORD, POSTGRES_PASSWORD)
+#  2. Caddy en reverse-proxy sur 443 -> frontend:4300 (voir Caddyfile.example)
 # =====================================================================
-
-version: '3.8'
 
 services:
   postgres:
-    # Remove dev port exposure; rely on internal docker network only
-    ports: []
     restart: always
     deploy:
       resources:
@@ -31,11 +28,7 @@ services:
           memory: 512M
 
   backend:
-    # Remove dev port exposure; only accessible via frontend/nginx internal network
-    ports: []
     restart: always
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
     deploy:
       resources:
         limits:
@@ -45,8 +38,6 @@ services:
           memory: 1G
 
   frontend:
-    # Keep 4300 for reverse-proxy. Caddy (or nginx) listens on 443 externally,
-    # relays internally to frontend:80, which in turn relays /api to backend:8080.
     restart: always
     deploy:
       resources:
@@ -55,4 +46,3 @@ services:
           memory: 512M
         reservations:
           memory: 256M
-

@@ -15,10 +15,17 @@
         <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
       }
 
-      <p class="step-label">1. Effectuez le paiement</p>
+      <p class="step-label">1. Envoyez l'argent</p>
       <p class="instructions">
-        Envoyez <strong>{{ o.amountXof | money: 'XOF' }}</strong> via l'un des moyens ci-dessous, puis renseignez la
-        reference de la transaction.
+        Envoyez <strong>{{ o.amountXof | money: 'XOF' }}</strong> via l'un des moyens ci-dessous.
+      </p>
+      @if (paymentInstructions()) {
+        <p class="form-notice">{{ paymentInstructions() }}</p>
+      }
+
+      <p class="step-label">2. Confirmez votre paiement</p>
+      <p class="instructions">
+        Deja envoye ? Confirmez ci-dessous pour qu'on verifie et debloque votre transfert.
       </p>
 
       <form [formGroup]="form" (ngSubmit)="submitPayment()" class="form">
@@ -38,7 +45,8 @@
 
         <mat-form-field appearance="outline" class="form__field">
           <mat-label>Reference de transaction</mat-label>
-          <input matInput formControlName="transactionReference" />
+          <input matInput formControlName="transactionReference" placeholder="Ex. MP240916.1234" />
+          <mat-hint>Le code recu par SMS apres votre envoi</mat-hint>
           @if (form.controls.transactionReference.invalid && form.controls.transactionReference.touched) {
             <mat-error>La reference est obligatoire.</mat-error>
           }

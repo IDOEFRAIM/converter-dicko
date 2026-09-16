@@ -63,7 +63,14 @@ public enum SettingKey {
     POOL_REWARD_PER_MILLION_XOF_PCT(SettingType.DECIMAL),
 
     /** Plafond de la reduction de marge accordee par une Ruee, tous bonus cumules (#4). */
-    POOL_REWARD_MAX_PCT(SettingType.DECIMAL);
+    POOL_REWARD_MAX_PCT(SettingType.DECIMAL),
+
+    /**
+     * Texte libre affiche au client avant qu'il declare son paiement (numero Mobile Money,
+     * coordonnees bancaires...) — voir migration V39. Sans ce texte, le client n'a aucun moyen
+     * de savoir ou envoyer son argent une fois l'ordre cree.
+     */
+    PAYMENT_INSTRUCTIONS_TEXT(SettingType.STRING);
 
     private final SettingType type;
 

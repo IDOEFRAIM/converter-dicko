@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { AuthService } from '../../../core/services/auth.service';
 import { OrderService } from '../../../core/services/order.service';
 import { PaymentService } from '../../../core/services/payment.service';
 import { SettingsService } from '../../../core/services/settings.service';
@@ -51,6 +52,7 @@ export class PaymentSubmitPage implements OnInit {
   private readonly orderService = inject(OrderService);
   private readonly paymentService = inject(PaymentService);
   private readonly settingsService = inject(SettingsService);
+  private readonly authService = inject(AuthService);
 
   readonly order = signal<OrderDetail | null>(null);
   readonly payment = signal<Payment | null>(null);
@@ -60,6 +62,7 @@ export class PaymentSubmitPage implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly proofUploaded = signal(false);
   readonly methods = signal<{ value: PaymentMethod; label: string }[]>([]);
+  readonly paymentInstructions = signal<string>('');
 
   private readonly idempotency = new IdempotencyAttempt();
 
@@ -77,6 +80,14 @@ export class PaymentSubmitPage implements OnInit {
       this.errorMessage.set('Ordre introuvable.');
       this.loading.set(false);
       return;
+    }
+
+    // Retour beta-testeur sept. 2026 : simplifier le formulaire -- dans l'immense majorite des
+    // cas, le payeur EST le titulaire du compte. Pre-rempli, modifiable si quelqu'un d'autre a
+    // effectue le paiement en son nom.
+    const user = this.authService.currentUser();
+    if (user) {
+      this.form.patchValue({ payerName: `${user.firstName} ${user.lastName}`.trim(), payerPhone: user.phone });
     }
 
     this.orderService.get(orderId).subscribe({
@@ -98,6 +109,7 @@ export class PaymentSubmitPage implements OnInit {
           label: METHOD_LABELS[value as PaymentMethod] ?? value,
         })),
       );
+      this.paymentInstructions.set(response.data.paymentInstructionsText);
     });
   }
 

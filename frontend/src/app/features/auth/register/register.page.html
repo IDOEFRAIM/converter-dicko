@@ -15,13 +15,10 @@
     <input matInput formControlName="lastName" autocomplete="family-name" />
   </mat-form-field>
 
-  <mat-form-field appearance="outline" class="form__field">
-    <mat-label>Numero de telephone</mat-label>
-    <input matInput formControlName="phone" placeholder="+2250700000000" autocomplete="username" />
-    @if (form.controls.phone.invalid && form.controls.phone.touched) {
-      <mat-error>Format international attendu, ex. +2250700000000.</mat-error>
-    }
-  </mat-form-field>
+  <app-phone-number-field [control]="form.controls.phone" autocomplete="username" />
+  @if (form.controls.phone.invalid && form.controls.phone.touched) {
+    <p class="form-notice form-notice--error">Numero invalide.</p>
+  }
 
   <mat-form-field appearance="outline" class="form__field">
     <mat-label>Mot de passe</mat-label>
@@ -30,6 +27,11 @@
       <mat-error>Au moins 8 caracteres.</mat-error>
     }
   </mat-form-field>
+
+  <p class="form-notice">
+    En creant un compte, vous acceptez notre
+    <a routerLink="/privacy" target="_blank">politique de confidentialite</a>.
+  </p>
 
   <button mat-flat-button class="brand-button form__submit" type="submit"  [disabled]="loading()">
     @if (loading()) {

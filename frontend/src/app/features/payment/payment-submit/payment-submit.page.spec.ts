@@ -33,6 +33,7 @@ const PUBLIC_SETTINGS = {
   maxProofsPerPayment: 3,
   enabledPaymentMethods: ['MOBILE_MONEY'],
   requirePaymentProof: true,
+  paymentInstructionsText: 'Envoyez le montant indique par Mobile Money, puis declarez votre paiement.',
 };
 
 describe('PaymentSubmitPage', () => {

@@ -1,0 +1,17 @@
+# =====================================================================
+#  Overlay de developpement local : ajoute les ports directs vers
+#  PostgreSQL et le backend (absents du fichier de base, prod-safe par
+#  defaut) pour deboguer/inspecter sans passer par le frontend.
+#
+#  USAGE (poste de dev uniquement, jamais en production) :
+#    docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+# =====================================================================
+
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  backend:
+    ports:
+      - "${SERVER_PORT:-8080}:8080"

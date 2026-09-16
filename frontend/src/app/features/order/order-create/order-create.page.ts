@@ -12,7 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { OrderService } from '../../../core/services/order.service';
 import { QuoteService } from '../../../core/services/quote.service';
 import { SupplierService } from '../../../core/services/supplier.service';
-import { extractErrorMessage } from '../../../core/services/api-error.util';
+import { errorCode, extractErrorMessage } from '../../../core/services/api-error.util';
 import { IdempotencyAttempt } from '../../../core/services/idempotency.util';
 import {
   BeneficiaryType,
@@ -190,11 +190,22 @@ export class OrderCreatePage implements OnInit {
         if (Number(order.amountXof) >= WHATSAPP_CONFIRMATION_THRESHOLD_XOF) {
           this.showWhatsAppConfirmation(order.amountXof, order.reference);
         }
-        this.router.navigate(['/orders', order.id]);
+        // Retour beta-testeur sept. 2026 : "il est oblige de tourner et reflechir" -- un ordre
+        // vient toujours de naitre AWAITING_PAYMENT (voir OrderService.create backend), l'etape
+        // suivante est TOUJOURS payer. On y va donc directement plutot que de faire atterrir sur
+        // le detail de l'ordre, ou l'utilisateur devait chercher lui-meme comment payer.
+        this.router.navigate(['/orders', order.id, 'payment']);
       },
       error: (error) => {
         this.loading.set(false);
-        this.errorMessage.set(extractErrorMessage(error));
+        // Le blocage tresorerie reste reel (invariant comptable, voir TreasuryService.reserve
+        // backend) -- seul le TON change, jamais le message brut backend qui expose des
+        // montants internes ("disponible X, demande Y") -- retour beta-testeur sept. 2026.
+        this.errorMessage.set(
+          errorCode(error) === 'INSUFFICIENT_TREASURY'
+            ? 'Pour des raisons de maintenance, ce transfert va prendre un peu plus de temps que prevu. Reessayez un peu plus tard.'
+            : extractErrorMessage(error),
+        );
       },
     });
   }

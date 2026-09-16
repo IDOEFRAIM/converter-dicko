@@ -63,6 +63,14 @@
       <a routerLink="/quote/new" mat-flat-button class="brand-button">Nouveau devis</a>
     } @else if (q.status === 'ACCEPTED') {
       <p class="form-notice form-notice--success">Devis accepte.</p>
+      <a
+        [routerLink]="['/order/new']"
+        [queryParams]="{ quoteId: q.id }"
+        mat-flat-button
+        class="brand-button"
+      >
+        Continuer vers la creation de l'ordre
+      </a>
     }
   </mat-card>
 }
