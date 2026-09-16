@@ -10,7 +10,7 @@ import { RouterOutlet } from '@angular/router';
     <div class="auth-shell">
       <div class="auth-shell__brand">
         <span class="auth-shell__mark"><img src="logo.png" alt="" /></span>
-        Converter
+        YUAN PAY BF
       </div>
       <p class="auth-shell__tagline">Transferts XOF &rarr; CNY, simples et suivis</p>
       <div class="auth-shell__card">

@@ -44,7 +44,7 @@ public class PdfBoxReceiptPdfGenerator implements ReceiptPdfGenerator {
     public byte[] generate(TransferReceiptModel receipt) {
         try (PDDocument document = new PDDocument()) {
             try (PdfDocumentWriter writer = new PdfDocumentWriter(document)) {
-                writer.header("Converter", "Justificatif de transfert", "Ref. " + receipt.transactionReference(),
+                writer.header("YUAN PAY BF", "Justificatif de transfert", "Ref. " + receipt.transactionReference(),
                         format(receipt.createdAt()));
 
                 writer.highlight("Montant recu par le beneficiaire",
@@ -94,7 +94,7 @@ public class PdfBoxReceiptPdfGenerator implements ReceiptPdfGenerator {
                     writeRefund(writer, receipt.refund());
                 }
 
-                writer.footer("Document genere automatiquement -- Converter -- " + format(Instant.now()));
+                writer.footer("Document genere automatiquement -- YUAN PAY BF -- " + format(Instant.now()));
             }
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/auth/auth_session.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
@@ -10,6 +11,7 @@ import '../../../core/theme/experience_theme.dart';
 import '../../../shared/models/money.dart';
 import '../../../shared/models/purpose.dart';
 import '../../../shared/utils/validators.dart';
+import '../../../shared/utils/whatsapp_launcher.dart';
 import '../../../shared/widgets/icon_badge.dart';
 import '../../../shared/widgets/loading_view.dart';
 import '../../../shared/widgets/primary_action.dart';
@@ -105,12 +107,53 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
       purposeDetails: _purposeDetailsController.text.trim().isEmpty ? null : _purposeDetailsController.text.trim(),
     );
     if (order != null && mounted) {
+      final amount = double.tryParse(order.amountXof) ?? 0;
+      if (amount >= AppConfig.whatsAppConfirmationThresholdXof) {
+        await _showWhatsAppConfirmation(order);
+      }
+      if (!mounted) return;
       final poolId = controller.poolId;
       // Une contribution a une Ruee collective merite de revenir sur son detail (thermometre a
       // jour, celebration eventuelle) plutot que sur l'ordre lui-meme — l'ordre reste accessible
       // depuis l'onglet Activite comme d'habitude.
       context.go(poolId == null ? '/activity/orders/${order.id}' : '/pay/pools/$poolId');
     }
+  }
+
+  /// Retour client sept. 2026 : "a partir de plus de 02 millions tu dois etre
+  /// ramene sur WhatsApp pour confirmer ton ordre au 71 00 25 25" -- l'ordre
+  /// est deja cree normalement (aucune regle serveur ajoutee, voir
+  /// `AppConfig.whatsAppConfirmationThresholdXof`), cette boite oriente
+  /// simplement vers le canal humain attendu pour les gros montants.
+  Future<void> _showWhatsAppConfirmation(OrderDetail order) async {
+    final amountLabel = Money(order.amountXof, AppCurrency.xof).formattedWithCurrency();
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Confirmation par WhatsApp'),
+        content: Text(
+          'Votre transfert de $amountLabel doit etre confirme par WhatsApp au '
+          '71 00 25 25 avant traitement. Indiquez la reference ${order.reference}.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Plus tard'),
+          ),
+          FilledButton.icon(
+            onPressed: () async {
+              await launchWhatsAppConfirmation(
+                message: 'Bonjour, je confirme mon transfert de $amountLabel (reference ${order.reference}).',
+              );
+              if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+            },
+            icon: const Icon(Icons.chat),
+            label: const Text('Ouvrir WhatsApp'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -158,6 +201,30 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
                 child: Text(
                   'Liquidite peut-etre insuffisante. Vous pouvez continuer.',
                   style: AppTypography.body.copyWith(color: AppColors.warning),
+                ),
+              ),
+            ],
+            if ((double.tryParse(quote.amountXof) ?? 0) >= AppConfig.whatsAppConfirmationThresholdXof) ...[
+              const SizedBox(height: AppSpacing.md),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.warningSurface,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.chat, size: 18, color: AppColors.warning),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: Text(
+                        'Au-dela de 2 000 000 XOF, une confirmation par WhatsApp au 71 00 25 25 '
+                        'vous sera demandee apres la creation du transfert.',
+                        style: AppTypography.body.copyWith(color: AppColors.warning),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

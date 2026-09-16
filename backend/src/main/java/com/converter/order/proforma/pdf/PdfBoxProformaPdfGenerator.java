@@ -34,7 +34,7 @@ public class PdfBoxProformaPdfGenerator implements ProformaPdfGenerator {
     public byte[] generate(ProformaInvoiceModel model) {
         try (PDDocument document = new PDDocument()) {
             try (PdfDocumentWriter writer = new PdfDocumentWriter(document)) {
-                writer.header("Converter", "Facture proforma", "N. " + model.invoiceNumber(), format(model.issuedAt()));
+                writer.header("YUAN PAY BF", "Facture proforma", "N. " + model.invoiceNumber(), format(model.issuedAt()));
 
                 writer.highlight("Montant a recevoir",
                         amount(model.amountCny()) + " CNY",
@@ -42,7 +42,7 @@ public class PdfBoxProformaPdfGenerator implements ProformaPdfGenerator {
                 writer.blank();
 
                 writer.section("Emetteur");
-                writer.row("Prestataire", "Converter");
+                writer.row("Prestataire", "YUAN PAY BF");
                 writer.row("Objet", "Paiement transfrontalier de fournisseur (corridor " + model.currencyPair() + ")");
 
                 writer.section("Acheteur");
@@ -69,7 +69,7 @@ public class PdfBoxProformaPdfGenerator implements ProformaPdfGenerator {
                 writer.section("Beneficiaire");
                 writeBeneficiary(writer, model.beneficiary());
 
-                writer.footer("Document proforma -- sans valeur d'acquittement -- Converter -- " + format(Instant.now()));
+                writer.footer("Document proforma -- sans valeur d'acquittement -- YUAN PAY BF -- " + format(Instant.now()));
             }
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();

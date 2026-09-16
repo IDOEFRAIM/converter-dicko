@@ -413,7 +413,7 @@ class _AchievementsCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   CountUpText(
                     value: summary.xp.toDouble(),
-                    formatter: (v) => '${v.round()} XP',
+                    formatter: (v) => '${v.round()} points',
                     style: AppTypography.figureMedium.copyWith(color: AppColors.onLacquer),
                   ),
                   if (summary.nextBadgeLabel != null) ...[

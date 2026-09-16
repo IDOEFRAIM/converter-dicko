@@ -3,12 +3,14 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { OrderService } from '../../../core/services/order.service';
+import { QuoteService } from '../../../core/services/quote.service';
 import { SupplierService } from '../../../core/services/supplier.service';
 import { extractErrorMessage } from '../../../core/services/api-error.util';
 import { IdempotencyAttempt } from '../../../core/services/idempotency.util';
@@ -19,6 +21,20 @@ import {
 } from '../../../core/models/order.model';
 import { Purpose, PURPOSE_OPTIONS } from '../../../core/models/common.model';
 import { SupplierSummary } from '../../../core/models/supplier.model';
+import { openConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { MoneyPipe } from '../../../shared/pipes/money.pipe';
+
+/**
+ * Seuil (XOF) a partir duquel un transfert doit etre confirme sur WhatsApp
+ * (retour client sept. 2026 : "a partir de plus de 02 millions tu dois etre
+ * ramene sur WhatsApp pour confirmer ton ordre au 71 00 25 25") -- une simple
+ * orientation vers un canal humain pour les gros montants, jamais une regle
+ * metier serveur : l'ordre est deja cree normalement (miroir exact du
+ * comportement mobile, voir AppConfig.whatsAppConfirmationThresholdXof).
+ */
+const WHATSAPP_CONFIRMATION_THRESHOLD_XOF = 2_000_000;
+const WHATSAPP_CONFIRMATION_PHONE_DISPLAY = '71 00 25 25';
+const WHATSAPP_CONFIRMATION_PHONE_E164 = '22671002525';
 
 type BeneficiarySource = 'SUPPLIER' | 'MANUAL';
 
@@ -48,7 +64,9 @@ export class OrderCreatePage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly orderService = inject(OrderService);
+  private readonly quoteService = inject(QuoteService);
   private readonly supplierService = inject(SupplierService);
+  private readonly dialog = inject(MatDialog);
 
   readonly quoteId = signal<string | null>(null);
   readonly loading = signal(false);
@@ -56,10 +74,15 @@ export class OrderCreatePage implements OnInit {
   readonly suppliers = signal<SupplierSummary[]>([]);
   /** null tant que non vérifié ; false = liquidité CNY actuellement insuffisante pour ce devis. */
   readonly liquiditySufficient = signal<boolean | null>(null);
+  readonly quoteAmountXof = signal<string | null>(null);
 
   readonly purposeOptions = PURPOSE_OPTIONS;
 
   readonly hasSuppliers = computed(() => this.suppliers().length > 0);
+  readonly needsWhatsAppConfirmation = computed(
+    () => Number(this.quoteAmountXof() ?? 0) >= WHATSAPP_CONFIRMATION_THRESHOLD_XOF,
+  );
+  readonly whatsAppPhoneDisplay = WHATSAPP_CONFIRMATION_PHONE_DISPLAY;
 
   private readonly idempotency = new IdempotencyAttempt();
 
@@ -101,6 +124,14 @@ export class OrderCreatePage implements OnInit {
     this.orderService.checkFeasibility(quoteId).subscribe({
       next: (response) => this.liquiditySufficient.set(response.data.sufficientLiquidity),
       error: (error) => this.errorMessage.set(extractErrorMessage(error)),
+    });
+
+    // Uniquement pour l'avertissement WhatsApp au-dela du seuil (needsWhatsAppConfirmation) --
+    // un echec ici ne bloque jamais la suite du parcours, le montant reste affiche par
+    // l'ecran de devis precedent.
+    this.quoteService.get(quoteId).subscribe({
+      next: (response) => this.quoteAmountXof.set(response.data.amountXof),
+      error: () => undefined,
     });
 
     this.supplierService.list(0, 100, 'ACTIVE').subscribe({
@@ -155,12 +186,40 @@ export class OrderCreatePage implements OnInit {
       next: (response) => {
         this.loading.set(false);
         this.idempotency.complete();
-        this.router.navigate(['/orders', response.data.id]);
+        const order = response.data;
+        if (Number(order.amountXof) >= WHATSAPP_CONFIRMATION_THRESHOLD_XOF) {
+          this.showWhatsAppConfirmation(order.amountXof, order.reference);
+        }
+        this.router.navigate(['/orders', order.id]);
       },
       error: (error) => {
         this.loading.set(false);
         this.errorMessage.set(extractErrorMessage(error));
       },
+    });
+  }
+
+  /** Retour client sept. 2026 : voir WHATSAPP_CONFIRMATION_THRESHOLD_XOF ci-dessus. L'ordre est
+   * deja cree normalement ; cette boite oriente simplement vers le canal humain attendu pour les
+   * gros montants, sans bloquer la navigation vers le detail de l'ordre. */
+  private showWhatsAppConfirmation(amountXof: string, reference: string): void {
+    const amountLabel = new MoneyPipe().transform(amountXof, 'XOF');
+    openConfirmDialog(this.dialog, {
+      title: 'Confirmation par WhatsApp',
+      message:
+        `Votre transfert de ${amountLabel} doit etre confirme par WhatsApp au ` +
+        `${WHATSAPP_CONFIRMATION_PHONE_DISPLAY} avant traitement. Indiquez la reference ${reference}.`,
+      confirmLabel: 'Ouvrir WhatsApp',
+      cancelLabel: 'Plus tard',
+    }).subscribe((result) => {
+      if (!result) {
+        return;
+      }
+      const message = `Bonjour, je confirme mon transfert de ${amountLabel} (reference ${reference}).`;
+      window.open(
+        `https://wa.me/${WHATSAPP_CONFIRMATION_PHONE_E164}?text=${encodeURIComponent(message)}`,
+        '_blank',
+      );
     });
   }
 

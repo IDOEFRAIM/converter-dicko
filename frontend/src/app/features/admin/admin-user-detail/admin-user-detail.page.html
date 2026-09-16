@@ -1,0 +1,108 @@
+<app-page-header title="Utilisateur">
+  <a mat-button routerLink="/admin/users"><mat-icon>arrow_back</mat-icon> Retour</a>
+</app-page-header>
+
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else if (user(); as u) {
+  <mat-card class="detail-card">
+    <mat-card-content>
+      <div class="detail-grid">
+        <div><span class="detail-label">Nom</span><span>{{ fullName() }}</span></div>
+        <div><span class="detail-label">Telephone</span><span>{{ u.phone }}</span></div>
+        <div><span class="detail-label">Email</span><span>{{ u.email ?? '—' }}</span></div>
+        <div><span class="detail-label">Statut</span><app-status-badge [status]="u.status" /></div>
+        <div><span class="detail-label">Identite (KYC)</span>
+          <span class="kyc-status">
+            <mat-icon [color]="u.kycVerified ? 'primary' : undefined">
+              {{ u.kycVerified ? 'verified' : 'help_outline' }}
+            </mat-icon>
+            {{ u.kycVerified ? 'Verifiee' : 'Non verifiee' }}
+          </span>
+        </div>
+        <div><span class="detail-label">Cree le</span><span>{{ u.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span></div>
+        <div><span class="detail-label">Derniere connexion</span>
+          <span>{{ u.lastLoginAt ? (u.lastLoginAt | date: 'dd/MM/yyyy HH:mm') : '—' }}</span>
+        </div>
+        <div><span class="detail-label">Ordres</span><span>{{ u.orderCount }}</span></div>
+        <div><span class="detail-label">Volume total</span><span>{{ u.totalAmountCfa | money: 'XOF' }}</span></div>
+      </div>
+
+      @if (u.status === 'BLOCKED') {
+        <p class="blocked-notice">
+          <mat-icon aria-hidden="true">block</mat-icon>
+          Bloque le {{ u.blockedAt | date: 'dd/MM/yyyy HH:mm' }} — motif : {{ u.blockedReason }}
+        </p>
+      }
+
+      <div class="detail-actions">
+        @if (u.status === 'ACTIVE') {
+          <button mat-stroked-button color="warn" [disabled]="actionPending()" (click)="block()">
+            <mat-icon>block</mat-icon> Bloquer
+          </button>
+        } @else {
+          <button mat-stroked-button [disabled]="actionPending()" (click)="unblock()">
+            <mat-icon>lock_open</mat-icon> Debloquer
+          </button>
+        }
+        @if (u.kycVerified) {
+          <button mat-stroked-button [disabled]="actionPending()" (click)="revokeKyc()">
+            <mat-icon>gpp_bad</mat-icon> Revoquer l'identite
+          </button>
+        } @else {
+          <button mat-flat-button color="primary" [disabled]="actionPending()" (click)="verifyKyc()">
+            <mat-icon>verified_user</mat-icon> Verifier l'identite
+          </button>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <h2 class="section-title">Fournisseurs enregistres</h2>
+  @if (loadingSuppliers()) {
+    <div class="loading-row"><mat-spinner diameter="32" /></div>
+  } @else if (suppliers().length === 0) {
+    <app-empty-state title="Aucun fournisseur enregistre" description="Ce client n'a encore ajoute aucun beneficiaire." />
+  } @else {
+    <table mat-table [dataSource]="suppliers()" class="mat-elevation-z1 suppliers-table">
+      <ng-container matColumnDef="displayName">
+        <th mat-header-cell *matHeaderCellDef>Nom</th>
+        <td mat-cell *matCellDef="let row">{{ row.displayName }}</td>
+      </ng-container>
+      <ng-container matColumnDef="type">
+        <th mat-header-cell *matHeaderCellDef>Type</th>
+        <td mat-cell *matCellDef="let row">{{ beneficiaryTypeLabel(row.type) }}</td>
+      </ng-container>
+      <ng-container matColumnDef="identifier">
+        <th mat-header-cell *matHeaderCellDef>Identifiant</th>
+        <td mat-cell *matCellDef="let row">{{ identifier(row) }}</td>
+      </ng-container>
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Statut</th>
+        <td mat-cell *matCellDef="let row"><app-status-badge [status]="row.status" /></td>
+      </ng-container>
+      <ng-container matColumnDef="readyForPayment">
+        <th mat-header-cell *matHeaderCellDef>Pret pour paiement</th>
+        <td mat-cell *matCellDef="let row">
+          <mat-icon [color]="row.readyForPayment ? 'primary' : 'warn'">
+            {{ row.readyForPayment ? 'check_circle' : 'warning' }}
+          </mat-icon>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row">
+          @if (row.qrCodeUploaded) {
+            <button mat-button (click)="viewQrCode(row)">
+              <mat-icon>qr_code_2</mat-icon> Voir le QR
+            </button>
+          }
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  }
+} @else {
+  <app-empty-state title="Utilisateur introuvable" />
+}

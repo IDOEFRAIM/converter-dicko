@@ -102,8 +102,8 @@ class AchievementServiceIT extends AbstractOrderPipelineIT {
 
         AchievementSummaryResponse summary = achievementService.summary(user.getId());
 
-        assertThat(summary.badgeCode()).isEqualTo("CAMBISTE");
-        assertThat(summary.nextBadgeLabel()).isEqualTo("Courtier");
+        assertThat(summary.badgeCode()).isEqualTo("DEBUTANT");
+        assertThat(summary.nextBadgeLabel()).isEqualTo("Habitue");
         assertThat(summary.transfersUntilNextBadge()).isEqualTo(4);
     }
 
@@ -120,8 +120,8 @@ class AchievementServiceIT extends AbstractOrderPipelineIT {
 
         AchievementSummaryResponse summary = achievementService.summary(user.getId());
 
-        assertThat(summary.badgeCode()).isEqualTo("CAMBISTE");
-        assertThat(summary.nextBadgeLabel()).isEqualTo("Courtier");
+        assertThat(summary.badgeCode()).isEqualTo("DEBUTANT");
+        assertThat(summary.nextBadgeLabel()).isEqualTo("Habitue");
     }
 
     // Le comportement au palier maximal (plus de badge suivant) et chaque frontiere de palier sont
@@ -161,7 +161,7 @@ class AchievementServiceIT extends AbstractOrderPipelineIT {
 
         List<Notification> notifications = badgeUnlockNotifications(user.getId());
         assertThat(notifications).hasSize(1);
-        assertThat(notifications.get(0).getMessage()).contains("Cambiste");
+        assertThat(notifications.get(0).getMessage()).contains("Debutant");
     }
 
     @Test
@@ -173,8 +173,8 @@ class AchievementServiceIT extends AbstractOrderPipelineIT {
         User user = withProfile(createUser(RoleCode.USER), ExperienceProfile.STUDENT_MALE);
         String userToken = tokenFor(user);
 
-        completeOneOrder(admin, userToken); // 1er ordre -> franchit CAMBISTE
-        completeOneOrder(admin, userToken); // 2e ordre -> reste CAMBISTE (prochain palier a 5)
+        completeOneOrder(admin, userToken); // 1er ordre -> franchit DEBUTANT
+        completeOneOrder(admin, userToken); // 2e ordre -> reste DEBUTANT (prochain palier a 5)
 
         assertThat(badgeUnlockNotifications(user.getId())).hasSize(1);
     }

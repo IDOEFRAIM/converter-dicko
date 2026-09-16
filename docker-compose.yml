@@ -54,7 +54,7 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-converter}
       DB_USERNAME: ${POSTGRES_USER:-converter}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-converter_local_dev}
-      JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-120}
+      JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-43200}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:4200,http://localhost:4300}
       # Facultatif (voir GoogleAuthProperties) : vide -> /api/auth/google[/complete] repond 503.
       GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}

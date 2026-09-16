@@ -12,6 +12,14 @@
   </p>
 }
 
+@if (needsWhatsAppConfirmation()) {
+  <p class="form-notice form-notice--warn">
+    <mat-icon aria-hidden="true">chat</mat-icon>
+    Au-delà de 2 000 000 XOF, une confirmation par WhatsApp au {{ whatsAppPhoneDisplay }} vous
+    sera demandée après la création du transfert.
+  </p>
+}
+
 @if (quoteId()) {
   <form [formGroup]="form" (ngSubmit)="submit()" class="form">
     @if (hasSuppliers()) {

@@ -3,7 +3,7 @@
          un build release ne peut faire aucune requete reseau. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:label="mobile"
+        android:label="YUAN PAY BF"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

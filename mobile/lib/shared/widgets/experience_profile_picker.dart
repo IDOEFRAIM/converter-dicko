@@ -45,7 +45,7 @@ class _ProfileIdentityPickerState extends State<ProfileIdentityPicker> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Vous utiliserez Converter pour…', style: AppTypography.bodyStrong),
+        Text('Vous utiliserez YUAN PAY BF pour…', style: AppTypography.bodyStrong),
         const SizedBox(height: AppSpacing.sm),
         _choice(
           label: 'Mon activite',

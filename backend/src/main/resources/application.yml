@@ -100,7 +100,11 @@ app:
     # OBLIGATOIRE. Aucune valeur par defaut ici : c'est
     # `application-dev.yml` qui fournit une cle de developpement.
     secret: ${JWT_SECRET:}
-    expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
+    # 30 jours (retour client : "quand l'utilisateur sort de l'application, il est encore
+    # oblige de rentrer son mot de passe, c'est pas efficace") -- 120 min convenait a un usage
+    # continu mais forcait une reconnexion des que l'appli restait fermee plus de deux heures,
+    # ce qui est la norme pour une appli de paiement consultee sporadiquement dans la journee.
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:43200}
     issuer: converter-api
 
   cors:

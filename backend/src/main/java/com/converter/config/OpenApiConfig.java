@@ -25,10 +25,10 @@ public class OpenApiConfig {
     public OpenAPI converterOpenApi() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("Converter API")
+                        .title("YUAN PAY BF API")
                         .description("Plateforme d'echange CFA (XOF) <-> Yuan (CNY)")
                         .version("v0.1 (Phase 2 - fondations)")
-                        .contact(new Contact().name("Converter")))
+                        .contact(new Contact().name("YUAN PAY BF")))
                 .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
                 .components(new Components().addSecuritySchemes(SECURITY_SCHEME_NAME,
                         new SecurityScheme()

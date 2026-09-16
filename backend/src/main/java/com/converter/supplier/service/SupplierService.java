@@ -113,6 +113,22 @@ public class SupplierService {
         return PageResponse.from(page, SupplierService::toSummary);
     }
 
+    /**
+     * Fournisseurs d'UN client, pour un administrateur (retour client sept. 2026 : "l'admin
+     * n'arrive pas a voir les detail des different fournisseur pour chaque utilisateur...c'est ca
+     * qui permet de pouvoir faire les transfert") -- {@code ownerUserId} est ici choisi par
+     * l'administrateur (voir {@code AdminUserController}), jamais l'utilisateur courant : aucune
+     * verification de propriete (contrairement a {@link #list}). Detail complet (compte en clair),
+     * jamais le resume masque : c'est precisement le compte en clair que l'admin doit pouvoir
+     * consulter pour effectuer ou verifier un transfert.
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<SupplierDetailResponse> listForAdmin(UUID ownerUserId, Pageable pageable) {
+        return PageResponse.from(
+                supplierRepository.findByOwnerUserIdOrderByCreatedAtDesc(ownerUserId, pageable),
+                SupplierService::toDetail);
+    }
+
     @Transactional(readOnly = true)
     public PageResponse<SupplierSummaryResponse> listFavorites(UUID ownerUserId, Pageable pageable) {
         return PageResponse.from(
@@ -183,6 +199,26 @@ public class SupplierService {
     @Transactional(readOnly = true)
     public ProofDownload getQrCode(UUID id, UUID ownerUserId) {
         Supplier supplier = loadOwned(id, ownerUserId);
+        return qrCodeDownload(supplier);
+    }
+
+    /**
+     * Meme telechargement que {@link #getQrCode}, pour un administrateur consultant le fournisseur
+     * d'un client (voir {@link #listForAdmin}) -- {@code expectedOwnerUserId} est le {@code userId}
+     * de l'URL imbriquee ({@code /admin/users/{userId}/suppliers/{id}/qr-code}) : verifie que ce
+     * fournisseur appartient bien a ce client, jamais un simple {@code findById} qui laisserait un
+     * identifiant de fournisseur d'un AUTRE utilisateur passer sous une URL trompeuse.
+     */
+    @Transactional(readOnly = true)
+    public ProofDownload getQrCodeForAdmin(UUID id, UUID expectedOwnerUserId) {
+        Supplier supplier = supplierRepository.findById(id).orElseThrow(() -> notFound(id));
+        if (!supplier.getOwnerUserId().equals(expectedOwnerUserId)) {
+            throw notFound(id);
+        }
+        return qrCodeDownload(supplier);
+    }
+
+    private ProofDownload qrCodeDownload(Supplier supplier) {
         if (supplier.getQrCodeStorageKey() == null) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND,
                     "Ce fournisseur n'a pas encore de code QR televerse.");

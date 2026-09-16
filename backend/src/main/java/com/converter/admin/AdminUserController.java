@@ -4,6 +4,9 @@ import com.converter.common.api.ApiResponse;
 import com.converter.common.api.PageResponse;
 import com.converter.security.AuthenticatedUser;
 import com.converter.security.CurrentUser;
+import com.converter.storage.ProofDownload;
+import com.converter.supplier.dto.SupplierDetailResponse;
+import com.converter.supplier.service.SupplierService;
 import com.converter.user.domain.UserStatus;
 import com.converter.user.dto.AdminUserDetail;
 import com.converter.user.dto.AdminUserSummary;
@@ -13,10 +16,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.core.io.Resource;
 import org.springframework.security.access.prepost.PreAuthorize;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,9 +49,11 @@ import java.util.UUID;
 public class AdminUserController {
 
     private final UserService userService;
+    private final SupplierService supplierService;
 
-    public AdminUserController(UserService userService) {
+    public AdminUserController(UserService userService, SupplierService supplierService) {
         this.userService = userService;
+        this.supplierService = supplierService;
     }
 
     @GetMapping
@@ -111,5 +119,33 @@ public class AdminUserController {
             @AuthenticatedUser CurrentUser actor) {
         AdminUserDetail result = userService.revokeKyc(id, actor.getId());
         return ResponseEntity.ok(ApiResponse.of(result, "Verification d'identite revoquee."));
+    }
+
+    @GetMapping("/{id}/suppliers")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Fournisseurs enregistres par ce client",
+            description = "Detail complet (compte en clair, jamais masque comme dans le carnet du client "
+                    + "lui-meme) -- c'est ce qui permet a un administrateur d'effectuer ou de verifier un "
+                    + "transfert pour le compte de ce client.")
+    public ResponseEntity<ApiResponse<PageResponse<SupplierDetailResponse>>> suppliers(
+            @PathVariable UUID id,
+            @Parameter(hidden = true) @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.of(supplierService.listForAdmin(id, pageable)));
+    }
+
+    @GetMapping("/{id}/suppliers/{supplierId}/qr-code")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Code QR d'un fournisseur de ce client",
+            description = "Reserve aux fournisseurs ALIPAY/WECHAT_PAY. 404 si ce fournisseur n'appartient "
+                    + "pas a ce client ou n'a pas encore de code QR televerse.")
+    public ResponseEntity<Resource> supplierQrCode(
+            @PathVariable UUID id,
+            @PathVariable UUID supplierId) {
+        ProofDownload qrCode = supplierService.getQrCodeForAdmin(supplierId, id);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+                .header("X-Content-Type-Options", "nosniff")
+                .contentType(MediaType.parseMediaType(qrCode.contentType()))
+                .body(qrCode.resource());
     }
 }

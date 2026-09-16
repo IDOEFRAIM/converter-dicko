@@ -204,7 +204,7 @@ class _SummaryHero extends StatelessWidget {
                       const SizedBox(height: AppSpacing.sm),
                       CountUpText(
                         value: summary.xp.toDouble(),
-                        formatter: (v) => '${v.round()} XP',
+                        formatter: (v) => '${v.round()} points',
                         style: AppTypography.figureMedium.copyWith(color: AppColors.onLacquer),
                       ),
                     ],

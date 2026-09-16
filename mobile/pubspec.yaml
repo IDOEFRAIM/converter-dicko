@@ -88,6 +88,13 @@ dependencies:
   # supplementaire au-dela de ce package.
   pdf: ^3.11.1
 
+  # Ouvrir WhatsApp (retour client sept. 2026 : "a partir de plus de 02
+  # millions tu dois etre ramene sur WhatsApp pour confirmer ton ordre") --
+  # lien https://wa.me/... via le navigateur/l'app, seul moyen standard
+  # cross-plateforme d'ouvrir une conversation WhatsApp prereplie depuis
+  # Flutter (aucune API SDK native ne le permet sans ce plugin).
+  url_launcher: ^6.3.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

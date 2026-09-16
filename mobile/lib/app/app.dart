@@ -117,7 +117,7 @@ class _RouterHostState extends State<_RouterHost> {
     // commentaire de classe sur la perte de pile de navigation).
     final experienceProfile = context.watch<AuthSession>().experienceProfile;
     return MaterialApp.router(
-      title: 'Converter',
+      title: 'YUAN PAY BF',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.forProfile(experienceProfile),
       routerConfig: _router,

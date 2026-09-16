@@ -168,6 +168,18 @@ export const routes: Routes = [
           import('./features/admin/admin-kyc/admin-kyc.page').then((m) => m.AdminKycPage),
       },
       {
+        path: 'users',
+        loadComponent: () =>
+          import('./features/admin/admin-users/admin-users.page').then((m) => m.AdminUsersPage),
+      },
+      {
+        path: 'users/:id',
+        loadComponent: () =>
+          import('./features/admin/admin-user-detail/admin-user-detail.page').then(
+            (m) => m.AdminUserDetailPage,
+          ),
+      },
+      {
         path: 'settlements',
         loadComponent: () =>
           import('./features/admin/admin-settlements/admin-settlements.page').then(

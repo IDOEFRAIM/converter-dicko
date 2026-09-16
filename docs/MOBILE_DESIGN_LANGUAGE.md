@@ -72,9 +72,10 @@ ombres douces basses plutôt que le seul filet.
 ## 3. Gamification — sérieuse, jamais gadget
 
 Interdits : confettis cartoon, mascotte, sons stridents, « niveau supérieur ! » clignotant,
-**et tout lexique de jeu** (guerrier, trophée, légende…). Le vocabulaire est celui du
-métier : une **échelle unique** de paliers `Cambiste → Courtier → Négociant → Maison de
-change` (backend `AchievementService.CHANGER_TIERS`), un « Registre des opérations ».
+**et tout lexique de jeu** (guerrier, trophée, légende…) **ni jargon du métier du change**
+(retour client sept. 2026 : « on sait pas vraiment de quoi tu parles »). Le vocabulaire est
+celui du quotidien : une **échelle unique** de paliers `Débutant → Habitué → Expert →
+Champion` (backend `AchievementService.CHANGER_TIERS`), un « Registre des opérations ».
 
 - **Paliers = sceaux gravés** (medaillon `CustomPainter`, un motif par profil d'expérience) —
   pas un autocollant coloré. Le profil d'expérience est **fixé à l'inscription et non
@@ -177,11 +178,14 @@ Retours utilisateur post-refonte, traités hors « lots » :
   permet de le changer ensuite : écran « Habillage », route `/more/experience-profile`,
   `AuthRepository.updateExperienceProfile` et `AuthSession.updateCurrentUser` supprimés
   (backend `PATCH /auth/me/experience-profile` conservé mais plus appelé).
-- **#2 — Vocabulaire du métier, pas du jeu** (fait) : une **échelle unique** de paliers
-  `Cambiste → Courtier → Négociant → Maison de change` (backend `AchievementService.CHANGER_TIERS`,
-  remplace les deux listes genrées « guerrier / éclaireuse »). Copie mobile dé-ludifiée :
-  « Registre des opérations » (ex-Livre des Gains / Carnet de route), « OPÉRATION N »
-  (ex-PAGE N), « palier » (ex-« rang »), icône badge `workspace_premium` (ex-`military_tech`).
+- **#2 — Vocabulaire du quotidien, ni jeu ni jargon du métier** (fait) : une **échelle
+  unique** de paliers `Débutant → Habitué → Expert → Champion` (backend
+  `AchievementService.CHANGER_TIERS` ; remplace d'abord les deux listes genrées
+  « guerrier / éclaireuse », puis `Cambiste → Courtier → Négociant → Maison de change`,
+  retour client sept. 2026 : « on sait pas vraiment de quoi tu parles »). Copie mobile
+  dé-ludifiée : « Registre des opérations » (ex-Livre des Gains / Carnet de route),
+  « OPÉRATION N » (ex-PAGE N), « palier » (ex-« rang »), « points » (ex-« XP »), icône
+  badge `workspace_premium` (ex-`military_tech`).
 - **#4 — Rabais de Ruée progressif** (fait) : la réduction de marge n'est plus un
   pourcentage fixe. `rabais = base + PAR_PARTICIPANT·(N−1) + PAR_MILLION·⌊volume/1M⌋`,
   borné `[0, MAX]` (backend `PoolService.computeReward`, coefficients en `system_settings`

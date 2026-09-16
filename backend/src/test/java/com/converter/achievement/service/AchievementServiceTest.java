@@ -28,13 +28,13 @@ class AchievementServiceTest {
 
     @ParameterizedTest
     @CsvSource({
-            "0,,Cambiste,1",
-            "1,CAMBISTE,Courtier,4",
-            "4,CAMBISTE,Courtier,1",
-            "5,COURTIER,Negociant,10",
-            "14,COURTIER,Negociant,1",
-            "15,NEGOCIANT,Maison de change,15",
-            "29,NEGOCIANT,Maison de change,1",
+            "0,,Debutant,1",
+            "1,DEBUTANT,Habitue,4",
+            "4,DEBUTANT,Habitue,1",
+            "5,HABITUE,Expert,10",
+            "14,HABITUE,Expert,1",
+            "15,EXPERT,Champion,15",
+            "29,EXPERT,Champion,1",
     })
     void nonPro_progressesThroughTheChangerLadder(long count, String expectedCode, String expectedNextLabel,
                                                   long expectedTransfersUntilNext) {
@@ -47,14 +47,14 @@ class AchievementServiceTest {
     @Test
     void nonPro_atMaxTier_hasNoNextBadge() {
         var progress = AchievementService.resolveBadgeProgress(ExperienceProfile.STUDENT_MALE, 30);
-        assertThat(progress.code()).isEqualTo("MAISON_DE_CHANGE");
-        assertThat(progress.label()).isEqualTo("Maison de change");
+        assertThat(progress.code()).isEqualTo("CHAMPION");
+        assertThat(progress.label()).isEqualTo("Champion");
         assertThat(progress.nextLabel()).isNull();
         assertThat(progress.transfersUntilNext()).isNull();
 
         // Au-dela du seuil maximal, le palier reste le dernier -- jamais un palier "hors catalogue".
         var farBeyond = AchievementService.resolveBadgeProgress(ExperienceProfile.STUDENT_MALE, 500);
-        assertThat(farBeyond.code()).isEqualTo("MAISON_DE_CHANGE");
+        assertThat(farBeyond.code()).isEqualTo("CHAMPION");
     }
 
     @Test

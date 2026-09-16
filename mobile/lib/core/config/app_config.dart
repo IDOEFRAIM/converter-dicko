@@ -67,6 +67,18 @@ class AppConfig {
 
   bool get isProduction => environment == AppEnvironment.production;
 
+  /// Seuil (XOF) a partir duquel un transfert doit etre confirme sur WhatsApp
+  /// (retour client sept. 2026 : "a partir de plus de 02 millions tu dois
+  /// etre ramene sur WhatsApp pour confirmer ton ordre au 71 00 25 25") --
+  /// une simple orientation vers un canal humain pour les gros montants,
+  /// jamais une regle metier serveur : l'ordre est deja cree normalement,
+  /// voir `WhatsAppConfirmation` (order_create_page).
+  static const int whatsAppConfirmationThresholdXof = 2000000;
+
+  /// Numero de confirmation WhatsApp, au format E.164 (Burkina Faso, +226)
+  /// attendu par le lien `https://wa.me/`.
+  static const String whatsAppConfirmationPhoneE164 = '+22671002525';
+
   /// Desactive volontairement (retour client sept. 2026 : les ANR observes
   /// pendant les tests -- dus a la machine de dev sursollicitee, pas a la
   /// config Google elle-meme -- ont pousse a retirer le bouton plutot que
