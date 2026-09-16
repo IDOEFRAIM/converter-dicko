@@ -4,7 +4,7 @@
     autorise le HTTP en clair vers le backend local (Docker, sans certificat)
     via l'alias emulateur Android 10.0.2.2 -> localhost de la machine hote,
     ainsi que vers le backend Hetzner de test (HTTP direct par IP, en
-    attendant que Caddy termine le TLS devant -- voir Caddyfile.example).
+    attendant que Caddy termine le TLS devant, voir Caddyfile.example).
     Voir AppConfig.apiBaseUrl (DEV = http://178.105.95.145:4300 par defaut).
 -->
 <network-security-config>
