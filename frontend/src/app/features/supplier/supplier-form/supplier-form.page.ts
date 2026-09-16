@@ -66,6 +66,16 @@ export class SupplierFormPage implements OnInit, OnDestroy {
    */
   private createdSupplierId: string | null = null;
 
+  /**
+   * Identifiant du devis en attente, transmis quand ce formulaire est ouvert DEPUIS la creation
+   * d'un ordre (voir order-create.page.html, lien "+ Enregistrer un nouveau fournisseur"/"Ajouter
+   * un fournisseur Alipay/WeChat") -- retour beta-testeur sept. 2026 : "la facon de lui proposer
+   * un fournisseur lors de la conversion, c'est tres mal gere". Sans lui, un succes renvoyait
+   * TOUJOURS vers la fiche du fournisseur qui vient d'etre cree, un cul-de-sac qui obligeait
+   * l'utilisateur a retrouver seul le chemin retour vers son ordre en cours.
+   */
+  private returnToOrderQuoteId: string | null = null;
+
   readonly isEdit = computed(() => this.supplierId() !== null);
   readonly title = computed(() => (this.isEdit() ? 'Modifier le fournisseur' : 'Nouveau fournisseur'));
 
@@ -115,6 +125,7 @@ export class SupplierFormPage implements OnInit, OnDestroy {
       this.supplierId.set(id);
       this.loadExisting(id);
     }
+    this.returnToOrderQuoteId = this.route.snapshot.queryParamMap.get('returnToOrder');
     // bankName/accountNumber n'ont aucun Validator statique (obligatoires uniquement pour
     // CHINESE_BANK_ACCOUNT, impose via setErrors() dans submit()) : sans ce nettoyage, changer
     // de type APRES un premier submit() en erreur laisse ces erreurs "required" figees pour
@@ -244,14 +255,14 @@ export class SupplierFormPage implements OnInit, OnDestroy {
         if (!qrCodeFile) {
           this.saving.set(false);
           this.notification.success(targetId ? 'Fournisseur mis a jour.' : 'Fournisseur enregistre.');
-          this.router.navigate(['/suppliers', response.data.id]);
+          this.navigateAfterSave(response.data.id);
           return;
         }
         this.supplierService.uploadQrCode(response.data.id, qrCodeFile).subscribe({
           next: () => {
             this.saving.set(false);
             this.notification.success(targetId ? 'Fournisseur mis a jour.' : 'Fournisseur enregistre.');
-            this.router.navigate(['/suppliers', response.data.id]);
+            this.navigateAfterSave(response.data.id);
           },
           error: (error) => {
             this.saving.set(false);
@@ -267,8 +278,27 @@ export class SupplierFormPage implements OnInit, OnDestroy {
   }
 
   cancel(): void {
+    if (this.returnToOrderQuoteId) {
+      this.router.navigate(['/order/new'], { queryParams: { quoteId: this.returnToOrderQuoteId } });
+      return;
+    }
     const id = this.supplierId();
     this.router.navigate(id ? ['/suppliers', id] : ['/suppliers']);
+  }
+
+  /** Retourne vers l'ordre en cours (si ouvert depuis la creation d'un ordre) plutot que vers la
+   * fiche du fournisseur -- voir la Javadoc de {@link returnToOrderQuoteId}. */
+  private navigateAfterSave(newSupplierId: string): void {
+    if (this.returnToOrderQuoteId) {
+      // newSupplierId transmis pour que l'ordre pre-selectionne directement CE fournisseur
+      // (voir order-create.page.ts ngOnInit) plutot que de laisser l'utilisateur le re-chercher
+      // dans une liste qu'il vient de faire grandir lui-meme.
+      this.router.navigate(['/order/new'], {
+        queryParams: { quoteId: this.returnToOrderQuoteId, newSupplierId },
+      });
+      return;
+    }
+    this.router.navigate(['/suppliers', newSupplierId]);
   }
 
   ngOnDestroy(): void {

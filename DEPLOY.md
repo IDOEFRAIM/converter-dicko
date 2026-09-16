@@ -163,21 +163,86 @@ Planifier `backup.sh` en cron (quotidien). Détail et test de restauration :
 
 ## 7. Mise en production réelle (TLS)
 
-`docker compose` expose du HTTP en clair. Devant le conteneur `frontend`, placer
-un terminateur TLS (Caddy, Traefik, nginx hôte, ou l'LB du cloud) qui :
+`docker compose` expose du HTTP en clair. Devant les conteneurs, Caddy (process
+**hôte**, pas conteneurisé — voir `Caddyfile.example`) termine TLS avec **deux
+blocs de domaine distincts** :
 
-1. termine HTTPS pour le domaine du frontend ;
-2. relaie tout vers `frontend:4300` (le conteneur `frontend` sert le SPA **et**
-   relaie déjà `/api` vers `backend`) ;
-3. transmet `X-Forwarded-Proto https` (le backend a `server.forward-headers-strategy=framework`).
+| Domaine | Cible | Pour qui |
+|---|---|---|
+| `yourdomain.com` (web) | `frontend:4300` | Navigateur web — le SPA **et** son nginx relaient déjà `/api` vers `backend` en interne (même origine, pas de CORS) |
+| `api.yourdomain.com` | `127.0.0.1:8080` (backend direct) | App **mobile** (Flutter) — une app native a besoin d'une origine HTTP directement joignable (`AppConfig.apiBaseUrl`, voir §5), elle ne passe jamais par le relai nginx du frontend |
 
-Garder `8080` (API) et `5432` (PostgreSQL) **non exposés** publiquement : retirer
-leurs `ports:` de `docker-compose.yml` en production si un reverse proxy externe
-gère l'entrée, ou les lier à `127.0.0.1`.
+Le second bloc exige `docker-compose.prod.yml` (voir §3), qui publie le
+backend sur `127.0.0.1:8080` — **jamais** `0.0.0.0:8080` : seul un processus
+tournant sur cette même machine (donc Caddy) peut l'atteindre, le port reste
+injoignable depuis Internet même si un pare-feu externe est mal configuré.
+Vérifier malgré tout qu'aucune règle de pare-feu (UFW, groupe de sécurité
+cloud) ne route `8080` publiquement, en couche redondante.
+
+Dans les deux cas, transmettre `X-Forwarded-Proto https` (le backend a
+`server.forward-headers-strategy=framework`). PostgreSQL (`5432`) reste
+**non publié** dans tous les cas — aucun bloc Caddy n'en a besoin.
 
 ---
 
-## 8. État des tiers (au dernier commit)
+## 8. Rotation d'un secret compromis
+
+À exécuter dès qu'un secret (`JWT_SECRET`, `DB_PASSWORD`/`POSTGRES_PASSWORD`,
+`ADMIN_PASSWORD`) a pu fuiter (conversation, capture d'écran, log partagé...).
+Aucun de ces secrets n'a jamais été commité dans ce dépôt (`.env` est
+gitignoré, jamais suivi) — l'exposition est toujours un canal externe
+(chat, terminal partagé...), jamais l'historique git.
+
+**Générer les nouvelles valeurs directement sur le serveur** (jamais dans un
+outil tiers qui les journaliserait à son tour) :
+
+```bash
+openssl rand -base64 48   # nouveau JWT_SECRET
+openssl rand -base64 24   # nouveau POSTGRES_PASSWORD / DB_PASSWORD
+```
+
+1. **`POSTGRES_PASSWORD` / `DB_PASSWORD`** — le mot de passe est fixé au
+   tout premier démarrage du conteneur `postgres` (volume déjà initialisé) :
+   modifier `.env` seul ne suffit pas, il faut changer le rôle en base :
+   ```bash
+   docker exec -it converter-postgres psql -U converter -d converter \
+     -c "ALTER ROLE converter WITH PASSWORD 'NOUVELLE_VALEUR';"
+   ```
+   Puis mettre à jour `POSTGRES_PASSWORD` **et** `DB_PASSWORD` dans `.env`
+   (même valeur) et redémarrer `backend` (`docker compose restart backend`).
+
+2. **`JWT_SECRET`** — mettre à jour `.env` puis redémarrer `backend`.
+   **Effet de bord attendu et acceptable** : tous les jetons déjà émis
+   (web + mobile) sont instantanément invalidés, chaque utilisateur connecté
+   devra se reconnecter à son prochain appel API (401). C'est le but : un
+   jeton signé avec l'ancien secret ne doit plus jamais être accepté.
+
+3. **`ADMIN_PASSWORD`** — ce champ ne pilote que l'amorçage **initial** de
+   l'admin (`AdminAccountSeeder` : "le seed ne s'exécute que si aucun
+   administrateur n'existe déjà"). Un admin existe déjà en prod, donc changer
+   `.env` seul n'a aucun effet. Il n'existe pas encore d'endpoint
+   self-service de changement de mot de passe (voir code) : la rotation se
+   fait par mise à jour directe du condensat BCrypt (coût 12, voir
+   `SecurityConfig.passwordEncoder`) :
+   ```bash
+   # Sur une machine avec Python + bcrypt (pip install bcrypt), SANS
+   # jamais coller le mot de passe choisi dans un outil tiers/chat :
+   python3 -c "import bcrypt,getpass; print(bcrypt.hashpw(getpass.getpass().encode(), bcrypt.gensalt(12)).decode())"
+   ```
+   Puis appliquer le condensat obtenu :
+   ```bash
+   docker exec -it converter-postgres psql -U converter -d converter \
+     -c "UPDATE users SET password_hash = '<condensat obtenu ci-dessus>' WHERE phone = '<ADMIN_PHONE>';"
+   ```
+   Vérifier ensuite une connexion réussie avec le nouveau mot de passe avant
+   de considérer la rotation terminée.
+
+Dans tous les cas : ne jamais republier les nouvelles valeurs dans le canal
+qui a causé la fuite initiale (même conversation, même capture d'écran...).
+
+---
+
+## 9. État des tiers (au dernier commit)
 
 | Tier | Build | Tests |
 |---|---|---|

@@ -57,7 +57,7 @@ class AppConfig {
         // pour ne jamais pointer silencieusement vers un mauvais backend.
         return 'https://CHANGE_ME.production.invalid';
       case AppEnvironment.staging:
-        return 'https://CHANGE_ME.staging.invalid';
+        return 'http://178.105.95.145:4300';
       case AppEnvironment.dev:
         // DEV UNIQUEMENT : backend deploye sur Hetzner, en HTTP direct via IP (pas
         // encore de domaine/Caddy devant). Voir network_security_config.xml (debug)

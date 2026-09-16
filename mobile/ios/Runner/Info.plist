@@ -31,32 +31,16 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Utilisee pour prendre un selfie souvenir apres un transfert termine, ajoute a votre livre memoire (stocke uniquement sur cet appareil).</string>
 	<!--
-	  Connexion "Continuer avec Google" (google_sign_in) : CHANGE_ME sur les
-	  deux lignes ci-dessous avant tout build iOS reel. Aucune verification
-	  possible dans cet environnement (ni Xcode ni Mac) : valeurs
-	  volontairement invalides pour ne jamais construire silencieusement avec
-	  un Client ID errone.
-
-	  1. GIDClientID : le Client ID OAuth de type "iOS" (PAS le Client ID Web
-	     utilise cote backend/GOOGLE_SERVER_CLIENT_ID) : Google Cloud Console >
-	     API et services > Identifiants > Creer des identifiants > ID client
-	     OAuth > type "iOS", avec le Bundle ID de ce projet.
-	  2. CFBundleURLSchemes : l'ID client iOS ecrit a l'ENVERS (ex. Client ID
-	     "1234-abcd.apps.googleusercontent.com" -> schema
-	     "com.googleusercontent.apps.1234-abcd") : c'est ainsi que Google
-	     redirige vers l'app apres le choix du compte.
+	  Connexion "Continuer avec Google" (google_sign_in) : DESACTIVEE cote Dart
+	  (voir AppConfig.googleSignInAvailable, false suite a des ANR observes en
+	  test, sans rapport avec la config elle-meme). GIDClientID/CFBundleURLTypes
+	  retires ici volontairement : des valeurs CHANGE_ME faisaient echouer la
+	  validation App Store Connect ("URL schemes ... not in the correct
+	  format") a l'upload, meme avec le bouton deja masque dans l'app. A
+	  reintroduire avec de vraies valeurs Google Cloud Console (type "iOS",
+	  Client ID ecrit a l'envers pour CFBundleURLSchemes) le jour ou
+	  googleSignInAvailable repasse a true.
 	-->
-	<key>GIDClientID</key>
-	<string>CHANGE_ME.apps.googleusercontent.com</string>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>com.googleusercontent.apps.CHANGE_ME</string>
-			</array>
-		</dict>
-	</array>
 	<!--
 	  Autorise le HTTP en clair (App Transport Security) vers le backend
 	  Hetzner de test uniquement, en attendant que Caddy termine le TLS

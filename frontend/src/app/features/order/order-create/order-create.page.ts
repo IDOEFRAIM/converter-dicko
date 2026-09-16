@@ -134,12 +134,23 @@ export class OrderCreatePage implements OnInit {
       error: () => undefined,
     });
 
+    // Retour beta-testeur sept. 2026 : "la facon de lui proposer un fournisseur lors de la
+    // conversion, c'est tres mal gere" -- present uniquement quand ce formulaire a ete rouvert
+    // depuis "+ Enregistrer un nouveau fournisseur"/"Ajouter un fournisseur Alipay/WeChat" et que
+    // sa creation a reussi (voir supplier-form.page.ts, navigateAfterSave). Permet de
+    // pre-selectionner directement ce fournisseur plutot que de forcer l'utilisateur a le
+    // re-choisir dans une liste qu'il vient tout juste de faire grandir lui-meme.
+    const newSupplierId = this.route.snapshot.queryParamMap.get('newSupplierId');
+
     this.supplierService.list(0, 100, 'ACTIVE').subscribe({
       next: (response) => {
         this.suppliers.set(response.data.content);
         // Si le client a deja des fournisseurs, on le lui propose par defaut.
         if (response.data.content.length > 0) {
           this.form.controls.source.setValue('SUPPLIER');
+        }
+        if (newSupplierId && response.data.content.some((s) => s.id === newSupplierId)) {
+          this.form.controls.supplierId.setValue(newSupplierId);
         }
       },
       error: () => undefined,

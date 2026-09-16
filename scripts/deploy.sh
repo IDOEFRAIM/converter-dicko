@@ -39,11 +39,6 @@ done
 command -v docker >/dev/null 2>&1 || { echo "ERREUR : docker introuvable." >&2; exit 1; }
 docker compose version >/dev/null 2>&1 || { echo "ERREUR : le plugin 'docker compose' v2 est requis." >&2; exit 1; }
 
-# On fige la liste des fichiers compose : docker-compose.override.yml est une
-# commodite de DEV (remappe le port hote de PostgreSQL) et ne doit pas
-# s'appliquer en deploiement.
-COMPOSE=(docker compose -f docker-compose.yml)
-
 # --- .env -----------------------------------------------------------
 if [[ ! -f .env ]]; then
   cp .env.example .env
@@ -59,6 +54,18 @@ set +a
 
 PROFILE="${SPRING_PROFILES_ACTIVE:-dev}"
 echo ">> Profil applicatif : $PROFILE"
+
+# On fige la liste des fichiers compose : docker-compose.override.yml est une
+# commodite de DEV (remappe le port hote de PostgreSQL) et ne doit jamais
+# s'appliquer en deploiement. docker-compose.prod.yml (limites de ressources +
+# port backend 127.0.0.1 pour le domaine API dedie, voir ce fichier) est en
+# revanche INCLUS automatiquement des que le profil applicatif est prod --
+# sans cela, ports/limites de cet overlay ne s'appliqueraient jamais via ce
+# script, silencieusement.
+COMPOSE=(docker compose -f docker-compose.yml)
+if [[ "$PROFILE" == "prod" ]]; then
+  COMPOSE+=(-f docker-compose.prod.yml)
+fi
 
 # --- Garde-fous prod ----------------------------------------------
 if [[ "$PROFILE" == "prod" ]]; then

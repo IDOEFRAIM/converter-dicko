@@ -43,7 +43,9 @@
           <mat-error>Choisissez un fournisseur.</mat-error>
         }
       </mat-form-field>
-      <a routerLink="/suppliers/new" class="form-footer">+ Enregistrer un nouveau fournisseur</a>
+      <a routerLink="/suppliers/new" [queryParams]="{ returnToOrder: quoteId() }" class="form-footer">
+        + Enregistrer un nouveau fournisseur
+      </a>
     } @else {
       <!-- Alipay/WeChat Pay retires de la saisie manuelle (retour client : "pour alipay et
            wechat on doit forcement avoir un qrcode") -- cette requete ne peut joindre aucune
@@ -54,7 +56,9 @@
         Un compte Alipay ou WeChat Pay s'identifie par son code QR, jamais par un texte.
         Enregistrez ce beneficiaire comme fournisseur pour y joindre le vrai code QR — ce
         formulaire ne concerne que les comptes bancaires chinois.
-        <a routerLink="/suppliers/new">Ajouter un fournisseur Alipay/WeChat</a>
+        <a routerLink="/suppliers/new" [queryParams]="{ returnToOrder: quoteId() }">
+          Ajouter un fournisseur Alipay/WeChat
+        </a>
       </p>
 
       <mat-form-field appearance="outline" class="form__field">
