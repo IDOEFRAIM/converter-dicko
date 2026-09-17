@@ -80,6 +80,7 @@ public enum ErrorCode {
     POOL_INACTIVE(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
     POOL_ALREADY_JOINED(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
     POOL_NOT_JOINED(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
+    ACCOUNT_DELETION_BLOCKED(HttpStatus.CONFLICT, Category.BUSINESS_ERROR),
 
     // ---------------------------------------------------------- 429
     TOO_MANY_ATTEMPTS(HttpStatus.TOO_MANY_REQUESTS, Category.RATE_LIMIT),

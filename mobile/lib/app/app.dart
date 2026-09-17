@@ -25,6 +25,7 @@ import '../features/settings/data/settings_api.dart';
 import '../features/support/data/support_api.dart';
 import '../features/suppliers/data/supplier_api.dart';
 import '../features/wallet/data/wallet_api.dart';
+import '../shared/widgets/dismiss_keyboard_on_back.dart';
 import 'router/app_router.dart';
 
 /// Racine de l'application : composition des dependances (config -> session
@@ -121,6 +122,7 @@ class _RouterHostState extends State<_RouterHost> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.forProfile(experienceProfile),
       routerConfig: _router,
+      builder: (context, child) => DismissKeyboardOnBack(child: child),
     );
   }
 }

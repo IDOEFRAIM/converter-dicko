@@ -84,6 +84,10 @@ class ApiClient {
     return _send(() => _dio.patch<Map<String, dynamic>>(path, data: data));
   }
 
+  Future<Map<String, dynamic>> delete(String path, {Object? data}) {
+    return _send(() => _dio.delete<Map<String, dynamic>>(path, data: data));
+  }
+
   /// Envoi multipart (preuve de paiement/reglement). [formData] doit deja
   /// contenir un `MultipartFile` sous la cle attendue par le backend (`file`).
   Future<Map<String, dynamic>> postMultipart(String path, FormData formData) {

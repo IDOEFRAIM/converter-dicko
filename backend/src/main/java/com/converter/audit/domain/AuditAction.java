@@ -20,6 +20,7 @@ public enum AuditAction {
     USER_BLOCKED,
     USER_UNBLOCKED,
     USER_EXPERIENCE_PROFILE_CHANGED,
+    ACCOUNT_DELETED,
 
     // ---- Taux de change (Phase 1, non declenche) ----
     EXCHANGE_RATE_CREATED,

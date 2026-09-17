@@ -54,4 +54,14 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     /** Sert a determiner si l'amorcage d'un administrateur est necessaire. */
     @Query("SELECT COUNT(u) FROM User u JOIN u.roles r WHERE r.code = :code")
     long countByRole(@Param("code") RoleCode code);
+
+    /**
+     * Numero synthetique unique (format "+9" + 14 chiffres, jamais un
+     * indicatif pays reel) pour {@code User#anonymizeForDeletion} — voir
+     * {@code deleted_account_phone_seq}, V40. Respecte {@code
+     * ck_users_phone_format} : impossible d'y ecrire un texte libre.
+     */
+    @Query(value = "SELECT '+9' || lpad(nextval('deleted_account_phone_seq')::text, 14, '0')",
+            nativeQuery = true)
+    String nextDeletedAccountPhone();
 }

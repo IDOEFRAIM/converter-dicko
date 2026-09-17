@@ -8,9 +8,11 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_surfaces.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/experience_theme.dart';
+import '../../../shared/utils/legal_links.dart';
 import '../../../shared/widgets/icon_badge.dart';
 import '../../../shared/widgets/notification_bell_button.dart';
 import '../../auth/data/auth_repository.dart';
+import 'delete_account_dialog.dart';
 
 /// Menu "Plus" : fonctionnalites secondaires, regroupees par theme (retour
 /// client sept. 2026 : "app intuitive, on doit clairement comprendre
@@ -99,6 +101,47 @@ class MorePage extends StatelessWidget {
                 color: AppColors.ochre,
                 label: "Verification d'identite",
                 onTap: () => context.push('/more/kyc'),
+              ),
+              _MoreTile(
+                icon: Icons.delete_outline,
+                color: AppColors.negative,
+                label: 'Supprimer mon compte',
+                onTap: user == null
+                    ? () {}
+                    : () => showDialog<bool>(
+                          context: context,
+                          builder: (context) => DeleteAccountDialog(
+                            authRepository: context.read<AuthRepository>(),
+                            requiresPassword: user.hasPassword,
+                          ),
+                        ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          // Mentions legales (retour client : "l'utilisateur n'a pas acces aux CGU et a la
+          // politique de confidentialite dans l'app") -- pages deja live et a jour, ouvertes
+          // dans le navigateur externe plutot que recopiees ici (voir LegalLinks).
+          _MoreSection(
+            title: 'LEGAL',
+            tiles: [
+              _MoreTile(
+                icon: Icons.privacy_tip_outlined,
+                color: AppColors.inkMuted,
+                label: 'Politique de confidentialite',
+                onTap: () => LegalLinks.open(LegalLinks.privacyPolicy),
+              ),
+              _MoreTile(
+                icon: Icons.description_outlined,
+                color: AppColors.inkMuted,
+                label: "Conditions generales d'utilisation",
+                onTap: () => LegalLinks.open(LegalLinks.termsOfUse),
+              ),
+              _MoreTile(
+                icon: Icons.gavel_outlined,
+                color: AppColors.inkMuted,
+                label: 'Contrat de licence utilisateur final',
+                onTap: () => LegalLinks.open(LegalLinks.endUserLicense),
               ),
             ],
           ),

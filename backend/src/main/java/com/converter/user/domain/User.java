@@ -74,6 +74,9 @@ public class User extends AuditableEntity {
     @Column(name = "blocked_by")
     private UUID blockedBy;
 
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
     /**
      * Verification d'identite (KYC). Volontairement minimal — un simple drapeau pose par un
      * administrateur, pas un moteur de conformite complet (aucun document/upload/OCR). Devient
@@ -155,6 +158,33 @@ public class User extends AuditableEntity {
         this.blockedReason = reason;
         this.blockedBy = actorId;
         this.blockedAt = at;
+    }
+
+    /**
+     * Anonymise ce compte a la demande de son titulaire (voir
+     * {@code AccountDeletionService}).
+     *
+     * <p>{@code syntheticPhone} DOIT respecter {@code ck_users_phone_format}
+     * (le vrai numero est ainsi libere pour une future inscription — voir
+     * {@code deleted_account_phone_seq}, V40) : cette entite ne genere
+     * jamais elle-meme de valeur, seul l'appelant (avec acces au
+     * repository) le peut. {@code passwordAnonymizationHash} DOIT etre un
+     * condensat d'une valeur aleatoire jamais transmise a l'utilisateur
+     * (jamais {@code null} : {@code ck_users_has_auth_method} exige au
+     * moins un moyen d'authentification present, et {@code googleSubject}
+     * est justement retire ici). Ne touche jamais aux tables financieres
+     * qui referencent {@link #getId()} — elles restent intactes (voir la
+     * Javadoc de {@code V40__account_deletion.sql}).
+     */
+    public void anonymizeForDeletion(String syntheticPhone, String passwordAnonymizationHash, Instant at) {
+        this.status = UserStatus.DELETED;
+        this.deletedAt = at;
+        this.phone = syntheticPhone;
+        this.passwordHash = passwordAnonymizationHash;
+        this.googleSubject = null;
+        this.firstName = "Compte";
+        this.lastName = "supprime";
+        this.email = null;
     }
 
     public void unblock() {
@@ -254,6 +284,10 @@ public class User extends AuditableEntity {
 
     public UUID getBlockedBy() {
         return blockedBy;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
     }
 
     public boolean isKycVerified() {

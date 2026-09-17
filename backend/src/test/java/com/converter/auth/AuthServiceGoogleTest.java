@@ -191,6 +191,6 @@ class AuthServiceGoogleTest {
     private static UserResponse dummyUserResponse() {
         return new UserResponse(UUID.randomUUID(), "+22507000000", "Jane", "Doe", "jane@example.com",
                 com.converter.user.domain.UserStatus.ACTIVE, java.util.Set.of("USER"), Instant.now(), null,
-                com.converter.user.domain.ExperienceProfile.PRO, false);
+                com.converter.user.domain.ExperienceProfile.PRO, false, false);
     }
 }

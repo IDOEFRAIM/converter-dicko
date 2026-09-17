@@ -2,6 +2,7 @@ package com.converter.auth;
 
 import com.converter.auth.dto.AuthResponse;
 import com.converter.auth.dto.CompleteGoogleSignUpRequest;
+import com.converter.auth.dto.DeleteAccountRequest;
 import com.converter.auth.dto.GoogleSignInRequest;
 import com.converter.auth.dto.GoogleSignInResponse;
 import com.converter.auth.dto.LoginRequest;
@@ -11,12 +12,14 @@ import com.converter.common.api.ApiResponse;
 import com.converter.security.AuthenticatedUser;
 import com.converter.security.CurrentUser;
 import com.converter.user.dto.UserResponse;
+import com.converter.user.service.AccountDeletionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,9 +33,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final AccountDeletionService accountDeletionService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, AccountDeletionService accountDeletionService) {
         this.authService = authService;
+        this.accountDeletionService = accountDeletionService;
     }
 
     @PostMapping("/register")
@@ -94,5 +99,21 @@ public class AuthController {
             @AuthenticatedUser CurrentUser currentUser) {
         UserResponse response = authService.updateExperienceProfile(currentUser.getId(), request.experienceProfile());
         return ResponseEntity.ok(ApiResponse.of(response, "Habillage mis a jour."));
+    }
+
+    @DeleteMapping("/me")
+    @SecurityRequirement(name = "bearer-jwt")
+    @Operation(summary = "Supprimer mon compte",
+            description = "Anonymise le compte (nom, telephone, email, mot de passe/Google) -- "
+                    + "les transferts deja effectues restent en base pour les obligations legales "
+                    + "de conservation. Refuse si un transfert est encore en cours, ou pour un "
+                    + "compte administrateur. currentPassword obligatoire sauf pour un compte "
+                    + "cree via Google (qui n'en a jamais).")
+    public ResponseEntity<ApiResponse<Void>> deleteMyAccount(
+            @RequestBody(required = false) DeleteAccountRequest request,
+            @AuthenticatedUser CurrentUser currentUser) {
+        String currentPassword = request == null ? null : request.currentPassword();
+        accountDeletionService.deleteOwnAccount(currentUser.getId(), currentPassword);
+        return ResponseEntity.ok(ApiResponse.message("Compte supprime."));
     }
 }

@@ -121,9 +121,13 @@ abstract final class AppTheme {
         backgroundColor: AppColors.surface,
         indicatorColor: primary.withValues(alpha: 0.1),
         elevation: 0,
+        // 10 (pas 12) : retour client "le texte va a la ligne : fournisseur
+        // dans la barre de navigation" -- avec 6 destinations sur un ecran
+        // etroit, "Fournisseurs" (le libelle le plus long) ne rentrait pas
+        // sur une ligne a 12, meme seul visible (onlyShowSelected).
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
-            fontSize: 12,
+            fontSize: 10,
             fontWeight: states.contains(WidgetState.selected) ? FontWeight.w700 : FontWeight.w500,
             color: states.contains(WidgetState.selected) ? primary : AppColors.inkFaint,
           ),

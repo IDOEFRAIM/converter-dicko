@@ -47,6 +47,11 @@ class CurrentUser {
   /// (remarque produit #6, parcours `/more/kyc`).
   final bool kycVerified;
 
+  /// Faux pour un compte cree via Google Sign-In (jamais de mot de passe) —
+  /// pilote l'ecran de suppression de compte : demander une re-confirmation
+  /// par mot de passe uniquement si vrai (voir `MorePage`/`AccountDeletionService`).
+  final bool hasPassword;
+
   const CurrentUser({
     required this.id,
     required this.phone,
@@ -59,6 +64,7 @@ class CurrentUser {
     required this.lastLoginAt,
     required this.experienceProfile,
     required this.kycVerified,
+    required this.hasPassword,
   });
 
   bool get isAdmin => roles.contains('ADMIN');
@@ -80,6 +86,7 @@ class CurrentUser {
       lastLoginAt: json['lastLoginAt'] == null ? null : DateTime.parse(json['lastLoginAt'] as String),
       experienceProfile: ExperienceProfile.fromCode(json['experienceProfile'] as String?),
       kycVerified: json['kycVerified'] as bool? ?? false,
+      hasPassword: json['hasPassword'] as bool? ?? true,
     );
   }
 }

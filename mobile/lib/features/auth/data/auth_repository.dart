@@ -68,4 +68,17 @@ class AuthRepository {
   }
 
   Future<void> logout() => _session.clear();
+
+  /// Suppression de compte en libre-service (retour client : "est-ce que
+  /// l'utilisateur a la possibilite de supprimer ses donnees ?"). Le backend
+  /// anonymise le compte (transferts deja effectues conserves pour les
+  /// obligations legales) et refuse si un transfert est encore en cours ou
+  /// pour un compte administrateur (voir `ErrorCode.ACCOUNT_DELETION_BLOCKED`) —
+  /// l'ecran appelant affiche alors `ApiException.message` tel quel.
+  /// [currentPassword] est ignore par le backend pour un compte cree via
+  /// Google (voir `CurrentUser.hasPassword`).
+  Future<void> deleteAccount({String? currentPassword}) async {
+    await _client.delete('/auth/me', data: {'currentPassword': currentPassword});
+    await _session.clear();
+  }
 }

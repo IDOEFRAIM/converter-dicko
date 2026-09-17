@@ -46,6 +46,11 @@ public record UserResponse(
 
         @Schema(description = "Identite verifiee (KYC). Requis pour creer un ordre au-dela de "
                 + "KYC_REQUIRED_THRESHOLD_XOF — voir le parcours /api/v1/kyc.")
-        boolean kycVerified
+        boolean kycVerified,
+
+        @Schema(description = "Faux pour un compte cree via Google Sign-In (jamais de mot de "
+                + "passe) — pilote l'ecran mobile de suppression de compte : demander une "
+                + "re-confirmation par mot de passe uniquement si vrai.")
+        boolean hasPassword
 ) {
 }
