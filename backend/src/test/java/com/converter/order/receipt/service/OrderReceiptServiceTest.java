@@ -142,7 +142,7 @@ class OrderReceiptServiceTest {
                 "6222000000001111", "Bank of China", "Shanghai Branch", null, null, null, null,
                 order.getCreatedAt());
         Payment payment = new Payment(order.getId(), PaymentMethod.MOBILE_MONEY, order.getAmountXof(),
-                order.getAmountXof(), "MM-PAY-REF-42", "+2250700000000", "Payeur Test",
+                order.getAmountXof(), "+2250700000000", "Payeur Test",
                 Instant.parse("2026-09-01T11:00:00Z"));
         payment.confirm(UUID.randomUUID(), Instant.parse("2026-09-01T12:00:00Z"));
 
@@ -172,7 +172,6 @@ class OrderReceiptServiceTest {
         assertThat(model.currencyPair()).isEqualTo(RateProvider.DEFAULT_CURRENCY_PAIR);
         assertThat(model.purpose()).isEqualTo(Purpose.IMPORT_GOODS);
         assertThat(model.purposeDetails()).isEqualTo("Materiel electronique");
-        assertThat(model.paymentReference()).isEqualTo("MM-PAY-REF-42");
         assertThat(model.paymentVerifiedAt()).isEqualTo(Instant.parse("2026-09-01T12:00:00Z"));
         assertThat(model.settlementReference()).isNull();
         assertThat(model.settlementExecutedAt()).isNull();

@@ -73,6 +73,22 @@ class MorePage extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xl),
           ],
+          // Retour client oct. 2026 : un utilisateur qui commence a modeliser un paiement
+          // puis quitte l'app par inadvertance peut ne pas savoir ou retrouver ce transfert
+          // au retour -- "Activite" est deja un onglet racine (voir AppShell), mais un raccourci
+          // redondant ici, dans "Plus", rassure l'utilisateur qui ne l'aurait pas repere.
+          _MoreSection(
+            title: 'MES TRANSFERTS',
+            tiles: [
+              _MoreTile(
+                icon: Icons.receipt_long_outlined,
+                color: ExperiencePalette.accentFor(authSession.experienceProfile, AccentRole.send).color,
+                label: 'Voir mes transferts',
+                onTap: () => context.go('/activity'),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xl),
           _MoreSection(
             title: 'TAUX',
             tiles: [

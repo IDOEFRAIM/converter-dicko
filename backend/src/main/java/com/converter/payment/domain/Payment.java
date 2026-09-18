@@ -43,9 +43,6 @@ public class Payment extends BaseEntity {
     @Column(name = "received_amount_xof", nullable = false, precision = 19, scale = 2)
     private BigDecimal receivedAmountXof;
 
-    @Column(name = "transaction_reference", nullable = false, length = 100)
-    private String transactionReference;
-
     @Column(name = "payer_phone", length = 20)
     private String payerPhone;
 
@@ -88,14 +85,13 @@ public class Payment extends BaseEntity {
     }
 
     public Payment(UUID orderId, PaymentMethod method, BigDecimal expectedAmountXof,
-                   BigDecimal receivedAmountXof, String transactionReference, String payerPhone,
+                   BigDecimal receivedAmountXof, String payerPhone,
                    String payerName, Instant submittedAt) {
         this.orderId = orderId;
         this.method = method;
         this.status = PaymentStatus.SUBMITTED;
         this.expectedAmountXof = expectedAmountXof;
         this.receivedAmountXof = receivedAmountXof;
-        this.transactionReference = transactionReference;
         this.payerPhone = payerPhone;
         this.payerName = payerName;
         this.submittedAt = submittedAt;
@@ -126,12 +122,11 @@ public class Payment extends BaseEntity {
      * preuves deja televersees pour la tentative rejetee restent attachees (jamais supprimees) :
      * l'admin voit l'historique complet a la revue suivante.
      */
-    public void resubmit(PaymentMethod method, BigDecimal receivedAmountXof, String transactionReference,
+    public void resubmit(PaymentMethod method, BigDecimal receivedAmountXof,
                          String payerPhone, String payerName, Instant now) {
         requireRejected();
         this.method = method;
         this.receivedAmountXof = receivedAmountXof;
-        this.transactionReference = transactionReference;
         this.payerPhone = payerPhone;
         this.payerName = payerName;
         this.status = PaymentStatus.SUBMITTED;
@@ -175,10 +170,6 @@ public class Payment extends BaseEntity {
 
     public BigDecimal getReceivedAmountXof() {
         return receivedAmountXof;
-    }
-
-    public String getTransactionReference() {
-        return transactionReference;
     }
 
     public String getPayerPhone() {

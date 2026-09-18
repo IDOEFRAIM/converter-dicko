@@ -127,7 +127,6 @@ public class OrderReceiptService {
                 toReceiptBeneficiary(beneficiary),
                 order.getPurpose(),
                 order.getPurposeDetails(),
-                payment == null ? null : payment.getTransactionReference(),
                 payment == null ? null : payment.getConfirmedAt(),
                 settlement == null ? null : settlement.getSettlementReference(),
                 settlement == null ? null : settlement.getExecutedAt(),

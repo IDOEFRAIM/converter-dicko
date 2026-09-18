@@ -16,7 +16,6 @@ export interface Payment {
   status: PaymentStatus;
   expectedAmountXof: string;
   receivedAmountXof: string;
-  transactionReference: string;
   payerPhone: string | null;
   payerName: string | null;
   rejectionReason: string | null;
@@ -29,7 +28,6 @@ export interface Payment {
 export interface SubmitPaymentRequest {
   method: PaymentMethod;
   receivedAmountXof: string;
-  transactionReference: string;
   payerPhone: string;
   payerName: string;
 }

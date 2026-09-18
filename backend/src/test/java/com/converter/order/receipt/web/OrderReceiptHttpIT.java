@@ -33,8 +33,7 @@ class OrderReceiptHttpIT extends AbstractOrderPipelineIT {
     private UUID completedOrderId(String admin, String user) {
         QuoteResponse quote = createAcceptedQuote(user, "1000000");
         OrderDetailResponse order = createOrder(user, quote.id(), bankBeneficiary());
-        return completeOrder(admin, user, order.id(), order.amountXof().toPlainString(),
-                "MM-HTTP-RECEIPT-" + UUID.randomUUID(), "CNY-HTTP-RECEIPT-" + UUID.randomUUID());
+        return completeOrder(admin, user, order.id(), order.amountXof().toPlainString(), "CNY-HTTP-RECEIPT-" + UUID.randomUUID());
     }
 
     @Test

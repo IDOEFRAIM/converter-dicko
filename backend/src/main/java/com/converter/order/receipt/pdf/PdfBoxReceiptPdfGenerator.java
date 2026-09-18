@@ -82,7 +82,6 @@ public class PdfBoxReceiptPdfGenerator implements ReceiptPdfGenerator {
                 }
 
                 writer.section("Paiement");
-                writer.row("Reference", receipt.paymentReference());
                 writer.row("Verifie le", receipt.paymentVerifiedAt() == null ? null : format(receipt.paymentVerifiedAt()));
 
                 writer.section("Reglement");

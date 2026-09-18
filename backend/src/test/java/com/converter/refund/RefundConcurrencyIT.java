@@ -37,7 +37,7 @@ class RefundConcurrencyIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REFUND-CONC-1");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
 
@@ -84,7 +84,7 @@ class RefundConcurrencyIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REFUND-CONC-2");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         RefundResponse refund = createRefund(admin, payment.id(), "test concurrence");

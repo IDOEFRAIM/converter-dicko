@@ -43,7 +43,7 @@ class AchievementServiceIT extends AbstractOrderPipelineIT {
     private UUID completeOneOrder(String adminToken, String userToken) {
         QuoteResponse quote = createAcceptedQuote(userToken, "100000");
         OrderDetailResponse order = createOrder(userToken, quote.id(), alipayBeneficiary());
-        return completeOrder(adminToken, userToken, order.id(), "100000", "ref-" + UUID.randomUUID(),
+        return completeOrder(adminToken, userToken, order.id(), "100000",
                 "settlement-" + UUID.randomUUID());
     }
 

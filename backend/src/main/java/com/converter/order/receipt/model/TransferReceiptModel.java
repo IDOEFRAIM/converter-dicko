@@ -30,7 +30,6 @@ public record TransferReceiptModel(
         ReceiptBeneficiary beneficiary,
         Purpose purpose,
         String purposeDetails,
-        String paymentReference,
         Instant paymentVerifiedAt,
         String settlementReference,
         Instant settlementExecutedAt,

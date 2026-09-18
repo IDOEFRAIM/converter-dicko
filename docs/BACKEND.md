@@ -572,12 +572,13 @@ Colonnes financières = **copie figée du `Quote`** à la création, jamais reca
 | `status` | VARCHAR(16) CHECK ∈ (`SUBMITTED`,`CONFIRMED`,`REJECTED`) |
 | `expected_amount_xof` | NUMERIC(19,2) CHECK > 0 (copié depuis `order.amount_xof`) |
 | `received_amount_xof` | NUMERIC(19,2) CHECK > 0 (déclaré par le client) |
-| `transaction_reference` | VARCHAR(100) NOT NULL |
 | `payer_phone` | nullable |
 | `submitted_at`, `confirmed_at`, `rejected_at`, `reviewed_by` (FK→users) | |
 | `rejection_reason` | `ck_payments_rejection_reason` : `(status='REJECTED') = (rejection_reason IS NOT NULL)` |
 
-Index : `idx_payments_pending(submitted_at) WHERE status='SUBMITTED'`, **`uq_payments_txref` UNIQUE `(method, transaction_reference)`** (non partiel — une référence ne sert jamais deux ordres).
+Index : `idx_payments_pending(submitted_at) WHERE status='SUBMITTED'`.
+
+`transaction_reference` (et son index `uq_payments_txref`) a été retiré en V42 (retour client oct. 2026 : demander une référence de transaction en plus de la preuve photo était un doublon inutile) — la preuve photo est désormais la seule pièce justificative demandée au client ; la détection de doublon qu'assurait cet index unique n'est plus couverte que par la revue manuelle des preuves par l'administration.
 
 #### `payment_proofs` (entité `@Immutable`)
 `id`, `payment_id` FK→payments ON DELETE CASCADE, `file_name` (assaini), `content_type` CHECK ∈ allowlist (`image/jpeg|png|webp`, `application/pdf`), `storage_key` VARCHAR(500) **UNIQUE**, `storage_provider` DEFAULT `LOCAL` CHECK ∈ (`LOCAL`,`S3`), `size_bytes` CHECK > 0, `checksum_sha256` VARCHAR(64), `uploaded_by` (FK→users), `uploaded_at`. `idx_payment_proofs_payment`.

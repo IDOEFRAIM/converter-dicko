@@ -74,7 +74,7 @@ class OrderTrackingFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(userEntity);
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        submitPayment(user, order.id(), "100000", "TRK-SUB-" + UUID.randomUUID());
+        submitPayment(user, order.id(), "100000");
 
         OrderTrackingResponse tracking = orderTrackingService.get(order.id(), userEntity.getId());
 
@@ -92,7 +92,7 @@ class OrderTrackingFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(userEntity);
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "TRK-VER-" + UUID.randomUUID());
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
 
@@ -112,7 +112,7 @@ class OrderTrackingFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(userEntity);
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "TRK-PROC-" + UUID.randomUUID());
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         createSettlement(admin, order.id());
@@ -134,7 +134,7 @@ class OrderTrackingFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(userEntity);
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "TRK-COMP-" + UUID.randomUUID());
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         SettlementResponse settlement = createSettlement(admin, order.id());
@@ -184,7 +184,7 @@ class OrderTrackingFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(userEntity);
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "TRK-REJ-" + UUID.randomUUID());
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         rejectPayment(admin, payment.id(), "preuve illisible");
 
         OrderTrackingResponse tracking = orderTrackingService.get(order.id(), userEntity.getId());
@@ -224,7 +224,7 @@ class OrderTrackingFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(userEntity);
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "TRK-REFP-" + UUID.randomUUID());
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         createRefund(admin, payment.id(), "erreur de commande");
@@ -244,7 +244,7 @@ class OrderTrackingFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(userEntity);
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "TRK-REFD-" + UUID.randomUUID());
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         RefundResponse refund = createRefund(admin, payment.id(), "erreur de commande");

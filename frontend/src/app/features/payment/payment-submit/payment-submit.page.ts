@@ -69,7 +69,6 @@ export class PaymentSubmitPage implements OnInit {
   readonly form = new FormGroup({
     method: new FormControl<PaymentMethod>('MOBILE_MONEY', { nonNullable: true, validators: [Validators.required] }),
     receivedAmountXof: new FormControl<number | null>(null, { validators: [Validators.required, Validators.min(1)] }),
-    transactionReference: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     payerPhone: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     payerName: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
   });
@@ -123,12 +122,9 @@ export class PaymentSubmitPage implements OnInit {
     const request = {
       method: value.method,
       receivedAmountXof: String(value.receivedAmountXof),
-      transactionReference: value.transactionReference,
       payerPhone: value.payerPhone,
       payerName: value.payerName,
     };
-    // Ex. apres un 409 DUPLICATE_TRANSACTION_REFERENCE : l'utilisateur corrige la reference,
-    // le corps change => nouvelle cle, pas de 409 IDEMPOTENCY_KEY_REUSED parasite.
     const idempotencyKey = this.idempotency.keyFor({ orderId: order.id, ...request });
 
     this.submitting.set(true);

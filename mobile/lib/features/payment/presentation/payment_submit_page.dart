@@ -51,7 +51,6 @@ class _PaymentSubmitView extends StatefulWidget {
 
 class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
   final _formKey = GlobalKey<FormState>();
-  final _referenceController = TextEditingController();
   final _phoneController = TextEditingController();
   final _payerNameController = TextEditingController();
   PaymentMethod? _method;
@@ -72,7 +71,6 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
 
   @override
   void dispose() {
-    _referenceController.dispose();
     _phoneController.dispose();
     _payerNameController.dispose();
     super.dispose();
@@ -96,7 +94,6 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
     }
     await controller.submit(
       method: method,
-      transactionReference: _referenceController.text.trim(),
       payerPhone: _phoneController.text.trim(),
       payerName: _payerNameController.text.trim(),
     );
@@ -214,16 +211,6 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
               ),
               const SizedBox(height: AppSpacing.md),
             ],
-            TextFormField(
-              controller: _referenceController,
-              maxLength: 100,
-              decoration: const InputDecoration(
-                labelText: 'Reference de la transaction *',
-                helperText: 'Le code recu par SMS apres votre envoi (ex. MP240916.1234)',
-              ),
-              validator: (value) => Validators.requiredMaxLength(value, 100, label: 'La reference de transaction'),
-            ),
-            const SizedBox(height: AppSpacing.md),
             // Pre-rempli avec les coordonnees du compte (voir initState) -- rarement a modifier,
             // seulement si quelqu'un d'autre a effectue le paiement pour ce transfert.
             TextFormField(
@@ -264,6 +251,14 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
   }
 
   List<Widget> _buildProofStep(BuildContext context, PaymentSubmitController controller) {
+    // Retour client oct. 2026 : "confirmer le paiement avec une capture est plus simple" --
+    // un administrateur ne peut PAS confirmer un paiement sans preuve tant que
+    // REQUIRE_PAYMENT_PROOF est actif (voir PaymentService.confirm, backend). Avant ce
+    // correctif, "Voir le transfert" restait toujours actionnable ici, meme sans preuve
+    // jointe : l'utilisateur croyait avoir termine, alors que son transfert resterait bloque
+    // indefiniment cote administration, sans qu'il en soit jamais informe.
+    final proofRequired = controller.settings?.requirePaymentProof ?? true;
+    final canFinish = controller.proofUploaded || !proofRequired;
     return [
       Container(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -280,7 +275,14 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
         ),
       ),
       const SizedBox(height: AppSpacing.xl),
-      const _StepLabel(number: 3, label: 'Ajoutez la preuve'),
+      _StepLabel(number: 3, label: proofRequired ? 'Ajoutez la preuve *' : 'Ajoutez la preuve'),
+      const SizedBox(height: AppSpacing.xs),
+      Text(
+        proofRequired
+            ? 'Obligatoire : sans capture de votre paiement, notre equipe ne peut pas debloquer votre transfert.'
+            : 'Facultatif, mais accelere la verification par notre equipe.',
+        style: AppTypography.caption,
+      ),
       const SizedBox(height: AppSpacing.md),
       ProofDropzone(
         uploading: controller.uploadingProof,
@@ -299,7 +301,7 @@ class _PaymentSubmitViewState extends State<_PaymentSubmitView> {
       SizedBox(
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: () => context.go('/activity/orders/${controller.orderId}'),
+          onPressed: canFinish ? () => context.go('/activity/orders/${controller.orderId}') : null,
           child: const Text('Voir le transfert'),
         ),
       ),

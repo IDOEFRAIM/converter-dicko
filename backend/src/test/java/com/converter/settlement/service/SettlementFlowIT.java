@@ -62,7 +62,7 @@ class SettlementFlowIT extends AbstractOrderPipelineIT {
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrderWithSupplierRaw(user, quote.id(), supplier.id()).getBody().data();
         assertThat(order.beneficiary().identifier()).isNull();
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REF-QR-SETTLEMENT");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
 
@@ -101,7 +101,7 @@ class SettlementFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), bankBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REF-010");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
 
@@ -137,7 +137,7 @@ class SettlementFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "50000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "50000", "MM-REF-IDEMP-CREATE");
+        PaymentResponse payment = submitPayment(user, order.id(), "50000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
 
@@ -165,7 +165,7 @@ class SettlementFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "50000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "50000", "MM-REF-011");
+        PaymentResponse payment = submitPayment(user, order.id(), "50000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         SettlementResponse settlement = createSettlement(admin, order.id());
@@ -185,7 +185,7 @@ class SettlementFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REF-012");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         SettlementResponse settlement = createSettlement(admin, order.id());
@@ -247,7 +247,7 @@ class SettlementFlowIT extends AbstractOrderPipelineIT {
             updateSetting(admin, SettingKey.TREASURY_RESERVE_ON_ORDER, "true");
         }
 
-        PaymentResponse paymentB = submitPayment(user, orderB.id(), "100000", "MM-REF-NORES-1");
+        PaymentResponse paymentB = submitPayment(user, orderB.id(), "100000");
         uploadProof(user, paymentB.id());
         confirmPayment(admin, paymentB.id());
         SettlementResponse settlementB = createSettlement(admin, orderB.id());
@@ -279,7 +279,7 @@ class SettlementFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "50000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "50000", "MM-REF-013");
+        PaymentResponse payment = submitPayment(user, order.id(), "50000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         SettlementResponse settlement = createSettlement(admin, order.id());
@@ -310,7 +310,7 @@ class SettlementFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REF-CONC-1");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         SettlementResponse settlement = createSettlement(admin, order.id());

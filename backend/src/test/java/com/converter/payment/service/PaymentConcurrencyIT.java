@@ -54,10 +54,7 @@ class PaymentConcurrencyIT extends AbstractOrderPipelineIT {
             var futures = IntStream.range(0, attempts)
                     .mapToObj(i -> pool.submit(() -> {
                         awaitUninterruptibly(start);
-                        // References distinctes : la course doit se decider sur uq_payments_order,
-                        // pas accidentellement sur uq_payments_txref.
-                        ResponseEntity<String> response = submitPaymentRawAsString(user, order.id(), "100000",
-                                "MM-CONC-" + i);
+                        ResponseEntity<String> response = submitPaymentRawAsString(user, order.id(), "100000");
                         if (response.getStatusCode() == HttpStatus.CREATED) {
                             submitted.incrementAndGet();
                         } else if (response.getStatusCode() == HttpStatus.CONFLICT) {
@@ -88,7 +85,7 @@ class PaymentConcurrencyIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-CONC-CONFIRM-1");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
 
         BigDecimal xofBefore = treasurySnapshot(admin, Currency.XOF).balance();
@@ -136,11 +133,10 @@ class PaymentConcurrencyIT extends AbstractOrderPipelineIT {
     }
 
     private ResponseEntity<String> submitPaymentRawAsString(String userToken, java.util.UUID orderId,
-                                                             String receivedAmountXof, String reference) {
+                                                             String receivedAmountXof) {
         HttpHeaders headers = auth(userToken);
         String body = "{\"method\":\"MOBILE_MONEY\",\"receivedAmountXof\":" + receivedAmountXof
-                + ",\"transactionReference\":\"" + reference
-                + "\",\"payerPhone\":\"+2250700000000\",\"payerName\":\"Payeur Test\"}";
+                + ",\"payerPhone\":\"+2250700000000\",\"payerName\":\"Payeur Test\"}";
         headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
         return restTemplate.exchange("/api/v1/orders/" + orderId + "/payments", HttpMethod.POST,
                 new HttpEntity<>(body, headers), String.class);

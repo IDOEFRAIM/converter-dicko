@@ -133,7 +133,7 @@ public class PaymentService {
 
         AuditAction action = isResubmission ? AuditAction.PAYMENT_RESUBMITTED : AuditAction.PAYMENT_SUBMITTED;
         auditService.record(userId, null, action, "Payment", saved.getId().toString(),
-                "{\"orderId\":\"" + orderId + "\",\"reference\":\"" + request.transactionReference() + "\"}");
+                "{\"orderId\":\"" + orderId + "\"}");
         String message = isResubmission
                 ? "Votre nouveau paiement pour l'ordre " + orderId + " a ete declare et est en cours de verification."
                 : "Votre paiement pour l'ordre " + orderId + " a ete declare et est en cours de verification.";
@@ -149,35 +149,26 @@ public class PaymentService {
             throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATE,
                     "Un paiement a deja ete declare pour cet ordre.");
         }
-        if (paymentRepository.existsByMethodAndTransactionReference(request.method(), request.transactionReference())) {
-            throw new BusinessException(ErrorCode.DUPLICATE_TRANSACTION_REFERENCE,
-                    "Cette reference de transaction a deja ete utilisee pour un autre paiement.");
-        }
         Payment payment = new Payment(orderId, request.method(), order.getAmountXof(),
-                request.receivedAmountXof(), request.transactionReference(), request.payerPhone(),
+                request.receivedAmountXof(), request.payerPhone(),
                 request.payerName(), now);
         try {
             return paymentRepository.saveAndFlush(payment);
         } catch (DataIntegrityViolationException ex) {
-            // Course concurrente ayant franchi les pre-verifications ci-dessus (uq_payments_order
-            // ou uq_payments_txref). Impossible de re-interroger la base ici (la transaction PG
-            // est avortee par la violation) ; le cas concurrent dominant est de tres loin la
-            // double declaration pour le meme ordre. On renvoie donc le code metier precis
-            // correspondant, jamais le DUPLICATE_RESOURCE generique (passe 2, P2-6).
+            // Course concurrente ayant franchi la pre-verification ci-dessus (uq_payments_order).
+            // Impossible de re-interroger la base ici (la transaction PG est avortee par la
+            // violation) ; le cas concurrent dominant est de tres loin la double declaration pour
+            // le meme ordre. On renvoie donc le code metier precis correspondant, jamais le
+            // DUPLICATE_RESOURCE generique (passe 2, P2-6).
             throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATE,
-                    "Un paiement a deja ete declare pour cet ordre (ou la reference de transaction est deja prise).");
+                    "Un paiement a deja ete declare pour cet ordre.");
         }
     }
 
     private Payment resubmitRejectedPayment(UUID orderId, SubmitPaymentRequest request, Instant now) {
         Payment existing = paymentRepository.findByOrderIdForUpdate(orderId)
                 .orElseThrow(() -> notFoundPayment(orderId));
-        if (paymentRepository.existsByMethodAndTransactionReferenceAndIdNot(
-                request.method(), request.transactionReference(), existing.getId())) {
-            throw new BusinessException(ErrorCode.DUPLICATE_TRANSACTION_REFERENCE,
-                    "Cette reference de transaction a deja ete utilisee pour un autre paiement.");
-        }
-        existing.resubmit(request.method(), request.receivedAmountXof(), request.transactionReference(),
+        existing.resubmit(request.method(), request.receivedAmountXof(),
                 request.payerPhone(), request.payerName(), now);
         return paymentRepository.save(existing);
     }
@@ -361,7 +352,7 @@ public class PaymentService {
     private static PaymentResponse toResponse(Payment payment, List<PaymentProofResponse> proofs) {
         return new PaymentResponse(
                 payment.getId(), payment.getOrderId(), payment.getMethod(), payment.getStatus(),
-                payment.getExpectedAmountXof(), payment.getReceivedAmountXof(), payment.getTransactionReference(),
+                payment.getExpectedAmountXof(), payment.getReceivedAmountXof(),
                 payment.getPayerPhone(), payment.getPayerName(), payment.getRejectionReason(), proofs,
                 payment.getSubmittedAt(), payment.getConfirmedAt(), payment.getRejectedAt());
     }

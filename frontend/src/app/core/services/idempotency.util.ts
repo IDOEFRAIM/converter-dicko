@@ -18,8 +18,31 @@ import { HttpHeaders } from '@angular/common/http';
  *   <li>apres un succes, la cle est oubliee.</li>
  * </ul>
  */
+/**
+ * Retour client oct. 2026 : "TypeError: crypto.randomUUID is not a function" bloquait TOUTE
+ * confirmation/rejet de paiement en administration -- `crypto.randomUUID()` n'existe que dans un
+ * contexte SECURISE (HTTPS, ou localhost). L'admin accedait au site en HTTP simple par IP brute
+ * (http://<ip>:4300, hors Caddy/HTTPS) : sur cette origine, `crypto.randomUUID` est absent, et
+ * l'exception plantait le gestionnaire de clic AVANT tout envoi reseau (aucune trace serveur,
+ * bouton qui se reactive sans rien confirmer).
+ *
+ * `crypto.getRandomValues` reste disponible meme en HTTP (pas soumis a la meme restriction) : on
+ * l'utilise pour construire un UUID v4 a la main si `randomUUID` est absent. Repli final
+ * (improbable, aucune Web Crypto API du tout) suffisamment unique pour une cle d'idempotence
+ * cote client -- jamais un besoin cryptographique, seulement une deduplication de rejeu.
+ */
 export function newIdempotencyKey(): string {
-  return crypto.randomUUID();
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  }
+  return `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2)}`;
 }
 
 /** En-tetes HTTP portant la cle d'idempotence, ou en-tetes vides si aucune cle n'est fournie. */

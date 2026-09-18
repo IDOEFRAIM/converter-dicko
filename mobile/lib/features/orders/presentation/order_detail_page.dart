@@ -137,7 +137,7 @@ class _OrderDetailView extends StatelessWidget {
                 children: [
                   const Corridor(level: CorridorLevel.compact),
                   const SizedBox(height: AppSpacing.lg),
-                  _buildStatusPanel(order),
+                  _buildStatusPanel(context, order),
                   const SizedBox(height: AppSpacing.lg),
                   _buildAmountFlow(order),
                   const SizedBox(height: AppSpacing.lg),
@@ -168,25 +168,42 @@ class _OrderDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusPanel(OrderDetail order) {
+  /// Retour client oct. 2026 : quand le statut confirme "paiement soumis, en
+  /// verification" (i.e. juste apres la declaration cote [PaymentSubmitPage]),
+  /// l'utilisateur tapait instinctivement sur cette carte en s'attendant a un
+  /// suivi -- sans effet avant ce correctif. Le lien "Voir le suivi" restait
+  /// disponible plus bas, mais hors du champ visuel de cette confirmation.
+  Widget _buildStatusPanel(BuildContext context, OrderDetail order) {
     final message = orderStatusMessages[order.status]!;
-    return _panel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          StatusBadge(status: order.status.code),
-          const SizedBox(height: AppSpacing.sm),
-          Text(message.description, style: AppTypography.body.copyWith(color: AppColors.inkMuted)),
-          if (order.status == OrderStatus.rejected && order.rejectionReason != null) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Text(order.rejectionReason!, style: AppTypography.body.copyWith(color: AppColors.negative)),
+    final trackable = order.status == OrderStatus.paymentSubmitted;
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(child: StatusBadge(status: order.status.code)),
+            if (trackable) const Icon(Icons.chevron_right, color: AppColors.inkFaint),
           ],
-          if (order.status == OrderStatus.cancelled && order.cancellationReason != null) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Text(order.cancellationReason!, style: AppTypography.body.copyWith(color: AppColors.negative)),
-          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(message.description, style: AppTypography.body.copyWith(color: AppColors.inkMuted)),
+        if (order.status == OrderStatus.rejected && order.rejectionReason != null) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(order.rejectionReason!, style: AppTypography.body.copyWith(color: AppColors.negative)),
         ],
-      ),
+        if (order.status == OrderStatus.cancelled && order.cancellationReason != null) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(order.cancellationReason!, style: AppTypography.body.copyWith(color: AppColors.negative)),
+        ],
+      ],
+    );
+    if (!trackable) {
+      return _panel(child: content);
+    }
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      onTap: () => context.push('/activity/orders/${order.id}/tracking'),
+      child: _panel(child: content),
     );
   }
 

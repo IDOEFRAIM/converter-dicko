@@ -21,10 +21,6 @@ public record SubmitPaymentRequest(
         @Digits(integer = 17, fraction = 2, message = "Le montant depasse la precision autorisee")
         BigDecimal receivedAmountXof,
 
-        @NotBlank(message = "La reference de transaction est obligatoire")
-        @Size(max = 100)
-        String transactionReference,
-
         @NotBlank(message = "Le numero du payeur est obligatoire")
         @Size(max = 20)
         String payerPhone,

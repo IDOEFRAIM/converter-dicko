@@ -41,7 +41,7 @@ export class AdminPaymentsPage implements OnInit {
   readonly payments = signal<Payment[]>([]);
   readonly loading = signal(true);
   readonly processingId = signal<string | null>(null);
-  readonly displayedColumns = ['reference', 'method', 'payer', 'receivedAmountXof', 'submittedAt', 'proofs', 'actions'];
+  readonly displayedColumns = ['method', 'payer', 'receivedAmountXof', 'submittedAt', 'proofs', 'actions'];
   private readonly confirmIdempotency = new IdempotencyAttempt();
   private readonly rejectIdempotency = new IdempotencyAttempt();
 

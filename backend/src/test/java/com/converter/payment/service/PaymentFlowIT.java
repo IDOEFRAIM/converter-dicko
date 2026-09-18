@@ -40,7 +40,7 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
 
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REF-001");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
 
         assertThat(payment.status()).isEqualTo(PaymentStatus.SUBMITTED);
         assertThat(payment.orderId()).isEqualTo(order.id());
@@ -71,7 +71,6 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         ResponseEntity<ErrorResponse> response = restTemplate.exchange(
                 "/api/v1/orders/" + order.id() + "/payments", HttpMethod.POST,
                 new HttpEntity<>("{\"method\":\"MOBILE_MONEY\",\"receivedAmountXof\":1,"
-                        + "\"transactionReference\":\"MM-REF-SHORT-1\","
                         + "\"payerPhone\":\"+2250700000000\",\"payerName\":\"Payeur Test\"}", headers),
                 ErrorResponse.class);
 
@@ -93,12 +92,12 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "50000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        submitPayment(user, order.id(), "50000", "MM-REF-002");
+        submitPayment(user, order.id(), "50000");
 
         ResponseEntity<ErrorResponse> response = restTemplate.exchange(
                 "/api/v1/orders/" + order.id() + "/payments", HttpMethod.POST,
                 new HttpEntity<>(new SubmitPaymentRequest(PaymentMethod.MOBILE_MONEY, new BigDecimal("50000"),
-                        "MM-REF-003", "+2250700000000", "Payeur Test"), auth(user)),
+                        "+2250700000000", "Payeur Test"), auth(user)),
                 ErrorResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
@@ -112,7 +111,7 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "50000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "50000", "MM-REF-004");
+        PaymentResponse payment = submitPayment(user, order.id(), "50000");
 
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         byte[] notAnImage = "this is definitely not a jpeg".getBytes();
@@ -143,7 +142,7 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "50000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "50000", "MM-REF-005");
+        PaymentResponse payment = submitPayment(user, order.id(), "50000");
 
         ResponseEntity<ErrorResponse> response = restTemplate.exchange(
                 "/api/admin/payments/" + payment.id() + "/confirm", HttpMethod.POST,
@@ -161,7 +160,7 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REF-006");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
 
         BigDecimal xofBefore = treasurySnapshot(admin, Currency.XOF).balance();
@@ -200,7 +199,7 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "50000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "50000", "MM-REF-IDEMP-CONFIRM");
+        PaymentResponse payment = submitPayment(user, order.id(), "50000");
         uploadProof(user, payment.id());
 
         HttpHeaders headers = auth(admin);
@@ -228,7 +227,7 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "50000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "50000", "MM-REF-IDEMP-REJECT");
+        PaymentResponse payment = submitPayment(user, order.id(), "50000");
         uploadProof(user, payment.id());
 
         HttpHeaders headers = auth(admin);
@@ -258,7 +257,7 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REF-007");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
 
         BigDecimal cnyAvailableBefore = treasurySnapshot(admin, Currency.CNY).available();
@@ -296,7 +295,7 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "50000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "50000", "MM-REF-MULTILINE");
+        PaymentResponse payment = submitPayment(user, order.id(), "50000");
         uploadProof(user, payment.id());
 
         ResponseEntity<ApiResponse<PaymentResponse>> rejected = rejectPaymentRaw(admin, payment.id(),
@@ -316,12 +315,12 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse firstAttempt = submitPayment(user, order.id(), "100000", "MM-REF-RESUB-1");
+        PaymentResponse firstAttempt = submitPayment(user, order.id(), "100000");
         uploadProof(user, firstAttempt.id());
         rejectPayment(admin, firstAttempt.id(), "preuve illisible");
 
         ResponseEntity<ApiResponse<PaymentResponse>> resubmitted = submitPaymentRaw(
-                user, order.id(), "100000", "MM-REF-RESUB-2");
+                user, order.id(), "100000");
 
         assertThat(resubmitted.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         PaymentResponse payment = resubmitted.getBody().data();
@@ -329,7 +328,6 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         assertThat(payment.id()).isEqualTo(firstAttempt.id());
         assertThat(payment.status()).isEqualTo(PaymentStatus.SUBMITTED);
         assertThat(payment.rejectionReason()).isNull();
-        assertThat(payment.transactionReference()).isEqualTo("MM-REF-RESUB-2");
 
         ResponseEntity<ApiResponse<OrderDetailResponse>> reloaded = restTemplate.exchange(
                 "/api/v1/orders/" + order.id(), HttpMethod.GET, new HttpEntity<>(auth(user)),
@@ -339,57 +337,6 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         assertThat(reloaded.getBody().data().id()).isEqualTo(order.id());
         assertThat(reloaded.getBody().data().status()).isEqualTo(OrderStatus.PAYMENT_SUBMITTED);
         assertThat(reloaded.getBody().data().rejectionReason()).isNull();
-    }
-
-    /**
-     * Le paiement reel hors plateforme n'a pas change : reutiliser exactement la MEME reference
-     * de transaction lors de la resoumission ne doit jamais etre traite comme un doublon contre
-     * soi-meme (voir {@code existsByMethodAndTransactionReferenceAndIdNot}).
-     */
-    @Test
-    void resubmitPayment_reusingTheSameTransactionReference_isAllowed() {
-        String admin = adminToken();
-        publishRate(admin, "85.000000");
-        depositCny(admin, "1000000");
-        String user = tokenFor(createUser(RoleCode.USER));
-        QuoteResponse quote = createAcceptedQuote(user, "50000");
-        OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse firstAttempt = submitPayment(user, order.id(), "50000", "MM-REF-SAME-REF");
-        uploadProof(user, firstAttempt.id());
-        rejectPayment(admin, firstAttempt.id(), "montant illisible sur la photo");
-
-        ResponseEntity<ApiResponse<PaymentResponse>> resubmitted = submitPaymentRaw(
-                user, order.id(), "50000", "MM-REF-SAME-REF");
-
-        assertThat(resubmitted.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(resubmitted.getBody().data().transactionReference()).isEqualTo("MM-REF-SAME-REF");
-    }
-
-    @Test
-    void resubmitPayment_reusingAnotherOrdersTransactionReference_isStillRejectedAsDuplicate() {
-        String admin = adminToken();
-        publishRate(admin, "85.000000");
-        depositCny(admin, "2000000");
-        String user = tokenFor(createUser(RoleCode.USER));
-
-        QuoteResponse quoteA = createAcceptedQuote(user, "50000");
-        OrderDetailResponse orderA = createOrder(user, quoteA.id(), alipayBeneficiary());
-        submitPayment(user, orderA.id(), "50000", "MM-REF-OTHER-ORDER");
-
-        QuoteResponse quoteB = createAcceptedQuote(user, "60000");
-        OrderDetailResponse orderB = createOrder(user, quoteB.id(), alipayBeneficiary());
-        PaymentResponse paymentB = submitPayment(user, orderB.id(), "60000", "MM-REF-TO-REJECT");
-        uploadProof(user, paymentB.id());
-        rejectPayment(admin, paymentB.id(), "reference illisible");
-
-        ResponseEntity<ErrorResponse> response = restTemplate.exchange(
-                "/api/v1/orders/" + orderB.id() + "/payments", HttpMethod.POST,
-                new HttpEntity<>(new SubmitPaymentRequest(PaymentMethod.MOBILE_MONEY, new BigDecimal("60000"),
-                        "MM-REF-OTHER-ORDER", "+2250700000000", "Payeur Test"), auth(user)),
-                ErrorResponse.class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(response.getBody().code()).isEqualTo("DUPLICATE_TRANSACTION_REFERENCE");
     }
 
     /**
@@ -406,11 +353,11 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse firstAttempt = submitPayment(user, order.id(), "100000", "MM-REF-CONFIRM-1");
+        PaymentResponse firstAttempt = submitPayment(user, order.id(), "100000");
         uploadProof(user, firstAttempt.id());
         rejectPayment(admin, firstAttempt.id(), "preuve illisible");
 
-        PaymentResponse resubmitted = submitPayment(user, order.id(), "100000", "MM-REF-CONFIRM-2");
+        PaymentResponse resubmitted = submitPayment(user, order.id(), "100000");
         uploadProof(user, resubmitted.id());
         PaymentResponse confirmed = confirmPayment(admin, resubmitted.id());
 
@@ -434,13 +381,13 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse firstAttempt = submitPayment(user, order.id(), "100000", "MM-REF-TREASURY-1");
+        PaymentResponse firstAttempt = submitPayment(user, order.id(), "100000");
         uploadProof(user, firstAttempt.id());
         rejectPayment(admin, firstAttempt.id(), "preuve illisible");
 
         BigDecimal cnyAvailableBeforeResubmit = treasurySnapshot(admin, Currency.CNY).available();
 
-        submitPayment(user, order.id(), "100000", "MM-REF-TREASURY-2");
+        submitPayment(user, order.id(), "100000");
 
         // Ni reduite (pas de deuxieme reservation -- interdite par uq_treasury_tx_reservation_
         // per_order) ni augmentee (jamais liberee au rejet) : totalement inchangee.
@@ -462,7 +409,7 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "50000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "50000", "MM-REF-PROOFVIEW");
+        PaymentResponse payment = submitPayment(user, order.id(), "50000");
         PaymentProofResponse proof = uploadProof(user, payment.id());
 
         ResponseEntity<byte[]> response = restTemplate.exchange(
@@ -482,7 +429,7 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "50000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "50000", "MM-REF-008");
+        PaymentResponse payment = submitPayment(user, order.id(), "50000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
 
@@ -502,7 +449,7 @@ class PaymentFlowIT extends AbstractOrderPipelineIT {
         String owner = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(owner, "50000");
         OrderDetailResponse order = createOrder(owner, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(owner, order.id(), "50000", "MM-REF-009");
+        PaymentResponse payment = submitPayment(owner, order.id(), "50000");
 
         String intruder = tokenFor(createUser(RoleCode.USER));
         ResponseEntity<ErrorResponse> response = restTemplate.exchange(

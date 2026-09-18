@@ -54,7 +54,7 @@ class FullPipelineIT extends AbstractOrderPipelineIT {
                 .isEqualByComparingTo(order.amountCny());
 
         // 3. Payment soumis
-        PaymentResponse payment = submitPayment(user, order.id(), order.amountXof().toPlainString(), "MM-E2E-001");
+        PaymentResponse payment = submitPayment(user, order.id(), order.amountXof().toPlainString());
         assertThat(payment.status()).isEqualTo(PaymentStatus.SUBMITTED);
         assertThat(orderStatus(user, order.id())).isEqualTo(OrderStatus.PAYMENT_SUBMITTED);
 

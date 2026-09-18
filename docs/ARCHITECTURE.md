@@ -1388,7 +1388,7 @@ Chaque étape est déjà, ou sera (Quote/Settlement/RiskFlag), un enregistrement
 | Quelle preuve ? | `payment_proofs.storage_key` / `checksum_sha256` |
 | Qui a validé ? | `payments.reviewed_by` |
 | Qui a exécuté le règlement ? | `settlements.executed_by` |
-| Quelle référence de transaction ? | `payments.transaction_reference` / `settlements.settlement_reference` |
+| Quelle référence de transaction ? | `settlements.settlement_reference` (`payments.transaction_reference` retiré en V42, voir §J.1 #6) |
 
 Le schéma générique d'`audit_logs` (Phase 1, §C.12) n'a besoin d'**aucune** modification structurelle pour couvrir cette chaîne — seul son catalogue `AuditAction` s'enrichit au fil des phases (§K.13).
 
@@ -2385,7 +2385,7 @@ Vérification sur l'exemple de la spécification : `100 000 / 85 = 1 176,470588�
 | 3 | **Erreur d'arrondi** cumulée | 🔴 Critique | `BigDecimal` exclusivement, `MoneyCalculator` unique, arrondis explicites, tests dédiés |
 | 4 | **Recalcul d'un ordre historique** au taux courant | 🔴 Critique | Snapshot immuable + test d'invariance : modifier le taux ne doit modifier aucun ordre existant |
 | 5 | **Survente de liquidité** (N ordres concurrents épuisent la réserve) | 🟠 Élevé | Réservation sous verrou pessimiste sur `treasury_accounts` + CHECK `reserved_balance <= balance` |
-| 6 | Réutilisation d'une **référence Mobile Money** sur deux ordres | 🟠 Élevé | Index unique partiel `(method, transaction_reference)` |
+| 6 | Réutilisation d'une **même preuve/transaction** sur deux ordres | 🟠 Élevé | Revue manuelle des preuves photo par l'administration avant confirmation. *Ex-parade V10 : index unique `(method, transaction_reference)`, retiré en V42 (retour client oct. 2026 : demander une référence en plus de la photo était un doublon inutile) — aucune contrainte base ne couvre plus ce risque, seulement la vigilance de l'admin.* |
 | 7 | Divergence **solde matérialisé ↔ ledger** | 🟡 Moyen | `balance_after` inscrit dans chaque écriture + test de réconciliation |
 
 ### J.2 Risques de sécurité applicative

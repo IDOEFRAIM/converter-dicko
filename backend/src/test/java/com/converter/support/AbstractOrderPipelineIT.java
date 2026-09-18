@@ -145,17 +145,17 @@ public abstract class AbstractOrderPipelineIT extends AbstractRateQuoteIT {
     }
 
     protected ResponseEntity<ApiResponse<PaymentResponse>> submitPaymentRaw(
-            String userToken, UUID orderId, String receivedAmountXof, String reference) {
+            String userToken, UUID orderId, String receivedAmountXof) {
         return restTemplate.exchange("/api/v1/orders/" + orderId + "/payments", HttpMethod.POST,
                 new HttpEntity<>(new SubmitPaymentRequest(PaymentMethod.MOBILE_MONEY,
-                        new BigDecimal(receivedAmountXof), reference, "+2250700000000", "Payeur Test"),
+                        new BigDecimal(receivedAmountXof), "+2250700000000", "Payeur Test"),
                         auth(userToken)),
                 new ParameterizedTypeReference<ApiResponse<PaymentResponse>>() {
                 });
     }
 
-    protected PaymentResponse submitPayment(String userToken, UUID orderId, String receivedAmountXof, String reference) {
-        return submitPaymentRaw(userToken, orderId, receivedAmountXof, reference).getBody().data();
+    protected PaymentResponse submitPayment(String userToken, UUID orderId, String receivedAmountXof) {
+        return submitPaymentRaw(userToken, orderId, receivedAmountXof).getBody().data();
     }
 
     protected ResponseEntity<ApiResponse<PaymentProofResponse>> uploadProofRaw(String userToken, UUID paymentId) {
@@ -333,8 +333,8 @@ public abstract class AbstractOrderPipelineIT extends AbstractRateQuoteIT {
      * fournit l'{@code orderId} deja obtenu) — reutilise par les tests du justificatif (Phase 7).
      */
     protected UUID completeOrder(String adminToken, String userToken, UUID orderId, String amountXof,
-                                 String paymentReference, String settlementReference) {
-        PaymentResponse payment = submitPayment(userToken, orderId, amountXof, paymentReference);
+                                 String settlementReference) {
+        PaymentResponse payment = submitPayment(userToken, orderId, amountXof);
         uploadProof(userToken, payment.id());
         confirmPayment(adminToken, payment.id());
         SettlementResponse settlement = createSettlement(adminToken, orderId);

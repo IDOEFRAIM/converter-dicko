@@ -68,7 +68,6 @@ describe('PaymentSubmitPage', () => {
 
   it('submits the payment declaration then reveals the proof upload step', () => {
     fixture.componentInstance.form.patchValue({
-      transactionReference: 'MM-REF-1',
       payerPhone: '+2250700000000',
       payerName: 'Jean Payeur',
     });
@@ -78,7 +77,6 @@ describe('PaymentSubmitPage', () => {
     expect(req.request.body).toEqual({
       method: 'MOBILE_MONEY',
       receivedAmountXof: '100000',
-      transactionReference: 'MM-REF-1',
       payerPhone: '+2250700000000',
       payerName: 'Jean Payeur',
     });
@@ -90,7 +88,6 @@ describe('PaymentSubmitPage', () => {
         status: 'SUBMITTED',
         expectedAmountXof: '100000.00',
         receivedAmountXof: '100000.00',
-        transactionReference: 'MM-REF-1',
         payerPhone: '+2250700000000',
         payerName: 'Jean Payeur',
         rejectionReason: null,
@@ -107,7 +104,6 @@ describe('PaymentSubmitPage', () => {
 
   it('shows a safe-retry message on network failure, never a definitive failure message', () => {
     fixture.componentInstance.form.patchValue({
-      transactionReference: 'MM-REF-1',
       payerPhone: '+2250700000000',
       payerName: 'Jean Payeur',
     });
@@ -122,7 +118,6 @@ describe('PaymentSubmitPage', () => {
 
   it('reuses the same Idempotency-Key when retrying an unchanged submission after a failure', () => {
     fixture.componentInstance.form.patchValue({
-      transactionReference: 'MM-REF-1',
       payerPhone: '+2250700000000',
       payerName: 'Jean Payeur',
     });
@@ -143,7 +138,6 @@ describe('PaymentSubmitPage', () => {
         status: 'SUBMITTED',
         expectedAmountXof: '100000.00',
         receivedAmountXof: '100000.00',
-        transactionReference: 'MM-REF-1',
         payerPhone: '+2250700000000',
         payerName: 'Jean Payeur',
         rejectionReason: null,
@@ -156,9 +150,8 @@ describe('PaymentSubmitPage', () => {
     });
   });
 
-  it('uses a new Idempotency-Key when the submitted reference changes (a different intent)', () => {
+  it('uses a new Idempotency-Key when the submitted payer changes (a different intent)', () => {
     fixture.componentInstance.form.patchValue({
-      transactionReference: 'MM-REF-1',
       payerPhone: '+2250700000000',
       payerName: 'Jean Payeur',
     });
@@ -167,7 +160,7 @@ describe('PaymentSubmitPage', () => {
     const firstKey = first.request.headers.get('Idempotency-Key');
     first.flush(null, { status: 409, statusText: 'Conflict' });
 
-    fixture.componentInstance.form.patchValue({ transactionReference: 'MM-REF-2' });
+    fixture.componentInstance.form.patchValue({ payerName: 'Autre Payeur' });
     fixture.componentInstance.submitPayment();
     const second = httpMock.expectOne('/api/v1/orders/o1/payments');
     expect(second.request.headers.get('Idempotency-Key')).not.toBe(firstKey);
@@ -176,7 +169,6 @@ describe('PaymentSubmitPage', () => {
 
   it('disables submission while a request is already in flight', () => {
     fixture.componentInstance.form.patchValue({
-      transactionReference: 'MM-REF-1',
       payerPhone: '+2250700000000',
       payerName: 'Jean Payeur',
     });
@@ -197,7 +189,6 @@ describe('PaymentSubmitPage', () => {
       status: 'SUBMITTED',
       expectedAmountXof: '100000.00',
       receivedAmountXof: '100000.00',
-      transactionReference: 'MM-REF-1',
       payerPhone: '+2250700000000',
       payerName: 'Jean Payeur',
       rejectionReason: null,

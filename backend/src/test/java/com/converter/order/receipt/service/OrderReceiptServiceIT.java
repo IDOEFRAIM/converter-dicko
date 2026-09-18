@@ -66,8 +66,7 @@ class OrderReceiptServiceIT extends AbstractOrderPipelineIT {
 
         QuoteResponse quote = createAcceptedQuote(user, "1000000");
         OrderDetailResponse order = createOrder(user, quote.id(), bankBeneficiary());
-        UUID orderId = completeOrder(admin, user, order.id(), order.amountXof().toPlainString(),
-                "MM-NOREPRICE-001", "CNY-NOREPRICE-001");
+        UUID orderId = completeOrder(admin, user, order.id(), order.amountXof().toPlainString(), "CNY-NOREPRICE-001");
 
         BigDecimal originalRate = order.customerRate();
         BigDecimal originalFee = order.feeXof();
@@ -103,8 +102,7 @@ class OrderReceiptServiceIT extends AbstractOrderPipelineIT {
         SupplierDetailResponse supplier = createSupplier(user, "Bank A", "1111000011110000");
         QuoteResponse quote = createAcceptedQuote(user, "1000000");
         OrderDetailResponse order = createOrderRawWithSupplier(user, quote.id(), supplier.id()).getBody().data();
-        UUID orderId = completeOrder(admin, user, order.id(), order.amountXof().toPlainString(),
-                "MM-SUPPLIERMUT-001", "CNY-SUPPLIERMUT-001");
+        UUID orderId = completeOrder(admin, user, order.id(), order.amountXof().toPlainString(), "CNY-SUPPLIERMUT-001");
 
         // Le fournisseur enregistre est modifie APRES que l'ordre a ete cree (et complete).
         updateSupplier(user, supplier.id(), "Bank B", "2222000022220000");
@@ -133,8 +131,7 @@ class OrderReceiptServiceIT extends AbstractOrderPipelineIT {
 
         QuoteResponse quote = createAcceptedQuote(user, "1000000");
         OrderDetailResponse order = createOrder(user, quote.id(), bankBeneficiary());
-        UUID orderId = completeOrder(admin, user, order.id(), order.amountXof().toPlainString(),
-                "MM-REFUND-RECEIPT-001", "CNY-REFUND-RECEIPT-001");
+        UUID orderId = completeOrder(admin, user, order.id(), order.amountXof().toPlainString(), "CNY-REFUND-RECEIPT-001");
 
         var paymentResponse = restTemplate.exchange("/api/v1/orders/" + orderId, HttpMethod.GET,
                 new HttpEntity<>(auth(user)),
@@ -175,8 +172,7 @@ class OrderReceiptServiceIT extends AbstractOrderPipelineIT {
 
         QuoteResponse quote = createAcceptedQuote(user, "1000000");
         OrderDetailResponse order = createOrder(user, quote.id(), bankBeneficiary());
-        UUID orderId = completeOrder(admin, user, order.id(), order.amountXof().toPlainString(),
-                "MM-REFUND-REJ-001", "CNY-REFUND-REJ-001");
+        UUID orderId = completeOrder(admin, user, order.id(), order.amountXof().toPlainString(), "CNY-REFUND-REJ-001");
 
         UUID paymentId = findPaymentId(admin, orderId);
         RefundResponse refund = createRefund(admin, paymentId, "Demande refusee test");
@@ -216,8 +212,7 @@ class OrderReceiptServiceIT extends AbstractOrderPipelineIT {
         QuoteResponse quote = createAcceptedQuote(user, "500000");
         OrderDetailResponse order = createOrderWithSupplierRaw(user, quote.id(), supplier.id()).getBody().data();
         assertThat(order.beneficiary().identifier()).isNull();
-        UUID orderId = completeOrder(admin, user, order.id(), order.amountXof().toPlainString(),
-                "MM-QR-RECEIPT-001", "CNY-QR-RECEIPT-001");
+        UUID orderId = completeOrder(admin, user, order.id(), order.amountXof().toPlainString(), "CNY-QR-RECEIPT-001");
 
         ReceiptDocument document = orderReceiptService.generate(orderId, extractUserId(user));
         String text = extractText(document.content());

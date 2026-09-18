@@ -46,7 +46,7 @@ class PdfBoxReceiptPdfGeneratorTest {
                 new BigDecimal("1000000.00"), new BigDecimal("12500.00"), new BigDecimal("987500.00"),
                 new BigDecimal("84.200000"), new BigDecimal("11734.56"), "XOF/CNY",
                 beneficiary, Purpose.IMPORT_GOODS, "Achat de materiel electronique",
-                "MM-PAY-REF-42", Instant.parse("2026-09-01T12:00:00Z"),
+                Instant.parse("2026-09-01T12:00:00Z"),
                 "CNY-PAYOUT-99", Instant.parse("2026-09-02T15:00:00Z"),
                 refund);
     }
@@ -76,7 +76,6 @@ class PdfBoxReceiptPdfGeneratorTest {
         assertThat(text).contains("Bank of China");
         assertThat(text).contains("Importation de marchandises");
         assertThat(text).contains("Achat de materiel electronique");
-        assertThat(text).contains("MM-PAY-REF-42");
         assertThat(text).contains("CNY-PAYOUT-99");
     }
 
@@ -136,7 +135,7 @@ class PdfBoxReceiptPdfGeneratorTest {
                 OrderStatus.COMPLETED, "Ido Efraim",
                 new BigDecimal("500000.00"), new BigDecimal("6000.00"), new BigDecimal("494000.00"),
                 new BigDecimal("84.200000"), new BigDecimal("5867.00"), "XOF/CNY",
-                beneficiary, null, null, null, null, null, null, null);
+                beneficiary, null, null, null, null, null, null);
 
         String text = extractText(generator.generate(model));
 

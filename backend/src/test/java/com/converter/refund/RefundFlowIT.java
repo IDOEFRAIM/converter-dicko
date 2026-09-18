@@ -41,7 +41,7 @@ class RefundFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REFUND-001");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
 
@@ -63,7 +63,7 @@ class RefundFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REFUND-002");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         // Jamais confirme.
 
         ResponseEntity<ErrorResponse> response = restTemplate.exchange(
@@ -82,7 +82,7 @@ class RefundFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REFUND-003");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         createRefund(admin, payment.id(), "premier remboursement");
@@ -106,7 +106,7 @@ class RefundFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REFUND-014");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         RefundResponse first = createRefund(admin, payment.id(), "premiere tentative");
@@ -132,7 +132,7 @@ class RefundFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REFUND-015");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         RefundResponse first = createRefund(admin, payment.id(), "premier remboursement");
@@ -155,7 +155,7 @@ class RefundFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REFUND-004");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         RefundResponse refund = createRefund(admin, payment.id(), "remboursement test");
@@ -179,7 +179,7 @@ class RefundFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REFUND-005");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         RefundResponse refund = createRefund(admin, payment.id(), "remboursement test");
@@ -199,7 +199,7 @@ class RefundFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "50000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "50000", "MM-REFUND-006");
+        PaymentResponse payment = submitPayment(user, order.id(), "50000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         RefundResponse refund = createRefund(admin, payment.id(), "test");
@@ -221,7 +221,7 @@ class RefundFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "50000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "50000", "MM-REFUND-007");
+        PaymentResponse payment = submitPayment(user, order.id(), "50000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         RefundResponse refund = createRefund(admin, payment.id(), "test");
@@ -243,7 +243,7 @@ class RefundFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REFUND-008");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         RefundResponse refund = createRefund(admin, payment.id(), "test");
@@ -277,7 +277,7 @@ class RefundFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REFUND-009");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         SettlementResponse settlement = createSettlement(admin, order.id());
@@ -307,7 +307,7 @@ class RefundFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REFUND-010");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         SettlementResponse settlement = createSettlement(admin, order.id());
@@ -339,7 +339,7 @@ class RefundFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "50000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "50000", "MM-REFUND-011");
+        PaymentResponse payment = submitPayment(user, order.id(), "50000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
 
@@ -358,7 +358,7 @@ class RefundFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REFUND-012");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         String idemKey = "refund-create-" + UUID.randomUUID();
@@ -379,7 +379,7 @@ class RefundFlowIT extends AbstractOrderPipelineIT {
         String user = tokenFor(createUser(RoleCode.USER));
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), alipayBeneficiary());
-        PaymentResponse payment = submitPayment(user, order.id(), "100000", "MM-REFUND-013");
+        PaymentResponse payment = submitPayment(user, order.id(), "100000");
         uploadProof(user, payment.id());
         confirmPayment(admin, payment.id());
         String idemKey = "refund-conflict-" + UUID.randomUUID();

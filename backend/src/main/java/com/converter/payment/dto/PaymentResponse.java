@@ -17,7 +17,6 @@ public record PaymentResponse(
         PaymentStatus status,
         BigDecimal expectedAmountXof,
         BigDecimal receivedAmountXof,
-        String transactionReference,
         String payerPhone,
         String payerName,
         String rejectionReason,

@@ -80,11 +80,11 @@ class BusinessReportingHttpIT extends AbstractOrderPipelineIT {
         // 2 COMPLETED.
         QuoteResponse quote1 = createAcceptedQuote(user, "100000");
         OrderDetailResponse order1 = createOrder(user, quote1.id(), bankBeneficiary());
-        completeOrder(admin, user, order1.id(), order1.amountXof().toPlainString(), "MM-SUM-001", "CNY-SUM-001");
+        completeOrder(admin, user, order1.id(), order1.amountXof().toPlainString(), "CNY-SUM-001");
 
         QuoteResponse quote2 = createAcceptedQuote(user, "200000");
         OrderDetailResponse order2 = createOrder(user, quote2.id(), bankBeneficiary());
-        completeOrder(admin, user, order2.id(), order2.amountXof().toPlainString(), "MM-SUM-002", "CNY-SUM-002");
+        completeOrder(admin, user, order2.id(), order2.amountXof().toPlainString(), "CNY-SUM-002");
 
         // 1 CANCELLED.
         QuoteResponse quote3 = createAcceptedQuote(user, "50000");
@@ -95,7 +95,7 @@ class BusinessReportingHttpIT extends AbstractOrderPipelineIT {
         // 1 REJECTED (paiement rejete).
         QuoteResponse quote4 = createAcceptedQuote(user, "70000");
         OrderDetailResponse order4 = createOrder(user, quote4.id(), bankBeneficiary());
-        PaymentResponse payment4 = submitPayment(user, order4.id(), order4.amountXof().toPlainString(), "MM-SUM-004");
+        PaymentResponse payment4 = submitPayment(user, order4.id(), order4.amountXof().toPlainString());
         rejectPayment(admin, payment4.id(), "test rejet");
 
         var response = summaryRaw(user);
@@ -126,7 +126,7 @@ class BusinessReportingHttpIT extends AbstractOrderPipelineIT {
 
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), bankBeneficiary());
-        completeOrder(admin, user, order.id(), order.amountXof().toPlainString(), "MM-SUM-REFUND-001",
+        completeOrder(admin, user, order.id(), order.amountXof().toPlainString(),
                 "CNY-SUM-REFUND-001");
 
         BusinessPaymentSummaryResponse before = summaryRaw(user).getBody().data();
@@ -162,7 +162,7 @@ class BusinessReportingHttpIT extends AbstractOrderPipelineIT {
 
         QuoteResponse quote = createAcceptedQuote(user, "100000");
         OrderDetailResponse order = createOrder(user, quote.id(), bankBeneficiary());
-        completeOrder(admin, user, order.id(), order.amountXof().toPlainString(), "MM-SUM-DATE-001",
+        completeOrder(admin, user, order.id(), order.amountXof().toPlainString(),
                 "CNY-SUM-DATE-001");
 
         Instant future = Instant.now().plusSeconds(3600);

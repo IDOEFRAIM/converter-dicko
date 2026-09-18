@@ -44,15 +44,6 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="form__field">
-          <mat-label>Reference de transaction</mat-label>
-          <input matInput formControlName="transactionReference" placeholder="Ex. MP240916.1234" />
-          <mat-hint>Le code recu par SMS apres votre envoi</mat-hint>
-          @if (form.controls.transactionReference.invalid && form.controls.transactionReference.touched) {
-            <mat-error>La reference est obligatoire.</mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="form__field">
           <mat-label>Nom du payeur</mat-label>
           <input matInput formControlName="payerName" />
           @if (form.controls.payerName.invalid && form.controls.payerName.touched) {

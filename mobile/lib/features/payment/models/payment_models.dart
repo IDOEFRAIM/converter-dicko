@@ -41,14 +41,12 @@ enum PaymentStatus {
 class SubmitPaymentRequest {
   final PaymentMethod method;
   final String receivedAmountXof;
-  final String transactionReference;
   final String payerPhone;
   final String payerName;
 
   const SubmitPaymentRequest({
     required this.method,
     required this.receivedAmountXof,
-    required this.transactionReference,
     required this.payerPhone,
     required this.payerName,
   });
@@ -56,7 +54,6 @@ class SubmitPaymentRequest {
   Map<String, dynamic> toJson() => {
         'method': method.code,
         'receivedAmountXof': receivedAmountXof,
-        'transactionReference': transactionReference,
         'payerPhone': payerPhone,
         'payerName': payerName,
       };
@@ -95,7 +92,6 @@ class Payment {
   final PaymentStatus status;
   final String expectedAmountXof;
   final String receivedAmountXof;
-  final String transactionReference;
   final String? payerPhone;
   final String? payerName;
   final String? rejectionReason;
@@ -111,7 +107,6 @@ class Payment {
     required this.status,
     required this.expectedAmountXof,
     required this.receivedAmountXof,
-    required this.transactionReference,
     required this.payerPhone,
     required this.payerName,
     required this.rejectionReason,
@@ -129,7 +124,6 @@ class Payment {
       status: PaymentStatus.fromCode(json['status'] as String?),
       expectedAmountXof: decimalStringFromJson(json['expectedAmountXof']),
       receivedAmountXof: decimalStringFromJson(json['receivedAmountXof']),
-      transactionReference: json['transactionReference'] as String? ?? '',
       payerPhone: json['payerPhone'] as String?,
       payerName: json['payerName'] as String?,
       rejectionReason: json['rejectionReason'] as String?,

@@ -1,7 +1,6 @@
 package com.converter.payment.repository;
 
 import com.converter.payment.domain.Payment;
-import com.converter.payment.domain.PaymentMethod;
 import com.converter.payment.domain.PaymentStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
@@ -19,16 +18,6 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     Optional<Payment> findByOrderId(UUID orderId);
 
     boolean existsByOrderId(UUID orderId);
-
-    /** Pre-verification pour un message d'erreur precis avant de heurter {@code uq_payments_txref}. */
-    boolean existsByMethodAndTransactionReference(PaymentMethod method, String transactionReference);
-
-    /**
-     * Meme pre-verification, en excluant le paiement en cours de resoumission lui-meme : sinon
-     * un client qui resoumet avec exactement la MEME reference de transaction (le paiement reel
-     * hors plateforme n'a pas change) se verrait refuser sa propre reference existante.
-     */
-    boolean existsByMethodAndTransactionReferenceAndIdNot(PaymentMethod method, String transactionReference, UUID id);
 
     Page<Payment> findByStatusOrderBySubmittedAtAsc(PaymentStatus status, Pageable pageable);
 
