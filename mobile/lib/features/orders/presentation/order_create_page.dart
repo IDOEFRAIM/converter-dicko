@@ -125,10 +125,13 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
   }
 
   /// Retour client sept. 2026 : "a partir de plus de 02 millions tu dois etre
-  /// ramene sur WhatsApp pour confirmer ton ordre au 71 00 25 25" -- l'ordre
-  /// est deja cree normalement (aucune regle serveur ajoutee, voir
+  /// ramene sur WhatsApp pour confirmer ton ordre" -- l'ordre est deja cree
+  /// normalement (aucune regle serveur ajoutee, voir
   /// `AppConfig.whatsAppConfirmationThresholdXof`), cette boite oriente
-  /// simplement vers le canal humain attendu pour les gros montants.
+  /// simplement vers le canal humain attendu pour les gros montants. Numero
+  /// affiche en texte ici en plus du lien `wa.me` (AppConfig) -- garder les
+  /// deux synchronises (retour client sept. 2026 : l'ancien numero, 71 00 25
+  /// 25, etait errone).
   Future<void> _showWhatsAppConfirmation(OrderDetail order) async {
     final amountLabel = Money(order.amountXof, AppCurrency.xof).formattedWithCurrency();
     await showDialog<void>(
@@ -138,7 +141,7 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
         title: const Text('Confirmation par WhatsApp'),
         content: Text(
           'Votre transfert de $amountLabel doit etre confirme par WhatsApp au '
-          '71 00 25 25 avant traitement. Indiquez la reference ${order.reference}.',
+          '65 38 23 37 avant traitement. Indiquez la reference ${order.reference}.',
         ),
         actions: [
           TextButton(
@@ -223,7 +226,7 @@ class _OrderCreateViewState extends State<_OrderCreateView> {
                     const SizedBox(width: AppSpacing.xs),
                     Expanded(
                       child: Text(
-                        'Au-dela de 2 000 000 XOF, une confirmation par WhatsApp au 71 00 25 25 '
+                        'Au-dela de 2 000 000 XOF, une confirmation par WhatsApp au 65 38 23 37 '
                         'vous sera demandee apres la creation du transfert.',
                         style: AppTypography.body.copyWith(color: AppColors.warning),
                       ),

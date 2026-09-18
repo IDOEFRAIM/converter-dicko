@@ -27,14 +27,15 @@ import { MoneyPipe } from '../../../shared/pipes/money.pipe';
 /**
  * Seuil (XOF) a partir duquel un transfert doit etre confirme sur WhatsApp
  * (retour client sept. 2026 : "a partir de plus de 02 millions tu dois etre
- * ramene sur WhatsApp pour confirmer ton ordre au 71 00 25 25") -- une simple
- * orientation vers un canal humain pour les gros montants, jamais une regle
- * metier serveur : l'ordre est deja cree normalement (miroir exact du
- * comportement mobile, voir AppConfig.whatsAppConfirmationThresholdXof).
+ * ramene sur WhatsApp pour confirmer ton ordre") -- une simple orientation
+ * vers un canal humain pour les gros montants, jamais une regle metier
+ * serveur : l'ordre est deja cree normalement (miroir exact du comportement
+ * mobile, voir AppConfig.whatsAppConfirmationThresholdXof). Numero corrige
+ * (retour client sept. 2026) : l'ancien, 71 00 25 25, etait errone.
  */
 const WHATSAPP_CONFIRMATION_THRESHOLD_XOF = 2_000_000;
-const WHATSAPP_CONFIRMATION_PHONE_DISPLAY = '71 00 25 25';
-const WHATSAPP_CONFIRMATION_PHONE_E164 = '22671002525';
+const WHATSAPP_CONFIRMATION_PHONE_DISPLAY = '65 38 23 37';
+const WHATSAPP_CONFIRMATION_PHONE_E164 = '22665382337';
 
 type BeneficiarySource = 'SUPPLIER' | 'MANUAL';
 

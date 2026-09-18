@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
 /// Materialise des octets (justificatif PDF telecharge du backend, ou PDF
@@ -69,4 +70,22 @@ Future<void> saveAndOpenBytes({
     case ResultType.error:
       throw StateError('open_filex ${result.type}: ${result.message}');
   }
+}
+
+/// Affiche un PDF deja telecharge (recu, facture proforma) via l'apercu
+/// d'impression NATIF de la plateforme -- retour client oct. 2026 :
+/// "on arrive pas a voir les recus PDF ou proforma au niveau d'iOS".
+///
+/// [saveAndOpenBytes] (au-dessus, via `open_filex`) s'est revele non fiable
+/// pour un PDF sur iOS : ce plugin ne supporte pas Swift Package Manager
+/// (avertissement deja observe au build) et son ouverture de document y est
+/// une reimplementation tierce de `UIDocumentInteractionController`, sujette
+/// a des echecs silencieux. `Printing.layoutPdf` ne reimplemente rien : il
+/// delegue directement a l'API d'impression native de chaque plateforme
+/// (`UIPrintInteractionController` sur iOS, previsualisation Android), qui
+/// sait deja afficher un PDF de maniere fiable -- et propose nativement
+/// imprimer/partager/enregistrer depuis cet apercu. Reserve aux PDF : le
+/// code QR fournisseur (image) reste sur [saveAndOpenBytes].
+Future<void> openPdfBytes({required List<int> bytes, required String fileName}) async {
+  await Printing.layoutPdf(name: fileName, onLayout: (_) async => Uint8List.fromList(bytes));
 }

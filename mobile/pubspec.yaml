@@ -60,10 +60,12 @@ dependencies:
   # (section 28 : preparer une UX de partage/ouverture reelle).
   share_plus: ^13.3.0
 
-  # Ouvrir un fichier telecharge dans le lecteur systeme (recu / proforma PDF) :
-  # un vrai "telechargement" qui affiche le document, pas la feuille de partage
-  # (qui suggere WhatsApp/contacts et prete a confusion avec l'invitation aux
-  # ruees). Repli sur share_plus seulement si aucun lecteur n'est installe.
+  # Ouvrir un fichier telecharge dans le lecteur systeme. Reserve au code QR
+  # fournisseur (image) depuis oct. 2026 -- pour le recu/la proforma (PDF),
+  # voir `printing` plus bas : open_filex s'est revele non fiable pour les
+  # PDF sur iOS (retour client : "on arrive pas a voir les recus PDF ou
+  # proforma au niveau d'iOS"). Repli sur share_plus seulement si aucun
+  # lecteur n'est installe.
   open_filex: ^4.5.0
 
   # Repertoire temporaire ecrivable pour materialiser les octets telecharges
@@ -87,6 +89,12 @@ dependencies:
   # "Rapport d'activite" du profil PRO) — pur Dart, aucune dependance native
   # supplementaire au-dela de ce package.
   pdf: ^3.11.1
+
+  # Affichage fiable d'un PDF deja telecharge (recu, proforma) via l'apercu
+  # d'impression NATIF de chaque plateforme -- voir open_filex plus haut pour
+  # le contexte (retour client oct. 2026). Meme editeur que le paquet pdf
+  # ci-dessus.
+  printing: ^5.15.0
 
   # Ouvrir WhatsApp (retour client sept. 2026 : "a partir de plus de 02
   # millions tu dois etre ramene sur WhatsApp pour confirmer ton ordre") --

@@ -73,15 +73,18 @@ class AppConfig {
 
   /// Seuil (XOF) a partir duquel un transfert doit etre confirme sur WhatsApp
   /// (retour client sept. 2026 : "a partir de plus de 02 millions tu dois
-  /// etre ramene sur WhatsApp pour confirmer ton ordre au 71 00 25 25") --
-  /// une simple orientation vers un canal humain pour les gros montants,
-  /// jamais une regle metier serveur : l'ordre est deja cree normalement,
-  /// voir `WhatsAppConfirmation` (order_create_page).
+  /// etre ramene sur WhatsApp pour confirmer ton ordre") -- une simple
+  /// orientation vers un canal humain pour les gros montants, jamais une
+  /// regle metier serveur : l'ordre est deja cree normalement, voir
+  /// `WhatsAppConfirmation` (order_create_page).
   static const int whatsAppConfirmationThresholdXof = 2000000;
 
   /// Numero de confirmation WhatsApp, au format E.164 (Burkina Faso, +226)
-  /// attendu par le lien `https://wa.me/`.
-  static const String whatsAppConfirmationPhoneE164 = '+22671002525';
+  /// attendu par le lien `https://wa.me/` -- retour client sept. 2026 :
+  /// l'ancien numero (71 00 25 25) etait errone, le bon est +226 65 38 23 37.
+  /// Egalement affiche en texte (pas seulement le lien) dans
+  /// order_create_page.dart : les deux doivent rester synchronises.
+  static const String whatsAppConfirmationPhoneE164 = '+22665382337';
 
   /// Desactive volontairement (retour client sept. 2026 : les ANR observes
   /// pendant les tests -- dus a la machine de dev sursollicitee, pas a la

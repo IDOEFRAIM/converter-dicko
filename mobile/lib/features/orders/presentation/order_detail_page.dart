@@ -72,7 +72,7 @@ class _OrderDetailView extends StatelessWidget {
     }
     final reference = controller.order?.reference ?? 'transfert';
     try {
-      await saveAndOpenBytes(bytes: download.bytes, fileName: 'justificatif-$reference.pdf');
+      await openPdfBytes(bytes: download.bytes, fileName: 'justificatif-$reference.pdf');
     } catch (error) {
       // Ecriture disque ou ouverture systeme (aucun lecteur, permission
       // refusee...) peuvent echouer sans jamais lever d'ApiException -- le
@@ -97,7 +97,7 @@ class _OrderDetailView extends StatelessWidget {
     }
     final reference = controller.order?.reference ?? 'transfert';
     try {
-      await saveAndOpenBytes(bytes: download.bytes, fileName: 'proforma-$reference.pdf');
+      await openPdfBytes(bytes: download.bytes, fileName: 'proforma-$reference.pdf');
     } catch (_) {
       // Meme discipline que le justificatif : le telechargement reseau a reussi,
       // seule l'ecriture disque / l'ouverture systeme a echoue.
