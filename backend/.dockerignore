@@ -1,0 +1,29 @@
+# Contexte de build de l'image backend (docker-compose : context ./backend).
+# Seuls pom.xml, mvnw, .mvn/ et src/ sont necessaires — voir backend/Dockerfile.
+
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Sorties de test / rapports
+**/surefire-reports/
+**/failsafe-reports/
+*.log
+*.dump
+*.dumpstream
+
+# Stockage local des preuves (jamais dans l'image : volume nomme en prod)
+storage/
+uploads/
+logs/
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Divers
+.git/
+.gitignore
+HELP.md

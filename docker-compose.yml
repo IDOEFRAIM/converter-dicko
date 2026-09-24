@@ -1,0 +1,120 @@
+# =====================================================================
+#  Orchestration complete : PostgreSQL + backend + frontend.
+#
+#  - postgres  : base de donnees (volume nomme, persistant).
+#  - backend   : API Spring Boot (Flyway migre le schema au demarrage).
+#  - frontend  : Angular compile, servi par nginx, qui relaie /api -> backend.
+#
+#  Ce fichier seul est le config PROD-SAFE par defaut : ni PostgreSQL ni le
+#  backend ne publient de port sur l'hote, seul le frontend (4300) est
+#  expose, destine a etre reverse-proxy par Caddy (voir Caddyfile.example).
+#
+#  Usage prod (Hetzner, etc.) :
+#    cp .env.example .env && vim .env  # renseigner secrets (JWT_SECRET, DB_PASSWORD, ADMIN_PASSWORD)
+#    docker compose up -d --build
+#
+#  Usage dev (local, ajoute les ports 5432/8080 pour deboguer directement) :
+#    cp .env.example .env
+#    docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+#
+#  Runbook complet de mise en production : voir DEPLOY.md a la racine.
+#
+#  ATTENTION : Compose CONCATENE les listes (ports, volumes...) entre
+#  plusieurs fichiers -f, il ne les remplace pas. Un override avec
+#  `ports: []` ne retire donc JAMAIS un port deja publie ici. C'est
+#  pourquoi ce fichier de base ne publie AUCUN port pour postgres/backend
+#  et docker-compose.dev.yml les AJOUTE plutot que l'inverse.
+# =====================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: converter-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-converter}
+      POSTGRES_USER: ${POSTGRES_USER:-converter}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-converter_local_dev}
+    # Aucun port publie ici (voir note en tete de fichier) : acces via
+    # docker-compose.dev.yml en local, sinon reseau interne uniquement.
+    volumes:
+      - converter-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-converter} -d ${POSTGRES_DB:-converter}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - converter-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: converter-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-converter}
+      DB_USERNAME: ${POSTGRES_USER:-converter}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-converter_local_dev}
+      JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-43200}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:4200,http://localhost:4300}
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
+      ADMIN_SEED_ENABLED: ${ADMIN_SEED_ENABLED:-true}
+      ADMIN_PHONE: ${ADMIN_PHONE:-+22500000000}
+      ADMIN_FIRST_NAME: ${ADMIN_FIRST_NAME:-System}
+      ADMIN_LAST_NAME: ${ADMIN_LAST_NAME:-Administrator}
+      SERVER_PORT: 8080
+      # Prod: JWT_SECRET et ADMIN_PASSWORD doivent etre definis dans .env
+      JWT_SECRET:
+      ADMIN_PASSWORD:
+    volumes:
+      - converter-storage:/app/storage
+    # Aucun port publie ici (voir note en tete de fichier) : acces via
+    # docker-compose.dev.yml en local, sinon uniquement par le frontend/nginx.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+    networks:
+      - converter-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: converter-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    # Seul port publie par defaut. En prod, Caddy fait reverse-proxy depuis 443
+    # vers ce port (voir Caddyfile.example) ; en dev, on l'ouvre directement.
+    ports:
+      - "${FRONTEND_PORT:-4300}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - converter-net
+
+volumes:
+  converter-postgres-data:
+    name: converter-postgres-data
+  converter-storage:
+    name: converter-storage
+
+networks:
+  converter-net:
+    name: converter-net
+    driver: bridge

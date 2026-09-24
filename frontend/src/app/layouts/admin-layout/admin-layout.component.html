@@ -1,0 +1,29 @@
+<mat-sidenav-container class="admin-shell">
+  <mat-sidenav mode="side" opened class="admin-shell__nav">
+    <div class="admin-shell__brand">
+      <span class="admin-shell__mark"><img src="logo.png" alt="" /></span>
+      <span class="admin-shell__brand-text">YUAN PAY BF<small>Administration</small></span>
+    </div>
+    <mat-nav-list>
+      @for (link of links; track link.path) {
+        <a mat-list-item [routerLink]="link.path" routerLinkActive="admin-nav-active">
+          <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
+          <span matListItemTitle>{{ link.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <mat-toolbar class="admin-shell__toolbar">
+      <span class="admin-shell__spacer"></span>
+      <span class="admin-shell__user">{{ currentUser()?.firstName }}</span>
+      <button mat-icon-button (click)="logout()" aria-label="Deconnexion">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </mat-toolbar>
+    <main class="admin-shell__content">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

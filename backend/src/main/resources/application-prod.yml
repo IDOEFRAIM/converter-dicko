@@ -1,0 +1,52 @@
+# =====================================================================
+#  Profil PRODUCTION
+#
+#  AUCUNE valeur par defaut pour les secrets. Les proprietes sont
+#  validees au demarrage (@Validated + @NotBlank) : si JWT_SECRET ou
+#  DB_PASSWORD manque, l'application ECHOUE AU DEMARRAGE avec un
+#  message explicite, au lieu de tourner dans un etat non sur.
+# =====================================================================
+
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:20}
+
+  jpa:
+    properties:
+      hibernate:
+        format_sql: false
+
+# Documentation Swagger/OpenAPI desactivee en production : le profil de base
+# (application.yml) l'expose sur des chemins publics (voir SecurityConfig,
+# necessaire pour que l'UI Swagger charge sans jeton) — exposer le schema
+# complet de l'API (tous les endpoints, tous les DTO, toutes les regles de
+# validation) sans authentification a des utilisateurs anonymes n'apporte
+# rien en production et elargit inutilement la surface de reconnaissance
+# d'un attaquant. Reste actif en dev/test pour l'exploration de l'API.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+
+  admin-seed:
+    # Desactive par defaut en production : l'administrateur initial est
+    # cree lors d'un demarrage controle, puis le flag est remis a false.
+    enabled: ${ADMIN_SEED_ENABLED:false}
+    phone: ${ADMIN_PHONE:}
+    # En production, un mot de passe genere aleatoirement est REFUSE :
+    # si le seed est actif, ADMIN_PASSWORD doit etre fourni explicitement.
+    password: ${ADMIN_PASSWORD:}
+
+logging:
+  level:
+    root: WARN
+    com.converter: INFO

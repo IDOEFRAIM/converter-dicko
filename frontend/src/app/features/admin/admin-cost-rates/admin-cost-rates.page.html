@@ -1,0 +1,151 @@
+<app-page-header
+  title="Taux client (pricing)"
+  subtitle="Chaîne XOF → USD → CNY. C'est cette configuration qui permet la création de devis côté client."
+/>
+
+<div class="cost-notice">
+  <mat-icon>info</mat-icon>
+  <span>
+    À ne pas confondre avec « Taux préférentiel » (legacy, sans lien avec le pricing des devis).
+    Tant qu'aucune configuration n'est publiée ici, les clients voient « Aucune configuration de
+    coût publiée » et ne peuvent pas obtenir de devis.
+  </span>
+</div>
+
+@if (current(); as c) {
+  <mat-card class="page-card current-card">
+    <p class="section-title">Configuration courante</p>
+    <div class="rate-chain">
+      <div class="rate-chain__step">
+        <span class="rate-chain__label">Coût de revient</span>
+        <span class="rate-chain__value">{{ c.breakEvenRate }} XOF/CNY</span>
+      </div>
+      <mat-icon class="rate-chain__arrow">arrow_forward</mat-icon>
+      <div class="rate-chain__step">
+        <span class="rate-chain__label">Marge commerciale</span>
+        <span class="rate-chain__value">+{{ c.marginPercentage }} %</span>
+      </div>
+      <mat-icon class="rate-chain__arrow">arrow_forward</mat-icon>
+      <div class="rate-chain__step rate-chain__step--customer">
+        <span class="rate-chain__label">Taux client (ce que le client voit)</span>
+        <span class="rate-chain__value rate-chain__value--customer">{{ c.customerRate }} XOF/CNY</span>
+      </div>
+    </div>
+    <p class="current-card__meta">
+      Réf. {{ c.referenceAmountXof }} XOF · publiée le {{ c.createdAt | date: 'dd/MM/yyyy HH:mm' }}
+    </p>
+  </mat-card>
+}
+
+<form [formGroup]="form" (ngSubmit)="publish()" class="form">
+  <div class="form__row">
+    <mat-form-field appearance="outline" class="form__field">
+      <mat-label>Date métier</mat-label>
+      <input matInput type="date" formControlName="businessDate" />
+      @if (form.controls.businessDate.invalid && form.controls.businessDate.touched) {
+        <mat-error>La date métier est obligatoire (pas dans le futur).</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="form__field">
+      <mat-label>Montant de référence</mat-label>
+      <input matInput type="number" step="1" min="1" formControlName="referenceAmountXof" />
+      <span matTextSuffix>XOF</span>
+    </mat-form-field>
+  </div>
+
+  <div class="form__row">
+    <mat-form-field appearance="outline" class="form__field">
+      <mat-label>Taux XOF → USD</mat-label>
+      <input matInput type="number" step="0.000001" min="0" formControlName="rateXofUsd" />
+      <span matTextSuffix>XOF / 1 USD</span>
+      @if (form.controls.rateXofUsd.invalid && form.controls.rateXofUsd.touched) {
+        <mat-error>Taux strictement positif requis.</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="form__field">
+      <mat-label>Taux USD → CNY</mat-label>
+      <input matInput type="number" step="0.000001" min="0" formControlName="rateUsdCny" />
+      <span matTextSuffix>CNY / 1 USD</span>
+      @if (form.controls.rateUsdCny.invalid && form.controls.rateUsdCny.touched) {
+        <mat-error>Taux strictement positif requis.</mat-error>
+      }
+    </mat-form-field>
+  </div>
+
+  <div class="form__row">
+    <mat-form-field appearance="outline" class="form__field">
+      <mat-label>Frais XOF → USD</mat-label>
+      <input matInput type="number" step="0.0001" min="0" max="0.999999" formControlName="feeXofUsdPercent" />
+      <span matTextSuffix>fraction (0.01 = 1 %)</span>
+      @if (form.controls.feeXofUsdPercent.invalid && form.controls.feeXofUsdPercent.touched) {
+        <mat-error>Entre 0 et 1 (exclu).</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="form__field">
+      <mat-label>Frais fixe USD → CNY</mat-label>
+      <input matInput type="number" step="0.01" min="0" formControlName="feeUsdCnyFixedUsd" />
+      <span matTextSuffix>USD</span>
+    </mat-form-field>
+  </div>
+
+  <mat-form-field appearance="outline" class="form__field">
+    <mat-label>Note (optionnel)</mat-label>
+    <input matInput formControlName="note" maxlength="500" />
+  </mat-form-field>
+
+  <div class="form__actions">
+    <button mat-flat-button color="primary" type="submit" [disabled]="publishing()">
+      @if (publishing()) {
+        <mat-spinner diameter="20" />
+      } @else {
+        Publier la configuration
+      }
+    </button>
+  </div>
+</form>
+
+<h2 class="section-title">Historique</h2>
+
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else if (history().length === 0) {
+  <app-empty-state
+    title="Aucune configuration publiée"
+    description="Publiez la première configuration ci-dessus pour activer la création de devis."
+  />
+} @else {
+  <div class="table-scroll">
+    <table mat-table [dataSource]="history()" class="mat-elevation-z1">
+      <ng-container matColumnDef="businessDate">
+        <th mat-header-cell *matHeaderCellDef>Date</th>
+        <td mat-cell *matCellDef="let r">{{ r.businessDate }}</td>
+      </ng-container>
+      <ng-container matColumnDef="rateXofUsd">
+        <th mat-header-cell *matHeaderCellDef>XOF/USD</th>
+        <td mat-cell *matCellDef="let r">{{ r.rateXofUsd }}</td>
+      </ng-container>
+      <ng-container matColumnDef="rateUsdCny">
+        <th mat-header-cell *matHeaderCellDef>USD/CNY</th>
+        <td mat-cell *matCellDef="let r">{{ r.rateUsdCny }}</td>
+      </ng-container>
+      <ng-container matColumnDef="fees">
+        <th mat-header-cell *matHeaderCellDef>Frais</th>
+        <td mat-cell *matCellDef="let r">{{ r.feeXofUsdPercent }} · {{ r.feeUsdCnyFixedUsd }} USD</td>
+      </ng-container>
+      <ng-container matColumnDef="breakEvenRate">
+        <th mat-header-cell *matHeaderCellDef>Coût de revient</th>
+        <td mat-cell *matCellDef="let r">{{ r.breakEvenRate }} XOF/CNY</td>
+      </ng-container>
+      <ng-container matColumnDef="customerRate">
+        <th mat-header-cell *matHeaderCellDef>Taux client</th>
+        <td mat-cell *matCellDef="let r"><strong>{{ r.customerRate }}</strong> XOF/CNY</td>
+      </ng-container>
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef>Publiée</th>
+        <td mat-cell *matCellDef="let r">{{ r.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  </div>
+}

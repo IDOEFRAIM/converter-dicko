@@ -1,0 +1,111 @@
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else if (errorMessage() && !order()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+  <a routerLink="/orders" mat-stroked-button>Retour a mes ordres</a>
+} @else if (order(); as o) {
+  <div class="order-header">
+    <p class="order-header__label">Transfert</p>
+    <p class="order-header__reference">#{{ o.reference }}</p>
+  </div>
+  <app-corridor [compact]="true" class="order-corridor" />
+
+  <div class="panel order-status">
+    <app-status-badge [status]="o.status" />
+    @if (statusMessage(); as msg) {
+      <p class="order-status__description">{{ msg.description }}</p>
+    }
+    @if (o.status === 'REJECTED' && o.rejectionReason) {
+      <p class="order-status__reason">{{ o.rejectionReason }}</p>
+    }
+    @if (o.status === 'CANCELLED' && o.cancellationReason) {
+      <p class="order-status__reason">{{ o.cancellationReason }}</p>
+    }
+  </div>
+
+  <div class="order-flow">
+    <div class="order-flow__block">
+      <p class="order-flow__label">Vous envoyez</p>
+      <p class="order-flow__amount metric">{{ o.amountXof | money: 'XOF' }}</p>
+    </div>
+
+    <dl class="order-flow__meta">
+      <div>
+        <dt>Frais</dt>
+        <dd>{{ o.feeXof | money: 'XOF' }}</dd>
+      </div>
+      <div>
+        <dt>Taux</dt>
+        <dd>1 CNY = {{ o.customerRate }} XOF</dd>
+      </div>
+    </dl>
+
+    <div class="order-flow__block">
+      <p class="order-flow__label">Le beneficiaire recoit</p>
+      <p class="order-flow__amount order-flow__amount--accent metric">{{ o.amountCny | money: 'CNY' }}</p>
+    </div>
+  </div>
+
+  @if (o.status === 'AWAITING_PAYMENT') {
+    <div class="order-cta-row">
+      <button mat-stroked-button color="warn" (click)="cancel()" [disabled]="cancelling()">Annuler</button>
+      <button mat-flat-button class="brand-button" (click)="goToPayment()">Payer maintenant</button>
+    </div>
+  } @else if (o.status === 'REJECTED') {
+    <div class="order-cta-row">
+      <button mat-flat-button class="brand-button" (click)="goToPayment()">Resoumettre le paiement</button>
+    </div>
+  } @else if (o.status === 'COMPLETED') {
+    <div class="panel receipt-panel">
+      <p class="section-heading">
+        <mat-icon>receipt_long</mat-icon>
+        Justificatif
+      </p>
+      <p class="receipt-panel__description">Votre transfert est termine.</p>
+      <button mat-flat-button class="brand-button receipt-panel__cta" (click)="downloadReceipt()" [disabled]="downloadingReceipt()">
+        {{ downloadingReceipt() ? 'Preparation...' : 'Telecharger le justificatif' }}
+      </button>
+    </div>
+  }
+
+  <a [routerLink]="['/orders', o.id, 'tracking']" class="panel order-track-link">
+    <mat-icon>timeline</mat-icon>
+    <span>Voir le suivi du transfert</span>
+    <mat-icon class="order-track-link__chevron">chevron_right</mat-icon>
+  </a>
+
+  @if (settlementView(); as settlement) {
+    <div class="panel">
+      <p class="section-heading">
+        <mat-icon>local_shipping</mat-icon>
+        Reglement en Chine
+      </p>
+      <p class="settlement-card__label">{{ settlement.label }}</p>
+      <p class="settlement-card__description">{{ settlement.description }}</p>
+    </div>
+  }
+
+  <div class="panel">
+    <p class="section-heading">Fournisseur</p>
+    <p class="supplier-name">{{ o.beneficiary.fullName }}</p>
+    <p class="supplier-meta">
+      {{ beneficiaryTypeLabel() }} · {{ o.beneficiary.identifier }}
+      @if (o.beneficiary.bankName) {
+        · {{ o.beneficiary.bankName }}
+      }
+    </p>
+    @if (purposeLabel()) {
+      <p class="supplier-purpose">
+        Motif : {{ purposeLabel() }}
+        @if (o.purposeDetails) {
+          — {{ o.purposeDetails }}
+        }
+      </p>
+    }
+    @if (o.supplierId) {
+      <a mat-flat-button class="brand-button supplier-pay-again" [routerLink]="['/suppliers', o.supplierId, 'pay-again']">
+        Payer a nouveau
+      </a>
+    }
+  </div>
+}

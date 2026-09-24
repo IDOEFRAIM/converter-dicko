@@ -1,0 +1,61 @@
+<app-page-header title="Mon Wallet" subtitle="Solde interne XOF de la plateforme">
+  <a mat-flat-button routerLink="/preferred-rate" class="brand-button">
+    <mat-icon>trending_up</mat-icon>
+    Taux preferentiel
+  </a>
+</app-page-header>
+
+@if (errorMessage()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+}
+
+@if (wallet()) {
+  <section class="balance-card">
+    <div class="balance-card__main">
+      <p class="balance-card__label">Solde disponible</p>
+      <p class="balance-card__amount">{{ wallet()!.available | money: 'XOF' }}</p>
+    </div>
+    <div class="balance-card__row">
+      <div>
+        <p class="balance-card__label">Solde total</p>
+        <p class="balance-card__secondary">{{ wallet()!.balance | money: 'XOF' }}</p>
+      </div>
+      <div>
+        <p class="balance-card__label">Reserve</p>
+        <p class="balance-card__secondary">{{ wallet()!.reservedBalance | money: 'XOF' }}</p>
+      </div>
+    </div>
+  </section>
+}
+
+<h2 class="section-title">Historique des mouvements</h2>
+
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else if (transactions().length === 0) {
+  <app-empty-state title="Aucun mouvement" description="Les depots, reservations et debits apparaitront ici." />
+} @else {
+  @for (tx of transactions(); track tx.id) {
+    <div class="page-card tx-row">
+      <div class="tx-row__main">
+        @if (engagedLabelFor(tx); as engagedLabel) {
+          <p class="tx-row__type tx-row__type--engaged">
+            <mat-icon aria-hidden="true">hourglass_top</mat-icon>
+            {{ engagedLabel }}
+          </p>
+          <p class="tx-row__reason">Echange en cours, pas encore termine.</p>
+        } @else {
+          <p class="tx-row__type">{{ typeLabel(tx.type) }}</p>
+          @if (tx.reason) {
+            <p class="tx-row__reason">{{ tx.reason }}</p>
+          }
+        }
+        <p class="tx-row__date">{{ tx.createdAt | date: 'dd/MM/yyyy HH:mm' }}</p>
+      </div>
+      <div class="tx-row__amounts">
+        <p class="tx-row__amount">{{ tx.amount | money: 'XOF' }}</p>
+        <p class="tx-row__balance">Solde : {{ tx.balanceAfter | money: 'XOF' }}</p>
+      </div>
+    </div>
+  }
+}

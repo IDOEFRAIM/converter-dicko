@@ -1,0 +1,76 @@
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else if (errorMessage() && !quote()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+  <a routerLink="/quote/new" mat-stroked-button>Nouveau devis</a>
+} @else if (quote(); as q) {
+  <mat-card class="quote-card">
+    <div class="quote-flow">
+      <div class="quote-flow__block">
+        <p class="quote-flow__label">Vous envoyez</p>
+        <p class="quote-flow__amount metric">{{ q.amountXof | money: 'XOF' }}</p>
+      </div>
+
+      <div class="quote-flow__arrow" aria-hidden="true">
+        <mat-icon>arrow_downward</mat-icon>
+      </div>
+
+      <div class="quote-flow__block">
+        <p class="quote-flow__label">Le beneficiaire recoit</p>
+        <p class="quote-flow__amount quote-flow__amount--accent metric">&asymp; {{ q.amountCny | money: 'CNY' }}</p>
+      </div>
+    </div>
+
+    <p class="quote-rate">1 CNY = {{ q.customerRate }} XOF</p>
+
+    <dl class="quote-card__details">
+      <div>
+        <dt>Frais</dt>
+        <dd>{{ q.feeXof | money: 'XOF' }}</dd>
+      </div>
+      <div>
+        <dt>Montant net converti</dt>
+        <dd>{{ q.netAmountXof | money: 'XOF' }}</dd>
+      </div>
+      <div>
+        <dt>Statut</dt>
+        <dd><app-status-badge [status]="q.status" /></dd>
+      </div>
+    </dl>
+
+    @if (q.status === 'ACTIVE') {
+      <div class="quote-card__countdown">
+        <app-countdown-timer [expiresAt]="q.expiresAt" (expiredChange)="onExpired()" />
+      </div>
+
+      <div class="quote-card__actions">
+        <button mat-stroked-button (click)="cancel()" [disabled]="actionInProgress()">Annuler</button>
+        <button mat-flat-button class="brand-button" (click)="accept()" [disabled]="actionInProgress()">
+          @if (actionInProgress()) {
+            <mat-spinner diameter="20" />
+          } @else {
+            Accepter et continuer
+          }
+        </button>
+      </div>
+    } @else if (q.status === 'EXPIRED') {
+      <p class="form-notice form-notice--warn">
+        Ce devis a expire. Demandez-en un nouveau pour connaitre le taux actuel.
+      </p>
+      <a routerLink="/quote/new" mat-flat-button class="brand-button">Nouveau devis</a>
+    } @else if (q.status === 'CANCELLED') {
+      <p class="form-notice">Ce devis a ete annule.</p>
+      <a routerLink="/quote/new" mat-flat-button class="brand-button">Nouveau devis</a>
+    } @else if (q.status === 'ACCEPTED') {
+      <p class="form-notice form-notice--success">Devis accepte.</p>
+      <a
+        [routerLink]="['/order/new']"
+        [queryParams]="{ quoteId: q.id }"
+        mat-flat-button
+        class="brand-button"
+      >
+        Continuer vers la creation de l'ordre
+      </a>
+    }
+  </mat-card>
+}

@@ -1,0 +1,21 @@
+# Contexte de build de l'image frontend (docker-compose : context ./frontend).
+# `npm ci` reinstalle les dependances DANS l'image a partir de package-lock.json —
+# ne jamais copier node_modules de l'hote (plateforme differente, lenteur).
+
+node_modules/
+dist/
+.angular/
+.nx/
+coverage/
+
+# IDE / OS
+.vscode/
+.idea/
+*.log
+.DS_Store
+Thumbs.db
+
+# Divers
+.git/
+.gitignore
+README.md

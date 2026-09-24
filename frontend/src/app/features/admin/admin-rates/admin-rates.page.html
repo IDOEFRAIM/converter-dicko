@@ -1,0 +1,55 @@
+<app-page-header
+  title="Taux préférentiel (legacy)"
+  subtitle="1 CNY = X XOF. Alimente uniquement le module « taux préférentiel » — le pricing des devis (ce que le client voit) est géré dans « Taux client (pricing) »."
+/>
+
+<form [formGroup]="form" (ngSubmit)="publish()" class="rate-form">
+  <mat-form-field appearance="outline">
+    <mat-label>Taux (XOF pour 1 CNY)</mat-label>
+    <input matInput type="number" step="0.000001" formControlName="cfaPerCny" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="rate-form__note">
+    <mat-label>Note (optionnel)</mat-label>
+    <input matInput formControlName="note" />
+  </mat-form-field>
+
+  <button mat-flat-button color="primary" type="submit" [disabled]="publishing()">
+    @if (publishing()) {
+      <mat-spinner diameter="20" />
+    } @else {
+      Publier
+    }
+  </button>
+</form>
+
+<h2 class="section-title">Historique</h2>
+
+@if (loadingHistory()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else if (history().length === 0) {
+  <app-empty-state title="Aucun taux publie" />
+} @else {
+  <table mat-table [dataSource]="history()" class="mat-elevation-z1 rate-table">
+    <ng-container matColumnDef="cfaPerCny">
+      <th mat-header-cell *matHeaderCellDef>Taux</th>
+      <td mat-cell *matCellDef="let row">{{ row.cfaPerCny }}</td>
+    </ng-container>
+    <ng-container matColumnDef="note">
+      <th mat-header-cell *matHeaderCellDef>Note</th>
+      <td mat-cell *matCellDef="let row">{{ row.note || '—' }}</td>
+    </ng-container>
+    <ng-container matColumnDef="effectiveFrom">
+      <th mat-header-cell *matHeaderCellDef>Depuis</th>
+      <td mat-cell *matCellDef="let row">{{ row.effectiveFrom | date: 'dd/MM/yyyy HH:mm' }}</td>
+    </ng-container>
+    <ng-container matColumnDef="effectiveTo">
+      <th mat-header-cell *matHeaderCellDef>Jusqu'a</th>
+      <td mat-cell *matCellDef="let row">
+        {{ row.effectiveTo ? (row.effectiveTo | date: 'dd/MM/yyyy HH:mm') : 'Courant' }}
+      </td>
+    </ng-container>
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+  </table>
+}

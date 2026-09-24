@@ -1,0 +1,47 @@
+<h1 class="form-title">Creer un compte</h1>
+
+@if (errorMessage()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+}
+
+<form [formGroup]="form" (ngSubmit)="submit()" class="form">
+  <mat-form-field appearance="outline" class="form__field">
+    <mat-label>Prenom</mat-label>
+    <input matInput formControlName="firstName" autocomplete="given-name" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="form__field">
+    <mat-label>Nom</mat-label>
+    <input matInput formControlName="lastName" autocomplete="family-name" />
+  </mat-form-field>
+
+  <app-phone-number-field [control]="form.controls.phone" autocomplete="username" />
+  @if (form.controls.phone.invalid && form.controls.phone.touched) {
+    <p class="form-notice form-notice--error">Numero invalide.</p>
+  }
+
+  <mat-form-field appearance="outline" class="form__field">
+    <mat-label>Mot de passe</mat-label>
+    <input matInput type="password" formControlName="password" autocomplete="new-password" />
+    @if (form.controls.password.invalid && form.controls.password.touched) {
+      <mat-error>Au moins 8 caracteres.</mat-error>
+    }
+  </mat-form-field>
+
+  <p class="form-notice">
+    En creant un compte, vous acceptez notre
+    <a routerLink="/privacy" target="_blank">politique de confidentialite</a>.
+  </p>
+
+  <button mat-flat-button class="brand-button form__submit" type="submit"  [disabled]="loading()">
+    @if (loading()) {
+      <mat-spinner diameter="20" />
+    } @else {
+      Creer mon compte
+    }
+  </button>
+</form>
+
+<p class="form-footer">
+  Deja un compte ? <a routerLink="/login">Se connecter</a>
+</p>

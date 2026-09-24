@@ -1,0 +1,80 @@
+.history-filters {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 0.75rem;
+  margin-bottom: 0.5rem;
+
+  @media (min-width: 560px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+.history-filters__actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.history-count {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant, #616161);
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.history-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.history-card__main {
+  min-width: 0;
+  flex: 1;
+}
+
+.history-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.history-card__reference {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.history-card__amounts {
+  margin: 0.35rem 0 0;
+  font-weight: 600;
+}
+
+.history-card__meta {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant, #616161);
+}
+
+.history-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+}

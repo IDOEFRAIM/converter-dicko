@@ -1,0 +1,66 @@
+# =====================================================================
+#  Overlay OPTIONNEL pour la production (limites de ressources + acces
+#  direct au backend pour un reverse proxy hote).
+#
+#  Le fichier docker-compose.yml de base est DEJA prod-safe par defaut :
+#  ni PostgreSQL ni le backend ne publient de port sur l'hote. Cet
+#  overlay n'a PAS besoin de "retirer" des ports (Compose concatene les
+#  listes entre fichiers -f, un override `ports: []` ne les retire
+#  jamais) : il AJOUTE les limites de ressources, une politique de
+#  redemarrage plus stricte, et le port backend necessaire au sous-domaine
+#  API dedie (voir plus bas).
+#
+#  USAGE (Hetzner/staging/prod) :
+#    docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#  (scripts/deploy.sh l'inclut automatiquement des que SPRING_PROFILES_ACTIVE=prod)
+#
+#  Prerequis :
+#  1. .env avec les secrets de prod (JWT_SECRET, ADMIN_PASSWORD, POSTGRES_PASSWORD)
+#  2. Caddy (sur l'hote, pas conteneurise ici) en reverse proxy TLS avec DEUX
+#     blocs de domaine distincts (voir Caddyfile.example) :
+#       - le domaine web (ex. yuanpay.space)      -> frontend:4300 (SPA + relai /api)
+#       - le domaine API dedie (ex. api.yuanpay.space) -> 127.0.0.1:8080 (backend direct)
+#     Le second existe pour l'app MOBILE (Flutter) : une app native a besoin
+#     d'une origine HTTP joignable directement (AppConfig.apiBaseUrl), elle ne
+#     passe jamais par le relai nginx du frontend (reserve au navigateur web).
+# =====================================================================
+
+services:
+  postgres:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          memory: 512M
+
+  backend:
+    restart: always
+    # Publie UNIQUEMENT sur l'interface loopback de l'hote (127.0.0.1), jamais
+    # 0.0.0.0 : Caddy (process hote) doit pouvoir atteindre le backend pour le
+    # domaine API dedie, mais le port 8080 ne doit JAMAIS etre directement
+    # joignable depuis l'exterieur en contournant Caddy/TLS. Verifier malgre
+    # tout qu'aucune regle de pare-feu externe (UFW, groupe de securite cloud)
+    # ne route 8080 depuis Internet -- cette liaison 127.0.0.1 s'en protege
+    # deja au niveau Docker, mais une regle de pare-feu redondante ne nuit pas.
+    ports:
+      - "127.0.0.1:${SERVER_PORT:-8080}:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          memory: 1G
+
+  frontend:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          memory: 256M

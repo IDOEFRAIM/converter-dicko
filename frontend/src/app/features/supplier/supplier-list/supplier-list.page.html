@@ -1,0 +1,85 @@
+<app-page-header title="Mes fournisseurs" subtitle="Vos partenaires commerciaux en Chine">
+  <a routerLink="/suppliers/new" mat-flat-button class="brand-button">
+    <mat-icon>add</mat-icon>
+    Ajouter
+  </a>
+</app-page-header>
+
+@if (!loading() && suppliers().length > 0) {
+  <mat-form-field appearance="outline" class="form__field supplier-search">
+    <mat-icon matPrefix>search</mat-icon>
+    <input matInput placeholder="Rechercher un fournisseur" [formControl]="searchControl" />
+  </mat-form-field>
+}
+
+<mat-button-toggle-group
+  class="supplier-filters"
+  [value]="filter()"
+  (change)="setFilter($event.value)"
+  aria-label="Filtrer les fournisseurs"
+>
+  <mat-button-toggle value="ALL">Actifs</mat-button-toggle>
+  <mat-button-toggle value="FAVORITES">Favoris</mat-button-toggle>
+  <mat-button-toggle value="INACTIVE">Desactives</mat-button-toggle>
+</mat-button-toggle-group>
+
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else if (errorMessage()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+} @else if (suppliers().length === 0) {
+  <app-empty-state
+    [title]="emptyTitle()"
+    description="Aucun fournisseur enregistre. Ajoutez votre premier fournisseur pour payer plus rapidement la prochaine fois."
+  />
+} @else if (filteredSuppliers().length === 0) {
+  <app-empty-state title="Aucun resultat" description="Aucun fournisseur ne correspond a cette recherche." />
+} @else {
+  <ul class="supplier-list">
+    @for (supplier of filteredSuppliers(); track supplier.id) {
+      <li class="page-card supplier-card">
+        <a [routerLink]="['/suppliers', supplier.id]" class="supplier-card__link">
+          <div class="supplier-card__title">
+            <span class="supplier-card__name">{{ supplier.displayName }}</span>
+            @if (supplier.status === 'INACTIVE') {
+              <app-status-badge status="INACTIVE" />
+            }
+          </div>
+          <p class="supplier-card__meta">
+            {{ typeLabels[supplier.type] }} · {{ supplier.maskedAccountNumber }}
+            @if (supplier.city || supplier.country) {
+              · {{ supplier.city || supplier.country }}
+            }
+          </p>
+          <p class="supplier-card__meta supplier-card__meta--muted">
+            @if (supplier.purpose) {
+              {{ purposeLabels[supplier.purpose] }} ·
+            }
+            Ajoute le {{ supplier.createdAt | date: 'dd/MM/yyyy' }}
+          </p>
+        </a>
+        <div class="supplier-card__side">
+          <button
+            mat-icon-button
+            type="button"
+            class="supplier-card__fav"
+            [attr.aria-label]="supplier.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+            (click)="toggleFavorite(supplier, $event)"
+          >
+            <mat-icon>{{ supplier.favorite ? 'star' : 'star_border' }}</mat-icon>
+          </button>
+          @if (supplier.status === 'ACTIVE') {
+            <a
+              mat-flat-button
+              class="brand-button supplier-card__pay-again"
+              [routerLink]="['/suppliers', supplier.id, 'pay-again']"
+              (click)="$event.stopPropagation()"
+            >
+              Payer a nouveau
+            </a>
+          }
+        </div>
+      </li>
+    }
+  </ul>
+}

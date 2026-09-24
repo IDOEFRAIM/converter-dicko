@@ -1,0 +1,93 @@
+# =====================================================================
+#  Caddy reverse proxy configuration for YUAN PAY BF production
+#
+#  SETUP:
+#  1. Copy this file to Caddyfile (remove .example)
+#  2. Replace yourdomain.com / api.yourdomain.com with your actual domains
+#  3. Ensure DNS points to your Hetzner IP for BOTH domains
+#  4. Run: caddy run  (or: caddy run --config Caddyfile --watch)
+#
+#  TWO domain blocks, two different purposes:
+#  - yourdomain.com     -> frontend:4300 (web SPA; its nginx relays /api to
+#                          backend INTERNALLY over converter-net, browser
+#                          calls stay same-origin, no CORS involved)
+#  - api.yourdomain.com -> 127.0.0.1:8080 (backend DIRECT, bypassing nginx)
+#                          for the MOBILE app: a native app needs a real
+#                          reachable origin (AppConfig.apiBaseUrl), it never
+#                          goes through the web frontend's relay. Requires
+#                          docker-compose.prod.yml, which publishes the
+#                          backend on 127.0.0.1:8080 (loopback only, never
+#                          0.0.0.0 -- Caddy runs on this same host and is the
+#                          only thing meant to reach it).
+#
+#  Caddy will:
+#  - Automatically fetch/renew Let's Encrypt SSL/TLS certificates for both
+#  - Listen on 443 (HTTPS) and redirect 80 (HTTP) -> 443
+#  - Backend connects to postgres:5432 (internal, not exposed)
+#
+#  Logs: /var/log/caddy/ or systemd journal (caddy logs)
+# =====================================================================
+
+yourdomain.com {
+	# Automatic HTTPS and Let's Encrypt certificate
+	encode gzip
+
+	# Reverse proxy to frontend container (port 4300)
+	reverse_proxy localhost:4300 {
+		# Preserve original Host header for the frontend
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto https
+
+		# Timeouts for slow clients (file uploads)
+		transport http {
+			dial_timeout 30s
+			read_timeout 120s
+			write_timeout 120s
+		}
+	}
+
+	# Security headers
+	header X-Content-Type-Options nosniff
+	header X-Frame-Options DENY
+	header X-XSS-Protection "1; mode=block"
+	header Referrer-Policy strict-origin-when-cross-origin
+
+	# Logging (optional)
+	log {
+		output stdout
+		format single_field common_log
+	}
+}
+
+# Optional: alias (www.yourdomain.com -> yourdomain.com)
+# www.yourdomain.com {
+#     redir https://yourdomain.com{uri} permanent
+# }
+
+# Dedicated API domain for the mobile app (direct backend access, no nginx
+# relay -- see the header comment above and docker-compose.prod.yml).
+api.yourdomain.com {
+	encode gzip
+
+	reverse_proxy 127.0.0.1:8080 {
+		header_up X-Forwarded-Proto https
+
+		transport http {
+			dial_timeout 30s
+			read_timeout 120s
+			write_timeout 120s
+		}
+	}
+
+	header X-Content-Type-Options nosniff
+	header X-Frame-Options DENY
+	header Referrer-Policy strict-origin-when-cross-origin
+
+	log {
+		output stdout
+		format single_field common_log
+	}
+}
+

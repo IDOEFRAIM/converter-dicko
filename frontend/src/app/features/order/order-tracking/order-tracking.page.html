@@ -1,0 +1,55 @@
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else if (errorMessage() && !tracking()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+  <a routerLink="/history" mat-stroked-button>Retour a l'historique</a>
+} @else if (tracking(); as t) {
+  <app-page-header title="Suivi du transfert" subtitle="Progression de votre ordre">
+    <button mat-stroked-button (click)="refresh()" [disabled]="refreshing()">
+      <mat-icon>refresh</mat-icon>
+      Actualiser
+    </button>
+  </app-page-header>
+
+  <app-corridor [compact]="true" class="tracking-corridor" />
+
+  <div class="tracking-status panel">
+    <span>Statut actuel</span>
+    <app-status-badge [status]="t.currentStatus" />
+  </div>
+  @if (lastUpdatedAt(); as updatedAt) {
+    <p class="tracking-updated">Derniere mise a jour affichee : {{ updatedAt | date: 'dd/MM/yyyy HH:mm' }}</p>
+  }
+
+  @if (errorMessage()) {
+    <p class="form-notice form-notice--warn">{{ errorMessage() }}</p>
+  }
+
+  <ol class="tracking-timeline">
+    @for (event of t.timeline; track event.code + event.occurredAt; let i = $index) {
+      <li
+        class="tracking-timeline__item"
+        [class.tracking-timeline__item--negative]="isNegative(event)"
+        [class.tracking-timeline__item--current]="isCurrent(event, i)"
+        [class.tracking-timeline__item--refund]="isRefund(event)"
+      >
+        <span class="tracking-timeline__dot">
+          <mat-icon>
+            {{ isNegative(event) ? 'error' : isRefund(event) ? 'undo' : isCurrent(event, i) ? 'sync' : 'check' }}
+          </mat-icon>
+        </span>
+        <div class="tracking-timeline__body">
+          @if (isRefund(event)) {
+            <p class="tracking-timeline__eyebrow">Remboursement</p>
+          }
+          <p class="tracking-timeline__label">{{ labelFor(event) }}</p>
+          <p class="tracking-timeline__date">{{ event.occurredAt | date: 'dd/MM/yyyy HH:mm' }}</p>
+        </div>
+      </li>
+    }
+  </ol>
+
+  <div class="form__actions">
+    <a [routerLink]="['/orders', t.orderId]" mat-stroked-button>Voir le detail de l'ordre</a>
+  </div>
+}

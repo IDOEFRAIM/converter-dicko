@@ -1,0 +1,166 @@
+// Le hero n'est plus un bandeau bleu marketing : c'est le corridor + le taux du moment,
+// sur le meme fond "panel" chaud que le reste de la page (pas un degrade plein-largeur).
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0.25rem 0 1.75rem;
+}
+
+.hero__greeting {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--mat-sys-on-surface-variant, #616161);
+}
+
+.hero__rate-row {
+  display: flex;
+  align-items: center;
+  min-height: 2.5rem;
+}
+
+.hero__rate-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.hero__rate-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--mat-sys-on-surface-variant, #757575);
+}
+
+// Le taux est la valeur dominante de l'ecran (section 19) : seule grande valeur ici.
+.hero__rate {
+  font-size: 1.5rem;
+  color: var(--brand-navy, #1b325e);
+}
+
+.hero__rate-date {
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant, #757575);
+}
+
+.hero__cta {
+  align-self: flex-start;
+  height: 46px;
+  padding: 0 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+
+  mat-icon {
+    margin-right: 0.375rem;
+  }
+}
+
+.section-title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  color: var(--brand-navy, #1b325e);
+}
+
+// Voir styles.scss : `.section-header .section-title` ne peut pas etre surchargee
+// de facon fiable depuis le style global a cause de l'encapsulation de vue Angular.
+.section-header .section-title {
+  margin-bottom: 0;
+}
+
+// ---- Derniere operation ----
+
+.last-order {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.last-order__main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.last-order__name {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.last-order__amount {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--mat-sys-on-surface-variant, #616161);
+}
+
+.last-order__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+// ---- Fournisseurs ----
+
+.supplier-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  margin-bottom: 1.75rem;
+}
+
+.supplier-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.625rem 1.125rem;
+  border-radius: 999px;
+  background: var(--mat-sys-surface-container-low, #fffdf8);
+  border: 1px solid var(--mat-sys-outline-variant, #e6e9f0);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--mat-sys-on-surface, #1a1c1e);
+  text-decoration: none;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    box-shadow: var(--shadow-xs);
+    border-color: var(--brand-navy, #1b325e);
+  }
+}
+
+.supplier-chip--add {
+  padding: 0.625rem 0.875rem;
+  color: var(--brand-navy, #1b325e);
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+// ---- Taux ----
+
+.rate-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.rate-panel__chart {
+  width: 200px;
+  height: 40px;
+  flex: 1 1 200px;
+  max-width: 260px;
+}
+
+.rate-panel__cta {
+  flex: 0 0 auto;
+}

@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.16</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.converter</groupId>
+    <artifactId>converter-backend</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <name>converter-backend</name>
+    <description>Plateforme d'echange CFA (XOF) - Yuan (CNY)</description>
+
+    <properties>
+        <!-- Java 21 LTS impose par la decision d'architecture V7. -->
+        <java.version>21</java.version>
+        <maven.compiler.release>21</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <mapstruct.version>1.6.3</mapstruct.version>
+        <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
+        <jjwt.version>0.12.7</jjwt.version>
+        <springdoc.version>2.8.17</springdoc.version>
+        <pdfbox.version>3.0.3</pdfbox.version>
+        <!-- Decodage reel du contenu QR a l'upload (retour client : verifier que l'image
+             televersee contient effectivement un code QR lisible, pas seulement une image
+             valide) : ZXing est la reference du domaine, pas de reimplementation maison. -->
+        <zxing.version>3.5.3</zxing.version>
+        <!-- ImageIO n'a AUCUN lecteur WebP integre au JDK : un QR code en WebP (screenshot
+             Android par defaut sur de nombreux appareils, WhatsApp, etc.) fait echouer
+             ImageIO.read (retourne null) et etait donc a tort rejete comme "QR illisible".
+             TwelveMonkeys est pur Java (pas de lib native, contrairement a
+             org.sejda.imageio:webp-imageio, abandonne depuis 2020) et s'enregistre tout
+             seul via le SPI ImageIO des sa presence sur le classpath. -->
+        <twelvemonkeys.version>3.15.0</twelvemonkeys.version>
+        <!-- Verification officielle des jetons d'identite Google (connexion mobile) :
+             GoogleIdTokenVerifier gere lui-meme la recuperation/rotation des cles
+             publiques (JWKS) et les verifications iss/aud/exp ; reimplementer cela a
+             la main serait un risque de securite pour un gain nul. -->
+        <google-api-client.version>2.7.2</google-api-client.version>
+        <!-- Override du BOM Spring Boot 3.5.16 (qui gere 42.7.11) : correctif de
+             securite CVE-2026-54291 (downgrade silencieux du channel binding SCRAM,
+             pgJDBC 42.7.4-42.7.11), non exploitable dans la configuration actuelle
+             (channelBinding=require n'est positionne nulle part) mais correctif
+             mineur sans risque de rupture — audit de fermeture 2026-09. -->
+        <postgresql.version>42.7.13</postgresql.version>
+    </properties>
+
+    <dependencies>
+        <!-- ============================ Web ============================ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- ======================== Persistance ======================== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <!-- Obligatoire depuis Flyway 10 : le support PostgreSQL est un module separe. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ========================== Securite ========================= -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.api-client</groupId>
+            <artifactId>google-api-client</artifactId>
+            <version>${google-api-client.version}</version>
+        </dependency>
+
+        <!-- ====================== Cache en memoire ===================== -->
+        <!-- Utilise pour le cache des parametres metier et le compteur
+             anti brute-force sur /api/auth/login. Version geree par le BOM. -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
+        <!-- ========================= Mapping =========================== -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- ==================== Documentation API ====================== -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
+
+        <!-- ================= Generation de documents (PDF) ============== -->
+        <!-- Aucune librairie PDF preexistante (audit pom.xml, Phase 7). PDFBox choisi :
+             licence Apache 2.0, projet Apache Software Foundation (pas de risque de licence
+             commerciale contrairement a iText 7/AGPL), API suffisante pour un document texte
+             simple (justificatif de transaction) sans rendu HTML/CSS. -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>${pdfbox.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>${zxing.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>${zxing.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-webp</artifactId>
+            <version>${twelvemonkeys.version}</version>
+        </dependency>
+
+        <!-- ====================== Supervision ========================== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- ========================== Tests ============================ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Testcontainers : versions gerees par le BOM Spring Boot. -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <release>${maven.compiler.release}</release>
+                    <!-- L'ordre est significatif : lombok, puis le pont
+                         lombok-mapstruct, puis le processeur MapStruct.
+                         Sans le pont, MapStruct ne voit pas les accesseurs
+                         generes par Lombok et produit des mappers vides. -->
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>${lombok-mapstruct-binding.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                        <arg>-Amapstruct.defaultComponentModel=spring</arg>
+                        <arg>-Amapstruct.unmappedTargetPolicy=ERROR</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Tests unitaires (*Test) ET tests d'integration
+                         Testcontainers (*IT) sont executes par `mvnw test` :
+                         une seule commande couvre l'ensemble de la suite,
+                         sans plugin Failsafe separe. -->
+                    <includes>
+                        <include>**/*Test.java</include>
+                        <include>**/*IT.java</include>
+                    </includes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

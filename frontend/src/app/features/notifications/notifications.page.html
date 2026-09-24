@@ -1,0 +1,30 @@
+<app-page-header title="Notifications" subtitle="Vos messages internes" />
+
+@if (errorMessage()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+}
+
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else if (notifications().length === 0) {
+  <app-empty-state title="Aucune notification" description="Vos notifications apparaitront ici." />
+} @else {
+  @for (notification of notifications(); track notification.id) {
+    <button
+      type="button"
+      class="page-card notification-row"
+      [class.notification-row--unread]="!notification.readAt"
+      (click)="markRead(notification)"
+    >
+      <span class="notification-row__icon"><mat-icon>{{ icon(notification.type) }}</mat-icon></span>
+      <span class="notification-row__body">
+        <span class="notification-row__title">{{ notification.title }}</span>
+        <span class="notification-row__message">{{ notification.message }}</span>
+        <span class="notification-row__date">{{ notification.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+      </span>
+      @if (!notification.readAt) {
+        <span class="notification-row__dot" aria-hidden="true"></span>
+      }
+    </button>
+  }
+}

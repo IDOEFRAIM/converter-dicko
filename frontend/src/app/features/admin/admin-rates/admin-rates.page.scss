@@ -1,0 +1,23 @@
+.rate-form {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.rate-form__note {
+  flex: 1;
+  min-width: 200px;
+}
+
+.section-title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  color: var(--brand-navy, #1b325e);
+}
+
+.rate-table {
+  width: 100%;
+}

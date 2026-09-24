@@ -1,0 +1,169 @@
+<h1 class="page-title">Taux preferentiel</h1>
+<p class="page-subtitle">
+  Echangez automatiquement vos XOF des que le taux atteint votre cible (valable 3 jours).
+</p>
+
+@if (errorMessage()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+}
+
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else if (isWaiting()) {
+  <!-- VUE 1 : EN ATTENTE DU TAUX -->
+  <section class="page-card phase-card" data-testid="waiting-view">
+    <div class="phase-card__header">
+      <h2><mat-icon>hourglass_top</mat-icon> En attente du taux</h2>
+      <app-status-badge [status]="current()!.status" />
+    </div>
+
+    <div class="phase-card__grid">
+      <div>
+        <p class="phase-card__label">Montant XOF</p>
+        <p class="phase-card__value">{{ current()!.amountXof | money: 'XOF' }}</p>
+      </div>
+      <div>
+        <p class="phase-card__label">Taux cible</p>
+        <p class="phase-card__value">{{ current()!.targetRate }} XOF/CNY</p>
+      </div>
+      <div>
+        <p class="phase-card__label">Taux actuel</p>
+        <p class="phase-card__value">
+          {{ current()!.currentRate ? current()!.currentRate + ' XOF/CNY' : 'Indisponible' }}
+        </p>
+      </div>
+      <div>
+        <p class="phase-card__label">Ecart</p>
+        <p class="phase-card__value" [class.phase-card__value--positive]="current()!.gap !== null && current()!.gap! >= 0">
+          {{ current()!.gap !== null ? current()!.gap + ' XOF/CNY' : '—' }}
+        </p>
+      </div>
+      <div class="phase-card__span2">
+        <p class="phase-card__label">Temps restant (delai de 3 jours)</p>
+        <p class="phase-card__value">{{ waitingRemainingLabel() }}</p>
+      </div>
+    </div>
+
+    <button mat-stroked-button color="warn" (click)="cancel()" [disabled]="cancelling()">
+      @if (cancelling()) {
+        <mat-spinner diameter="18" />
+      } @else {
+        Annuler la demande
+      }
+    </button>
+  </section>
+} @else if (isExchange(); as _) {
+  <!-- VUE 2 : ECHANGE EN COURS -->
+  <section class="page-card phase-card phase-card--exchange" data-testid="exchange-view">
+    <div class="phase-card__header">
+      <h2><mat-icon>sync</mat-icon> Echange {{ current()!.exchange!.status === 'COMPLETED' ? 'termine' : 'en cours' }}</h2>
+      <app-status-badge [status]="current()!.exchange!.status" />
+    </div>
+
+    <div class="phase-card__grid">
+      <div>
+        <p class="phase-card__label">Montant XOF engage</p>
+        <p class="phase-card__value">{{ current()!.exchange!.amountXof | money: 'XOF' }}</p>
+      </div>
+      <div>
+        <p class="phase-card__label">Montant CNY</p>
+        <p class="phase-card__value">{{ current()!.exchange!.amountCny | money: 'CNY' }}</p>
+      </div>
+      <div>
+        <p class="phase-card__label">Taux obtenu</p>
+        <p class="phase-card__value">{{ current()!.exchange!.achievedRate }} XOF/CNY</p>
+      </div>
+      <div>
+        <p class="phase-card__label">
+          {{ current()!.exchange!.status === 'COMPLETED' ? 'Termine' : 'Temps restant (delai de 2h)' }}
+        </p>
+        <p class="phase-card__value">
+          {{ current()!.exchange!.status === 'COMPLETED' ? 'Termine' : exchangeRemainingLabel() }}
+        </p>
+      </div>
+    </div>
+
+    <div class="progress-track">
+      <div class="progress-track__step" [class.progress-track__step--done]="true">
+        <span class="progress-track__dot"></span>
+        T0 &mdash; demarrage
+      </div>
+      <div
+        class="progress-track__step"
+        [class.progress-track__step--done]="
+          current()!.exchange!.stage === 'PROGRESS_45' ||
+          current()!.exchange!.stage === 'PROGRESS_90' ||
+          current()!.exchange!.stage === 'COMPLETED'
+        "
+      >
+        <span class="progress-track__dot"></span>
+        T+45 min
+      </div>
+      <div
+        class="progress-track__step"
+        [class.progress-track__step--done]="current()!.exchange!.stage === 'PROGRESS_90' || current()!.exchange!.stage === 'COMPLETED'"
+      >
+        <span class="progress-track__dot"></span>
+        T+90 min
+      </div>
+      <div class="progress-track__step" [class.progress-track__step--done]="current()!.exchange!.stage === 'COMPLETED'">
+        <span class="progress-track__dot"></span>
+        Termine
+      </div>
+    </div>
+
+    @if (lastNotification(); as notif) {
+      <div class="last-notification">
+        <p class="last-notification__label">Derniere notification</p>
+        <p class="last-notification__title">{{ notif.title }}</p>
+        <p class="last-notification__message">{{ notif.message }}</p>
+        <p class="last-notification__date">{{ notif.createdAt | date: 'dd/MM/yyyy HH:mm' }}</p>
+      </div>
+    }
+
+    @if (current()!.exchange!.nextUpdateAt) {
+      <p class="next-update">
+        <mat-icon>update</mat-icon>
+        Prochaine mise a jour prevue le {{ current()!.exchange!.nextUpdateAt | date: 'dd/MM/yyyy HH:mm' }}
+      </p>
+    }
+  </section>
+} @else {
+  <form [formGroup]="form" (ngSubmit)="submit()" class="form page-card">
+    <p class="form-hint">Aucune demande en cours. Creez-en une nouvelle :</p>
+    <mat-form-field appearance="outline" class="form__field">
+      <mat-label>Montant en XOF</mat-label>
+      <input matInput type="number" min="1" [formControl]="form.controls.amountXof" />
+      @if (form.controls.amountXof.invalid && form.controls.amountXof.touched) {
+        <mat-error>Saisissez un montant valide.</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="form__field">
+      <mat-label>Taux cible (XOF pour 1 CNY)</mat-label>
+      <input matInput type="number" min="0" step="0.000001" [formControl]="form.controls.targetRate" />
+      @if (form.controls.targetRate.invalid && form.controls.targetRate.touched) {
+        <mat-error>Saisissez un taux valide.</mat-error>
+      }
+    </mat-form-field>
+    <button mat-flat-button type="submit" class="form__submit brand-button" [disabled]="submitting()">
+      @if (submitting()) {
+        <mat-spinner diameter="20" />
+      } @else {
+        Creer la demande
+      }
+    </button>
+  </form>
+}
+
+@if (history().length > 0) {
+  <h2 class="section-title">Historique</h2>
+  @for (request of history(); track request.id) {
+    <div class="page-card history-row">
+      <div>
+        <p class="history-row__amount">{{ request.amountXof | money: 'XOF' }} a {{ request.targetRate }} XOF/CNY</p>
+        <p class="history-row__date">{{ request.createdAt | date: 'dd/MM/yyyy HH:mm' }}</p>
+      </div>
+      <app-status-badge [status]="request.status" />
+    </div>
+  }
+}

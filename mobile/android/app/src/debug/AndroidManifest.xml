@@ -1,0 +1,13 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The INTERNET permission is required for development. Specifically,
+         the Flutter tool needs it to communicate with the running application
+         to allow setting breakpoints, to provide hot reload, etc.
+    -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- DEBUG UNIQUEMENT (ce manifest n'est jamais fusionne en release) : cible
+         Android bloque tout HTTP en clair par defaut depuis l'API 28. Le backend
+         local (docker) n'a pas de certificat. 10.0.2.2 est l'alias emulateur
+         vers localhost de la machine hote (voir AppConfig.apiBaseUrl). -->
+    <application android:networkSecurityConfig="@xml/network_security_config"/>
+</manifest>

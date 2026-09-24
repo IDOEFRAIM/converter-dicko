@@ -1,0 +1,122 @@
+<h1 class="form-title">Beneficiaire en Chine</h1>
+
+@if (errorMessage()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+}
+
+@if (liquiditySufficient() === false) {
+  <p class="form-notice form-notice--warn">
+    La liquidité disponible ne couvre pas ce montant pour l'instant. Vous pouvez préparer
+    l'ordre, mais sa création échouera tant que la trésorerie n'a pas été réapprovisionnée —
+    réessayez plus tard ou choisissez un montant plus faible.
+  </p>
+}
+
+@if (needsWhatsAppConfirmation()) {
+  <p class="form-notice form-notice--warn">
+    <mat-icon aria-hidden="true">chat</mat-icon>
+    Au-delà de 2 000 000 XOF, une confirmation par WhatsApp au {{ whatsAppPhoneDisplay }} vous
+    sera demandée après la création du transfert.
+  </p>
+}
+
+@if (quoteId()) {
+  <form [formGroup]="form" (ngSubmit)="submit()" class="form">
+    @if (hasSuppliers()) {
+      <mat-button-toggle-group formControlName="source" class="source-toggle" aria-label="Source du beneficiaire">
+        <mat-button-toggle value="SUPPLIER">Fournisseur enregistre</mat-button-toggle>
+        <mat-button-toggle value="MANUAL">Nouveau beneficiaire</mat-button-toggle>
+      </mat-button-toggle-group>
+    }
+
+    @if (useSupplier) {
+      <mat-form-field appearance="outline" class="form__field">
+        <mat-label>Fournisseur</mat-label>
+        <mat-select formControlName="supplierId">
+          @for (supplier of suppliers(); track supplier.id) {
+            <mat-option [value]="supplier.id">
+              {{ supplier.displayName }} — {{ supplier.maskedAccountNumber }}
+            </mat-option>
+          }
+        </mat-select>
+        @if (form.controls.supplierId.invalid && form.controls.supplierId.touched) {
+          <mat-error>Choisissez un fournisseur.</mat-error>
+        }
+      </mat-form-field>
+      <a routerLink="/suppliers/new" [queryParams]="{ returnToOrder: quoteId() }" class="form-footer">
+        + Enregistrer un nouveau fournisseur
+      </a>
+    } @else {
+      <!-- Alipay/WeChat Pay retires de la saisie manuelle (retour client : "pour alipay et
+           wechat on doit forcement avoir un qrcode") -- cette requete ne peut joindre aucune
+           image, donc aucun texte ne doit jamais tenir lieu de code QR. Seul le fournisseur
+           enregistre permet de televerser et valider le vrai code QR. -->
+      <p class="form-notice form-notice--warn">
+        <mat-icon aria-hidden="true">qr_code_2</mat-icon>
+        Un compte Alipay ou WeChat Pay s'identifie par son code QR, jamais par un texte.
+        Enregistrez ce beneficiaire comme fournisseur pour y joindre le vrai code QR — ce
+        formulaire ne concerne que les comptes bancaires chinois.
+        <a routerLink="/suppliers/new" [queryParams]="{ returnToOrder: quoteId() }">
+          Ajouter un fournisseur Alipay/WeChat
+        </a>
+      </p>
+
+      <mat-form-field appearance="outline" class="form__field">
+        <mat-label>Nom complet du beneficiaire</mat-label>
+        <input matInput formControlName="fullName" autocomplete="off" />
+        @if (form.controls.fullName.invalid && form.controls.fullName.touched) {
+          <mat-error>Le nom du beneficiaire est obligatoire.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form__field">
+        <mat-label>{{ identifierLabel }}</mat-label>
+        <input matInput formControlName="identifier" autocomplete="off" />
+        @if (form.controls.identifier.invalid && form.controls.identifier.touched) {
+          <mat-error>L'identifiant du beneficiaire est obligatoire.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form__field">
+        <mat-label>Nom de la banque</mat-label>
+        <input matInput formControlName="bankName" autocomplete="off" />
+        @if (form.controls.bankName.invalid && form.controls.bankName.touched) {
+          <mat-error>Obligatoire pour un compte bancaire.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form__field">
+        <mat-label>Agence (optionnel)</mat-label>
+        <input matInput formControlName="bankBranch" autocomplete="off" />
+      </mat-form-field>
+    }
+
+    <mat-form-field appearance="outline" class="form__field">
+      <mat-label>Motif du transfert (optionnel)</mat-label>
+      <mat-select formControlName="purpose">
+        <mat-option [value]="''">Non precise</mat-option>
+        @for (option of purposeOptions; track option.value) {
+          <mat-option [value]="option.value">{{ option.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="form__field">
+      <mat-label>Details du motif (optionnel)</mat-label>
+      <input matInput formControlName="purposeDetails" maxlength="500" autocomplete="off" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="form__field">
+      <mat-label>Note (optionnel)</mat-label>
+      <textarea matInput formControlName="note" rows="2" maxlength="500"></textarea>
+    </mat-form-field>
+
+    <button mat-flat-button class="brand-button form__submit" type="submit" [disabled]="loading()">
+      @if (loading()) {
+        <mat-spinner diameter="20" />
+      } @else {
+        Confirmer l'ordre
+      }
+    </button>
+  </form>
+}
