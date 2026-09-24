@@ -7,21 +7,26 @@
 
 .support-thread__empty {
   color: var(--mat-sys-on-surface-variant, #757575);
-  font-size: 0.9rem;
+  font-size: 15px;
+  text-align: center;
+  padding: 16px;
 }
 
 .support-bubble {
   align-self: flex-start;
   max-width: 80%;
-  background: var(--mat-sys-surface-container, #f1f1f1);
-  border-radius: var(--radius-sm, 8px) var(--radius-sm, 8px) var(--radius-sm, 8px) 2px;
-  padding: 0.6rem 0.85rem;
+  max-width: 75%;
+  background: var(--c-paper);
+  color: var(--c-ink);
+  border-radius: 14px 14px 14px 2px;
+  padding: 8px 12px;
 
+  // _MessageBubble (mobile) : reponses du support sur laque, a droite.
   &--admin {
     align-self: flex-end;
-    background: var(--brand-navy, #1b325e);
-    color: #fff;
-    border-radius: var(--radius-sm, 8px) var(--radius-sm, 8px) 2px var(--radius-sm, 8px);
+    background: var(--c-lacquer);
+    color: var(--c-on-lacquer);
+    border-radius: 14px 14px 2px 14px;
   }
 }
 
@@ -38,6 +43,10 @@
 }
 
 .support-composer {
+  position: sticky;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  padding: 12px 0 0;
+  background: var(--c-ivory);
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;

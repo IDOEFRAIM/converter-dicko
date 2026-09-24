@@ -1,108 +1,126 @@
-<h1 class="form-title">Paiement du transfert</h1>
-
+<!-- Copie de PaymentSubmitPage (mobile) : A PAYER, puis etapes numerotees 1-2 (declaration)
+     et 3 (preuve). -->
 @if (loading()) {
-  <div class="loading-row"><mat-spinner diameter="32" /></div>
-} @else {
-  @if (!payment(); as p) {
-    @if (order(); as o) {
-      <div class="panel payment-summary">
-        <p class="payment-summary__label">A payer</p>
-        <p class="payment-summary__amount metric">{{ o.amountXof | money: 'XOF' }}</p>
-        <p class="payment-summary__reference">Reference du transfert : #{{ o.reference }}</p>
+  <div class="m-loading"><mat-spinner diameter="32" /></div>
+} @else if (order(); as o) {
+  <div class="ps-label">
+    <span class="icon-badge ps-badge"><mat-icon fontSet="material-icons-outlined">payments</mat-icon></span>
+    <span class="t-eyebrow">A payer</span>
+  </div>
+  <p class="t-metric-large ps-amount">{{ o.amountXof | money: 'XOF' }}</p>
+  <p class="t-caption">#{{ o.reference }}</p>
+
+  @if (!payment()) {
+    <div class="ps-step">
+      <span class="ps-step__num">1</span>
+      <span class="t-body-strong">Envoyez l'argent</span>
+    </div>
+    @if (paymentInstructions()) {
+      <div class="ps-info">
+        <mat-icon fontSet="material-icons-outlined">info</mat-icon>
+        <p class="t-body">{{ paymentInstructions() }}</p>
       </div>
+    }
 
-      @if (errorMessage()) {
-        <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
-      }
+    <div class="ps-step ps-step--xl">
+      <span class="ps-step__num">2</span>
+      <span class="t-body-strong">Confirmez votre paiement</span>
+    </div>
+    <p class="t-caption ps-gap-xs">Deja envoye ? Confirmez ci-dessous pour qu'on verifie et debloque votre transfert.</p>
 
-      <p class="step-label">1. Envoyez l'argent</p>
-      <p class="instructions">
-        Envoyez <strong>{{ o.amountXof | money: 'XOF' }}</strong> via l'un des moyens ci-dessous.
-      </p>
-      @if (paymentInstructions()) {
-        <p class="form-notice">{{ paymentInstructions() }}</p>
-      }
-
-      <p class="step-label">2. Confirmez votre paiement</p>
-      <p class="instructions">
-        Deja envoye ? Confirmez ci-dessous pour qu'on verifie et debloque votre transfert.
-      </p>
-
-      <form [formGroup]="form" (ngSubmit)="submitPayment()" class="form">
+    <form [formGroup]="form" (ngSubmit)="submitPayment()" class="form ps-form">
+      @if (methods().length > 1) {
         <mat-form-field appearance="outline" class="form__field">
-          <mat-label>Methode de paiement</mat-label>
+          <mat-label>Moyen de paiement</mat-label>
           <mat-select formControlName="method">
             @for (option of methods(); track option.value) {
               <mat-option [value]="option.value">{{ option.label }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
+      }
 
-        <mat-form-field appearance="outline" class="form__field">
-          <mat-label>Montant envoye (XOF)</mat-label>
-          <input matInput type="number" formControlName="receivedAmountXof" />
-        </mat-form-field>
+      <mat-form-field appearance="outline" class="form__field">
+        <mat-label>Nom du payeur</mat-label>
+        <input matInput formControlName="payerName" maxlength="160" autocomplete="name" />
+        @if (form.controls.payerName.invalid && form.controls.payerName.touched) {
+          <mat-error>Le nom du payeur est obligatoire.</mat-error>
+        }
+      </mat-form-field>
 
-        <mat-form-field appearance="outline" class="form__field">
-          <mat-label>Nom du payeur</mat-label>
-          <input matInput formControlName="payerName" />
-          @if (form.controls.payerName.invalid && form.controls.payerName.touched) {
-            <mat-error>Le nom du payeur est obligatoire.</mat-error>
-          }
-        </mat-form-field>
+      <mat-form-field appearance="outline" class="form__field">
+        <mat-label>Numero du payeur</mat-label>
+        <input matInput type="tel" formControlName="payerPhone" maxlength="20" autocomplete="tel" />
+        @if (form.controls.payerPhone.invalid && form.controls.payerPhone.touched) {
+          <mat-error>Le numero du payeur est obligatoire.</mat-error>
+        }
+      </mat-form-field>
 
-        <mat-form-field appearance="outline" class="form__field">
-          <mat-label>Numero du payeur</mat-label>
-          <input matInput formControlName="payerPhone" />
-          @if (form.controls.payerPhone.invalid && form.controls.payerPhone.touched) {
-            <mat-error>Le numero du payeur est obligatoire.</mat-error>
-          }
-        </mat-form-field>
+      @if (errorMessage()) {
+        <div class="ps-warning t-body">{{ errorMessage() }}</div>
+      }
 
-        <button mat-flat-button class="brand-button form__submit" type="submit" [disabled]="submitting()">
-          @if (submitting()) {
-            <mat-spinner diameter="20" />
-            <span>Envoi en cours...</span>
-          } @else {
-            Envoyer le paiement
-          }
-        </button>
-      </form>
-    }
+      <button mat-flat-button class="ps-primary" type="submit" [disabled]="submitting()">
+        @if (submitting()) {
+          <mat-spinner diameter="20" />
+        } @else {
+          Envoyer
+        }
+      </button>
+    </form>
   } @else {
-    <p class="form-notice form-notice--success">
-      Paiement declare. Televersez une preuve (capture d'ecran ou recu) pour finaliser.
+    <div class="ps-success">
+      <mat-icon>check_circle</mat-icon>
+      <span>Paiement declare · en verification</span>
+    </div>
+
+    <div class="ps-step ps-step--xl">
+      <span class="ps-step__num">3</span>
+      <span class="t-body-strong">{{ proofRequired() ? 'Ajoutez la preuve *' : 'Ajoutez la preuve' }}</span>
+    </div>
+    <p class="t-caption ps-gap-xs">
+      {{
+        proofRequired()
+          ? 'Obligatoire : sans capture de votre paiement, notre equipe ne peut pas debloquer votre transfert.'
+          : 'Facultatif, mais accelere la verification par notre equipe.'
+      }}
     </p>
 
-    @if (errorMessage()) {
-      <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
-    }
-
-    @if (!proofUploaded()) {
-      <p class="step-label">2. Ajoutez la preuve</p>
-      <div class="upload-zone">
+    <!-- ProofDropzone -->
+    @if (proofUploaded()) {
+      <div class="surface-lacquer dropzone dropzone--done">
+        <mat-icon class="dropzone__seal">verified</mat-icon>
+        <div>
+          <p class="t-eyebrow dropzone__keyline">Preuve scellee</p>
+          <p class="t-caption dropzone__muted">{{ proofFileName() }}</p>
+        </div>
+      </div>
+    } @else {
+      <label class="dropzone pressable" [class.dropzone--busy]="uploading()">
         <input
           type="file"
-          id="proof-file"
+          class="dropzone__input"
           accept="image/jpeg,image/png,image/webp,application/pdf"
           (change)="onFileSelected($event)"
           [disabled]="uploading()"
         />
-        <label for="proof-file" class="upload-zone__label">
-          @if (uploading()) {
-            <mat-spinner diameter="20" />
-          } @else {
-            Choisir un fichier (JPEG, PNG, WEBP ou PDF)
-          }
-        </label>
-      </div>
-    } @else {
-      <p class="form-notice form-notice--success">
-        Preuve enregistree. Votre paiement est en cours de verification.
-      </p>
-      <button mat-flat-button class="brand-button form__submit" (click)="goToOrder()" >
-        Retour a l'ordre
-      </button>
+        <mat-icon class="dropzone__icon">{{ uploading() ? 'hourglass_top' : 'document_scanner' }}</mat-icon>
+        <span class="t-body-strong">{{ uploading() ? 'Analyse de la preuve...' : 'Deposer la preuve de paiement' }}</span>
+        <span class="t-caption">{{ uploading() ? 'Ne fermez pas cet ecran' : 'Photo ou capture du recu Mobile Money' }}</span>
+      </label>
     }
+
+    @if (errorMessage()) {
+      <p class="t-body ps-negative">{{ errorMessage() }}</p>
+    }
+
+    <button mat-flat-button class="ps-primary" type="button" [disabled]="!proofUploaded() && proofRequired()" (click)="goToOrder()">
+      Voir le transfert
+    </button>
   }
+} @else {
+  <div class="m-empty">
+    <mat-icon>error_outline</mat-icon>
+    <p class="t-body-strong">{{ errorMessage() ?? 'Impossible de charger cet ordre.' }}</p>
+  </div>
 }

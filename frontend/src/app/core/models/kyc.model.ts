@@ -22,22 +22,22 @@ export interface RejectKycRequest {
   reason: string;
 }
 
-/** Vue du client sur son propre dossier — miroir de `KycSubmissionResponse` (`GET /v1/kyc/submissions/me`). */
-export interface KycSubmission {
-  status: KycSubmissionStatus;
-  documentType: KycDocumentType;
-  submittedAt: string;
-  reviewedAt: string | null;
-  rejectionReason: string | null;
-}
-
-/** Le passeport n'a pas de verso pertinent — meme regle que `KycDocumentType.needsBack` (mobile). */
-export function kycDocumentNeedsBack(type: KycDocumentType): boolean {
-  return type !== 'PASSPORT';
-}
-
 export const KYC_DOCUMENT_TYPE_LABELS: Record<KycDocumentType, string> = {
   NATIONAL_ID: "Carte nationale d'identite (CNIB)",
   PASSPORT: 'Passeport',
   RESIDENCE_PERMIT: 'Carte de sejour',
 };
+
+/** Dossier de l'utilisateur connecte — `GET /api/v1/kyc/submissions/me` (null si jamais soumis). */
+export interface KycSubmission {
+  status: KycSubmissionStatus;
+  documentType: KycDocumentType | null;
+  submittedAt: string;
+  reviewedAt: string | null;
+  rejectionReason: string | null;
+}
+
+/** Le passeport n'a pas de verso pertinent (meme regle que `KycDocumentType.needsBack` mobile). */
+export function kycNeedsBack(type: KycDocumentType): boolean {
+  return type !== 'PASSPORT';
+}

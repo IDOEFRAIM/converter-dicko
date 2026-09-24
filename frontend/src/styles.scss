@@ -12,27 +12,112 @@
 }
 
 // ---------------------------------------------------------------------
-// Identite de marque — derivee du logo (cercle rouge "元" / cercle or "F"
-// cerclee d'or sur fond bleu marine) : marine = identite/texte/etats actifs,
-// or = accent/mise en valeur, rouge = alerte/erreur. Memes trois couleurs que
-// le logo, jamais un bleu vif ou un orange invente en plus.
+// Identite de marque — MIROIR EXACT du mobile (`mobile/lib/core/theme/
+// app_colors.dart`, langage de design "Le Comptoir") : le site client est
+// une alternative a l'application, il doit etre visuellement identique.
+// Toute couleur ajoutee ici doit d'abord exister dans AppColors.
 // ---------------------------------------------------------------------
 :root {
+  // ---- Marque ----
   --brand-navy: #1b325e;
   --brand-navy-dark: #0f1e3b;
   --brand-navy-light: #2e4c82;
-  --brand-gold: #d3af37;
-  --brand-red: #ce1922;
+  --brand-gold: #d3af37; // AppColors.ochre
+  --brand-red: #ce1922; // AppColors.chinaRed
 
-  --brand-gradient: linear-gradient(135deg, #2e4c82 0%, #1b325e 55%, #0f1e3b 100%);
+  // ---- Surfaces ----
+  --c-ivory: #fffdf8;
+  --c-ivory-dim: #f4f1e9;
+  --c-surface: #ffffff;
+  --c-outline: #e6e9f0;
+  --c-paper: #fbf8f1;
+  --c-paper-edge: #ede7d9;
+  --c-lacquer: #10203f;
+  --c-lacquer-edge: #24365c;
+  --c-keyline: #c7a54b;
+  --c-on-lacquer: #f2f1ea;
+  --c-on-lacquer-muted: #9fb0ce;
+  --c-signal: #2fb8a6;
+
+  // ---- Texte ----
+  --c-ink: #1a1c1e;
+  --c-ink-muted: #616161;
+  --c-ink-faint: #9aa0ab;
+
+  // ---- Semantique ----
+  --c-positive: #1b5e20;
+  --c-positive-surface: #e8f5e9;
+  --c-negative: #b71c1c;
+  --c-negative-surface: #ffebee;
+  --c-warning: #8d6e00;
+  --c-warning-surface: #fff8e1;
+
+  --lacquer-gradient: linear-gradient(135deg, #24365c 0%, #10203f 50%, #0a1730 100%);
+
+  // ---- Habillage (ExperiencePalette) : valeurs PRO par defaut, surchargees
+  // par les classes `.profile-*` posees sur <body> par ClientLayoutComponent.
+  --accent: var(--brand-navy);
+  --accent-soft: rgba(27, 50, 94, 0.1);
+  --accent-gradient: linear-gradient(135deg, #2e4c82 0%, #1b325e 55%, #0f1e3b 100%);
+  --accent-gradient-fg: #ffffff;
+  --role-send: #ff8a3d;
+  --role-send-surface: #ffe9da;
+  --role-group: #8b5cf6;
+  --role-group-surface: #ede4fb;
+  --role-rate: #2fb8a6;
+  --role-rate-surface: #dff3f0;
+  --role-premium: #c7a54b;
+  --role-premium-surface: #fbf0dc;
+
+  // Compatibilite avec les anciennes feuilles de style.
+  --brand-gradient: var(--accent-gradient);
   --brand-accent: var(--brand-gold);
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.07), 0 4px 10px rgba(15, 23, 42, 0.05);
-  --shadow-md: 0 8px 20px rgba(15, 23, 42, 0.09), 0 2px 6px rgba(15, 23, 42, 0.06);
-  --shadow-lg: 0 16px 32px rgba(10, 33, 90, 0.18);
+
+  // ---- Espacement / rayons (AppSpacing) ----
   --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 22px;
+  --radius-md: 14px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  // ---- Ombres (AppSurfaces) ----
+  --shadow-xs: 0 1px 2px rgba(27, 50, 94, 0.06);
+  --shadow-sm: 0 8px 18px rgba(27, 50, 94, 0.08);
+  --shadow-md: 0 8px 18px rgba(27, 50, 94, 0.12);
+  --shadow-lg: 0 14px 28px rgba(15, 30, 59, 0.35);
+
+  // ---- Typographie (AppTypography) : police systeme comme l'app ----
+  --font-app: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+// ExperiencePalette.primaryFor / gradientFor / accentFor
+body.profile-student-male {
+  --accent: #7a1e3c;
+  --accent-soft: rgba(122, 30, 60, 0.1);
+  --accent-gradient: linear-gradient(135deg, #7a1e3c 0%, #d3af37 55%, #ce1922 100%);
+  --accent-gradient-fg: #ffffff;
+  --role-send: #ce1922;
+  --role-send-surface: #fbe1e2;
+  --role-group: #7a1e3c;
+  --role-group-surface: #eedce2;
+  --role-rate: #d3af37;
+  --role-rate-surface: #fbf0dc;
+  --role-premium: #e0793d;
+  --role-premium-surface: #fce7d8;
+}
+
+body.profile-student-female {
+  --accent: #b27dc4;
+  --accent-soft: rgba(178, 125, 196, 0.12);
+  --accent-gradient: linear-gradient(135deg, #f3c9d8 0%, #b27dc4 55%, #aedff7 100%);
+  --accent-gradient-fg: #0f1e3b;
+  --role-send: #b27dc4;
+  --role-send-surface: #f3eaf9;
+  --role-group: #d46a93;
+  --role-group-surface: #f3c9d8;
+  --role-rate: #4fa3d1;
+  --role-rate-surface: #aedff7;
+  --role-premium: #c7a54b;
+  --role-premium-surface: #fbf0dc;
 }
 
 html {
@@ -44,7 +129,10 @@ html {
         primary: mat.$blue-palette,
         tertiary: mat.$yellow-palette,
       ),
-      typography: Roboto,
+      typography: (
+        plain-family: var(--font-app),
+        brand-family: var(--font-app),
+      ),
       density: 0,
     )
   );
@@ -55,11 +143,15 @@ html {
 // qu'en tons vifs "expressifs" et ne peuvent pas reproduire un marine/or
 // precis ; cette surcouche cible uniquement les roles visibles (primary,
 // tertiary, error) sans toucher au reste du systeme de tons M3.
-:root {
-  --mat-sys-primary: var(--brand-navy);
+//
+// Declare sur `body` (et non `:root`) : `--accent` y est surcharge par la
+// classe d'habillage `.profile-*`, et une variable CSS se resout la ou elle
+// est declaree — sur `:root`, le primaire resterait fige sur le marine.
+body {
+  --mat-sys-primary: var(--accent);
   --mat-sys-on-primary: #ffffff;
-  --mat-sys-primary-container: #dde1e9;
-  --mat-sys-on-primary-container: var(--brand-navy);
+  --mat-sys-primary-container: var(--accent-soft);
+  --mat-sys-on-primary-container: var(--accent);
 
   --mat-sys-tertiary: var(--brand-gold);
   --mat-sys-on-tertiary: var(--brand-navy);
@@ -385,4 +477,637 @@ a.page-card:hover {
   color: var(--brand-navy, #1b325e);
   text-decoration: none;
   white-space: nowrap;
+}
+
+// =====================================================================
+// ESPACE CLIENT — langage de design mobile "Le Comptoir"
+// ---------------------------------------------------------------------
+// Tout ce qui suit est scope sous `.app-frame` (ClientLayoutComponent) ou
+// `.auth-frame` (AuthLayoutComponent) : l'espace admin garde son propre
+// style. Chaque bloc reprend un widget/theme Flutter precis (nom cite en
+// commentaire) pour que le site soit une copie conforme de l'application.
+// =====================================================================
+
+.app-frame,
+.auth-frame {
+  font-family: var(--font-app);
+  color: var(--c-ink);
+  background: var(--c-ivory);
+  -webkit-tap-highlight-color: transparent;
+  --mat-sys-surface: var(--c-ivory);
+  --mat-sys-surface-container-low: var(--c-paper);
+  --mat-sys-on-surface: var(--c-ink);
+  --mat-sys-on-surface-variant: var(--c-ink-muted);
+  --mat-sys-outline-variant: var(--c-outline);
+
+  // ---- AppTheme.elevatedButtonTheme / outlinedButtonTheme ----
+  .mat-mdc-unelevated-button,
+  .mat-mdc-raised-button,
+  .mat-mdc-outlined-button {
+    --mat-button-filled-container-shape: var(--radius-sm);
+    --mat-button-outlined-container-shape: var(--radius-sm);
+    --mat-button-protected-container-shape: var(--radius-sm);
+    --mat-button-filled-container-height: 52px;
+    --mat-button-outlined-container-height: 52px;
+    --mat-button-protected-container-height: 52px;
+    --mat-button-outlined-outline-color: var(--c-outline);
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.1px;
+  }
+
+  .mat-mdc-unelevated-button:not(:disabled) {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .mat-mdc-outlined-button:not(:disabled) {
+    color: var(--accent);
+  }
+
+  .mat-mdc-button:not(:disabled) {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  // ---- AppTheme.inputDecorationTheme : champ blanc, bord fin, rayon 10 ----
+  .mat-mdc-form-field {
+    --mat-form-field-outlined-container-shape: var(--radius-sm);
+    --mat-form-field-outlined-outline-color: var(--c-outline);
+    --mat-form-field-outlined-hover-outline-color: var(--c-ink-faint);
+    --mat-form-field-outlined-focus-outline-color: var(--accent);
+    --mat-form-field-outlined-focus-outline-width: 1.5px;
+    --mat-form-field-outlined-label-text-color: var(--c-ink-muted);
+  }
+
+  .mdc-text-field--outlined {
+    background: var(--c-surface);
+    border-radius: var(--radius-sm);
+  }
+
+  // ---- SegmentedButton (M3) ----
+  .mat-button-toggle-group-appearance-standard {
+    border-radius: var(--radius-pill);
+    border-color: var(--c-ink-faint);
+  }
+
+  .mat-button-toggle-checked {
+    background: var(--accent-soft);
+    color: var(--c-ink);
+    font-weight: 700;
+  }
+
+  // ---- Utilitaires historiques, re-habilles "papier" ----
+  .page-card,
+  .panel {
+    background: var(--c-paper);
+    border: 1px solid var(--c-outline);
+    border-radius: var(--radius-md);
+    box-shadow: none;
+    padding: 16px;
+  }
+
+  a.page-card {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  a.page-card:hover {
+    border-color: var(--c-outline);
+    box-shadow: var(--shadow-sm);
+    transform: none;
+  }
+
+  a.page-card:active {
+    transform: scale(0.97);
+  }
+
+  .form-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--accent);
+  }
+
+  .section-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--c-ink-muted);
+    margin: 0 0 8px;
+  }
+
+  .section-header__link {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--c-ink-muted);
+  }
+
+  .brand-button.mdc-button {
+    background: var(--accent) !important;
+    color: #fff !important;
+  }
+
+  .form__submit {
+    height: 52px;
+    box-shadow: none;
+
+    &:not([disabled]):hover {
+      box-shadow: none;
+      transform: none;
+    }
+  }
+
+  .form-notice {
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .form-notice--error {
+    background: var(--c-negative-surface);
+    color: var(--c-negative);
+  }
+
+  .form-notice--warn {
+    background: var(--c-warning-surface);
+    color: var(--c-warning);
+  }
+
+  .form-notice--success {
+    background: var(--c-positive-surface);
+    color: var(--c-positive);
+  }
+
+  .metric {
+    font-variant-numeric: tabular-nums slashed-zero;
+    letter-spacing: -0.8px;
+  }
+}
+
+// ---- AppTypography -------------------------------------------------------
+.t-display {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -1.1px;
+  line-height: 1.02;
+}
+
+.t-title-large {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--accent);
+  margin: 0;
+}
+
+.t-title-medium {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  margin: 0;
+}
+
+.t-body {
+  font-size: 15px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.t-body-strong {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  margin: 0;
+}
+
+.t-caption {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--c-ink-muted);
+  margin: 0;
+}
+
+.t-eyebrow {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+  margin: 0;
+}
+
+.t-metric-large,
+.t-metric-medium,
+.t-figure-medium {
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-weight: 800;
+  margin: 0;
+}
+
+.t-metric-large {
+  font-size: 32px;
+  letter-spacing: -0.8px;
+  line-height: 1.04;
+}
+
+.t-metric-medium {
+  font-size: 22px;
+  letter-spacing: -0.4px;
+  line-height: 1.1;
+}
+
+.t-figure-medium {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+// ---- AppSurfaces ---------------------------------------------------------
+.surface-paper {
+  background: var(--c-paper);
+  border: 1px solid var(--c-outline);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 18px rgba(27, 50, 94, 0.08);
+}
+
+.surface-paper--flat {
+  box-shadow: none;
+}
+
+.surface-white {
+  background: var(--c-surface);
+  border: 1px solid var(--c-outline);
+  border-radius: var(--radius-md);
+}
+
+.surface-lacquer {
+  background: var(--lacquer-gradient);
+  border: 1px solid rgba(199, 165, 75, 0.55);
+  border-radius: var(--radius-md);
+  box-shadow: 0 14px 28px rgba(15, 30, 59, 0.35);
+  color: var(--c-on-lacquer);
+}
+
+// ---- Pressable : enfoncement au toucher ---------------------------------
+.pressable {
+  cursor: pointer;
+  transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  -webkit-user-select: none;
+  user-select: none;
+
+  &:active {
+    transform: scale(0.97);
+    transition-duration: 90ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    &:active {
+      transform: none;
+    }
+  }
+}
+
+a.pressable {
+  color: inherit;
+  text-decoration: none;
+}
+
+button.pressable {
+  font: inherit;
+  text-align: inherit;
+}
+
+// ---- IconBadge : pastille ronde coloree ---------------------------------
+.icon-badge {
+  --badge-size: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: var(--badge-size);
+  height: var(--badge-size);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--badge-color, var(--accent)) 12%, transparent);
+  color: var(--badge-color, var(--accent));
+
+  .mat-icon {
+    font-size: calc(var(--badge-size) * 0.45);
+    width: calc(var(--badge-size) * 0.45);
+    height: calc(var(--badge-size) * 0.45);
+  }
+}
+
+// ---- Tuile de liste (ListTile + carte blanche : fournisseurs, activite) --
+.list-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-outline);
+  border-radius: var(--radius-md);
+  color: inherit;
+  text-decoration: none;
+
+  &--compact {
+    padding: 12px;
+  }
+
+  &__main {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__chevron {
+    color: var(--c-ink-faint);
+    flex: 0 0 auto;
+  }
+}
+
+.list-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+// CircleAvatar(backgroundColor: ivoryDim, foregroundColor: primary)
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--c-ivory-dim);
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: 500;
+
+  &--solid {
+    width: 48px;
+    height: 48px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+  }
+}
+
+// ---- SectionHeader : sur-titre grave + "Tout voir" ----------------------
+.m-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+
+  a,
+  button {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--c-ink-muted);
+    text-decoration: none;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+}
+
+// ---- Groupe de tuiles "Plus" (_MoreSection / _MoreTile) -----------------
+.tile-group {
+  background: var(--c-paper);
+  border: 1px solid var(--c-outline);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.tile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 16px;
+  background: none;
+  border: 0;
+  color: var(--c-ink);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 150ms ease;
+
+  &:hover {
+    background: rgba(26, 28, 30, 0.04);
+  }
+
+  &:active {
+    background: rgba(26, 28, 30, 0.08);
+  }
+
+  &__label {
+    flex: 1 1 auto;
+  }
+
+  &__chevron {
+    color: var(--c-ink-faint);
+  }
+
+  & + & {
+    border-top: 1px solid var(--c-outline);
+    // Divider(indent: lg + 40 + md) : le filet commence apres la pastille.
+    border-image: linear-gradient(to right, transparent 68px, var(--c-outline) 68px) 1;
+  }
+}
+
+// ---- Etat vide / erreur / chargement ------------------------------------
+.m-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 48px 24px;
+
+  > .mat-icon {
+    font-size: 40px;
+    width: 40px;
+    height: 40px;
+    color: var(--c-ink-faint);
+    margin-bottom: 12px;
+  }
+}
+
+.m-loading {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0;
+}
+
+// ---- Ecran : marge standard des ListView mobiles (AppSpacing.lg) ---------
+.screen {
+  display: flex;
+  flex-direction: column;
+}
+
+.stack-sm > * + * {
+  margin-top: 8px;
+}
+
+.stack-md > * + * {
+  margin-top: 12px;
+}
+
+.stack-lg > * + * {
+  margin-top: 16px;
+}
+
+.stack-xl > * + * {
+  margin-top: 24px;
+}
+
+// ---- Bandeau d'installation PWA (au-dessus de la barre de navigation) ----
+.cdk-overlay-container .mat-mdc-snack-bar-container {
+  --mat-snack-bar-container-shape: var(--radius-sm);
+}
+
+// ---- MorePage ------------------------------------------------------------
+.more-account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.more-section-title {
+  margin-bottom: 8px;
+}
+
+.tile.more-logout {
+  color: var(--c-negative);
+}
+
+// ---- ChoiceChip (M3) -----------------------------------------------------
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 1px solid var(--c-ink-faint);
+  background: transparent;
+  color: var(--c-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &--selected {
+    border-color: transparent;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+  }
+}
+
+// ---- LoginPage / RegisterPage (mobile) -----------------------------------
+.auth-frame {
+  .auth-hero {
+    margin: 32px 0 32px;
+
+    &__corridor {
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .t-caption {
+      margin-top: 4px;
+    }
+  }
+
+  .auth-bar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: -16px 0 24px -12px;
+    color: var(--accent);
+
+    a {
+      color: var(--accent);
+    }
+
+    &__title {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 400;
+    }
+  }
+
+  .form {
+    gap: 8px;
+  }
+
+  .form__submit {
+    margin-top: 24px;
+    width: 100%;
+  }
+
+  .form-footer {
+    margin-top: 24px;
+  }
+}
+
+// ---- Formulaires mobiles (PrimaryAction pleine largeur, gros montant) ----
+.app-frame {
+  .m-label {
+    margin: 0 0 8px;
+
+    &--lg {
+      margin-top: 16px;
+    }
+  }
+
+  .m-big-input input {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+    font-variant-numeric: tabular-nums slashed-zero;
+  }
+
+  .m-suffix {
+    padding-right: 8px;
+    color: var(--c-ink-muted);
+  }
+
+  .m-primary {
+    width: 100%;
+    margin-top: 24px;
+  }
+
+  .m-negative {
+    color: var(--c-negative);
+    margin-top: 8px;
+  }
+
+  .qr-code-field__dropzone {
+    background: var(--c-paper);
+    border: 1.5px solid var(--c-outline);
+    border-radius: var(--radius-md);
+  }
+}
+
+.app-frame .m-section {
+  margin: 24px 0 8px;
 }

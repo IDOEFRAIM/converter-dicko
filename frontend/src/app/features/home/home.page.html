@@ -1,0 +1,212 @@
+<div class="screen">
+  <div class="home-top">
+    <h1 class="t-title-large home-top__greeting">{{ greeting() }}</h1>
+    <a
+      mat-icon-button
+      routerLink="/notifications"
+      aria-label="Notifications"
+      title="Notifications"
+      class="home-top__bell"
+    >
+      <mat-icon
+        fontSet="material-icons-outlined"
+        [matBadge]="unreadCount() > 0 ? unreadCount() : null"
+        matBadgeColor="warn"
+        matBadgeSize="small"
+        aria-hidden="false"
+        >notifications</mat-icon
+      >
+    </a>
+  </div>
+
+  @if (showKycBanner()) {
+    <a routerLink="/kyc" class="kyc-banner surface-paper pressable">
+      <span class="icon-badge kyc-banner__badge"
+        ><mat-icon fontSet="material-icons-outlined">verified_user</mat-icon></span
+      >
+      <span class="list-card__main">
+        <span class="t-body-strong">Verifiez votre identite</span>
+        <span class="t-caption">Trois photos, deux minutes.</span>
+      </span>
+      <mat-icon class="list-card__chevron">chevron_right</mat-icon>
+    </a>
+  }
+
+  <app-corridor-hero class="home-block" />
+
+  <!-- QuickActionsRow : 3 pastilles, couleurs du role (ExperiencePalette.accentFor). -->
+  <nav class="quick-actions home-block--xl" aria-label="Raccourcis">
+    <a routerLink="/pay" class="quick-action pressable">
+      <span class="quick-action__disc quick-action__disc--send"
+        ><mat-icon fontSet="material-icons-outlined">send</mat-icon></span
+      >
+      <span class="t-caption">Payer</span>
+    </a>
+    <a routerLink="/pay/pools" class="quick-action pressable">
+      <span class="quick-action__disc quick-action__disc--group"
+        ><mat-icon fontSet="material-icons-outlined">groups</mat-icon></span
+      >
+      <span class="t-caption">Ruee</span>
+    </a>
+    <a routerLink="/rates" class="quick-action pressable">
+      <span class="quick-action__disc quick-action__disc--rate"
+        ><mat-icon>trending_up</mat-icon></span
+      >
+      <span class="t-caption">Taux</span>
+    </a>
+  </nav>
+
+  <!-- _RateHero -->
+  <section class="rate-hero surface-white home-block--xl">
+    @switch (rateState()) {
+      @case ('loading') {
+        <div class="m-loading"><mat-spinner diameter="28" /></div>
+      }
+      @case ('error') {
+        <div class="m-empty home-inline-state">
+          <mat-icon>error_outline</mat-icon>
+          <p class="t-body-strong">Taux indisponible</p>
+          <button mat-button type="button" (click)="loadRate()">Reessayer</button>
+        </div>
+      }
+      @default {
+        @if (rate(); as entry) {
+          <div class="rate-hero__head">
+            <p class="t-eyebrow rate-hero__eyebrow">{{ rateEyebrow() }}</p>
+            <a routerLink="/pay" class="rate-hero__cta">Convertir</a>
+          </div>
+          <p class="t-metric-large rate-hero__value">1 CNY = {{ entry.customerRate }} XOF</p>
+          <p class="t-caption">Mis a jour le {{ entry.recordedAt | date: 'dd/MM/yyyy HH:mm' }}</p>
+        } @else {
+          <div class="m-empty home-inline-state">
+            <mat-icon>show_chart</mat-icon>
+            <p class="t-body-strong">Aucun taux publie</p>
+          </div>
+        }
+      }
+    }
+  </section>
+
+  <!-- _AchievementsCard -->
+  @if (achievements(); as summary) {
+    <a routerLink="/home/gains" class="home-block--xl pressable gains">
+      @if (profile() === 'PRO') {
+        <span class="gains__strip surface-paper">
+          <span class="list-card__main">
+            <span class="t-eyebrow">Volume ce mois-ci</span>
+            <span class="t-figure-medium">{{
+              summary.currentMonthAmountXofCompleted | money: 'XOF'
+            }}</span>
+            <span class="t-caption">{{ summary.completedTransferCount }} transferts</span>
+          </span>
+          <mat-icon class="gains__chevron">chevron_right</mat-icon>
+        </span>
+      } @else {
+        <span class="gains__strip surface-lacquer">
+          <span class="seal" [class.seal--locked]="!summary.badgeLabel">{{
+            summary.badgeLabel ? initial(summary.badgeLabel) : '?'
+          }}</span>
+          <span class="list-card__main">
+            <span class="t-eyebrow gains__rank">{{ summary.badgeLabel ?? 'Aucun palier' }}</span>
+            <span class="t-figure-medium gains__xp">{{ summary.xp }} points</span>
+            @if (summary.nextBadgeLabel) {
+              <span class="t-caption gains__next"
+                >{{ summary.transfersUntilNextBadge }} avant {{ summary.nextBadgeLabel }}</span
+              >
+            }
+          </span>
+          <mat-icon class="gains__chevron gains__chevron--lacquer">chevron_right</mat-icon>
+        </span>
+      }
+    </a>
+  } @else if (achievementsState() === 'loading') {
+    <div class="m-loading home-block--xl"><mat-spinner diameter="24" /></div>
+  }
+
+  <!-- DERNIERE OPERATION -->
+  <section class="home-block--xxl">
+    <div class="m-section-header">
+      <h2 class="t-eyebrow">Derniere operation</h2>
+      <a routerLink="/activity">Tout voir</a>
+    </div>
+    @switch (lastOperationState()) {
+      @case ('loading') {
+        <div class="m-loading"><mat-spinner diameter="28" /></div>
+      }
+      @case ('error') {
+        <div class="m-empty">
+          <mat-icon>error_outline</mat-icon>
+          <p class="t-body-strong">Impossible de charger la derniere operation</p>
+          <button mat-button type="button" (click)="loadLastOperation()">Reessayer</button>
+        </div>
+      }
+      @default {
+        @if (lastOperation(); as op) {
+          <a [routerLink]="['/orders', op.id]" class="list-card pressable">
+            <span class="list-card__main">
+              <span class="t-body-strong">#{{ op.reference }}</span>
+              <span class="t-caption home-gap-xs">{{ op.amountXof | money: 'XOF' }}</span>
+              <span class="t-caption">{{ op.createdAt | date: 'dd/MM/yyyy' }}</span>
+            </span>
+            <app-status-badge [status]="op.status" />
+          </a>
+        } @else {
+          <div class="m-empty">
+            <mat-icon fontSet="material-icons-outlined">receipt_long</mat-icon>
+            <p class="t-body-strong">Aucune operation</p>
+          </div>
+        }
+      }
+    }
+  </section>
+
+  <!-- MES FOURNISSEURS -->
+  <section class="home-block--xxl">
+    <div class="m-section-header">
+      <h2 class="t-eyebrow">Mes fournisseurs</h2>
+      <a routerLink="/suppliers">Tout voir</a>
+    </div>
+    @switch (suppliersState()) {
+      @case ('loading') {
+        <div class="m-loading"><mat-spinner diameter="28" /></div>
+      }
+      @case ('error') {
+        <div class="m-empty">
+          <mat-icon>error_outline</mat-icon>
+          <p class="t-body-strong">Impossible de charger vos fournisseurs</p>
+          <button mat-button type="button" (click)="loadSuppliers()">Reessayer</button>
+        </div>
+      }
+      @default {
+        @if (suppliers().length === 0) {
+          <div class="m-empty">
+            <mat-icon fontSet="material-icons-outlined">storefront</mat-icon>
+            <p class="t-body-strong">Aucun fournisseur</p>
+            <p class="t-caption">Ajoutez-en un pour payer plus vite.</p>
+          </div>
+        } @else {
+          <div class="list-stack">
+            @for (supplier of suppliers(); track supplier.id) {
+              <a
+                [routerLink]="['/suppliers', supplier.id]"
+                class="list-card list-card--compact pressable"
+              >
+                <span class="avatar">{{ initial(supplier.displayName) }}</span>
+                <span class="list-card__main">
+                  <span class="t-body-strong">{{ supplier.displayName }}</span>
+                  <span class="t-caption"
+                    >{{ typeLabels[supplier.type] ?? supplier.type }} ·
+                    {{ supplier.maskedAccountNumber }}</span
+                  >
+                </span>
+                @if (supplier.favorite) {
+                  <mat-icon class="home-star">star</mat-icon>
+                }
+              </a>
+            }
+          </div>
+        }
+      }
+    }
+  </section>
+</div>

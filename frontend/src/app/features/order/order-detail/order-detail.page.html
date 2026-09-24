@@ -1,111 +1,115 @@
+<!-- Copie de OrderDetailPage (mobile). -->
 @if (loading()) {
-  <div class="loading-row"><mat-spinner diameter="32" /></div>
+  <div class="m-loading"><mat-spinner diameter="32" /></div>
 } @else if (errorMessage() && !order()) {
-  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
-  <a routerLink="/orders" mat-stroked-button>Retour a mes ordres</a>
+  <div class="m-empty">
+    <mat-icon>error_outline</mat-icon>
+    <p class="t-body-strong">{{ errorMessage() }}</p>
+    <a routerLink="/activity" mat-button>Retour a l'activite</a>
+  </div>
 } @else if (order(); as o) {
-  <div class="order-header">
-    <p class="order-header__label">Transfert</p>
-    <p class="order-header__reference">#{{ o.reference }}</p>
-  </div>
-  <app-corridor [compact]="true" class="order-corridor" />
+  <div class="stack-lg">
+    <app-corridor [compact]="true" />
 
-  <div class="panel order-status">
-    <app-status-badge [status]="o.status" />
-    @if (statusMessage(); as msg) {
-      <p class="order-status__description">{{ msg.description }}</p>
-    }
-    @if (o.status === 'REJECTED' && o.rejectionReason) {
-      <p class="order-status__reason">{{ o.rejectionReason }}</p>
-    }
-    @if (o.status === 'CANCELLED' && o.cancellationReason) {
-      <p class="order-status__reason">{{ o.cancellationReason }}</p>
-    }
-  </div>
-
-  <div class="order-flow">
-    <div class="order-flow__block">
-      <p class="order-flow__label">Vous envoyez</p>
-      <p class="order-flow__amount metric">{{ o.amountXof | money: 'XOF' }}</p>
-    </div>
-
-    <dl class="order-flow__meta">
-      <div>
-        <dt>Frais</dt>
-        <dd>{{ o.feeXof | money: 'XOF' }}</dd>
-      </div>
-      <div>
-        <dt>Taux</dt>
-        <dd>1 CNY = {{ o.customerRate }} XOF</dd>
-      </div>
-    </dl>
-
-    <div class="order-flow__block">
-      <p class="order-flow__label">Le beneficiaire recoit</p>
-      <p class="order-flow__amount order-flow__amount--accent metric">{{ o.amountCny | money: 'CNY' }}</p>
-    </div>
-  </div>
-
-  @if (o.status === 'AWAITING_PAYMENT') {
-    <div class="order-cta-row">
-      <button mat-stroked-button color="warn" (click)="cancel()" [disabled]="cancelling()">Annuler</button>
-      <button mat-flat-button class="brand-button" (click)="goToPayment()">Payer maintenant</button>
-    </div>
-  } @else if (o.status === 'REJECTED') {
-    <div class="order-cta-row">
-      <button mat-flat-button class="brand-button" (click)="goToPayment()">Resoumettre le paiement</button>
-    </div>
-  } @else if (o.status === 'COMPLETED') {
-    <div class="panel receipt-panel">
-      <p class="section-heading">
-        <mat-icon>receipt_long</mat-icon>
-        Justificatif
-      </p>
-      <p class="receipt-panel__description">Votre transfert est termine.</p>
-      <button mat-flat-button class="brand-button receipt-panel__cta" (click)="downloadReceipt()" [disabled]="downloadingReceipt()">
-        {{ downloadingReceipt() ? 'Preparation...' : 'Telecharger le justificatif' }}
-      </button>
-    </div>
-  }
-
-  <a [routerLink]="['/orders', o.id, 'tracking']" class="panel order-track-link">
-    <mat-icon>timeline</mat-icon>
-    <span>Voir le suivi du transfert</span>
-    <mat-icon class="order-track-link__chevron">chevron_right</mat-icon>
-  </a>
-
-  @if (settlementView(); as settlement) {
-    <div class="panel">
-      <p class="section-heading">
-        <mat-icon>local_shipping</mat-icon>
-        Reglement en Chine
-      </p>
-      <p class="settlement-card__label">{{ settlement.label }}</p>
-      <p class="settlement-card__description">{{ settlement.description }}</p>
-    </div>
-  }
-
-  <div class="panel">
-    <p class="section-heading">Fournisseur</p>
-    <p class="supplier-name">{{ o.beneficiary.fullName }}</p>
-    <p class="supplier-meta">
-      {{ beneficiaryTypeLabel() }} · {{ o.beneficiary.identifier }}
-      @if (o.beneficiary.bankName) {
-        · {{ o.beneficiary.bankName }}
-      }
-    </p>
-    @if (purposeLabel()) {
-      <p class="supplier-purpose">
-        Motif : {{ purposeLabel() }}
-        @if (o.purposeDetails) {
-          — {{ o.purposeDetails }}
+    @if (o.status === 'PAYMENT_SUBMITTED') {
+      <a [routerLink]="['/orders', o.id, 'tracking']" class="od-panel od-status pressable">
+        <span class="od-status__row">
+          <app-status-badge [status]="o.status" />
+          <mat-icon class="od-chevron">chevron_right</mat-icon>
+        </span>
+        @if (statusMessage(); as msg) {
+          <span class="t-body od-muted">{{ msg.description }}</span>
         }
-      </p>
-    }
-    @if (o.supplierId) {
-      <a mat-flat-button class="brand-button supplier-pay-again" [routerLink]="['/suppliers', o.supplierId, 'pay-again']">
-        Payer a nouveau
       </a>
+    } @else {
+      <div class="od-panel od-status">
+        <span class="od-status__row"><app-status-badge [status]="o.status" /></span>
+        @if (statusMessage(); as msg) {
+          <p class="t-body od-muted">{{ msg.description }}</p>
+        }
+        @if (o.status === 'REJECTED' && o.rejectionReason) {
+          <p class="t-body od-negative">{{ o.rejectionReason }}</p>
+        }
+        @if (o.status === 'CANCELLED' && o.cancellationReason) {
+          <p class="t-body od-negative">{{ o.cancellationReason }}</p>
+        }
+      </div>
     }
+
+    <app-transfer-ticket [sendXof]="o.amountXof" [receiveCny]="o.amountCny" [rows]="ticketRows()" />
+
+    @if (o.proformaAvailable) {
+      <div class="od-panel">
+        <div class="od-doc">
+          <span class="icon-badge od-doc__badge od-doc__badge--send"><mat-icon fontSet="material-icons-outlined">description</mat-icon></span>
+          <span class="list-card__main">
+            <span class="t-eyebrow">Facture proforma</span>
+            <span class="t-caption">Generee automatiquement. Pour votre banque ou le dedouanement.</span>
+          </span>
+        </div>
+        <button type="button" class="od-pill od-pill--send" (click)="downloadProforma()" [disabled]="downloadingProforma()">
+          <mat-icon>download</mat-icon>
+          {{ downloadingProforma() ? 'Preparation...' : 'Telecharger la proforma' }}
+        </button>
+      </div>
+    }
+
+    @if (o.status === 'AWAITING_PAYMENT') {
+      <div class="od-actions">
+        <button mat-stroked-button type="button" (click)="cancel()" [disabled]="cancelling()">Annuler</button>
+        <button mat-flat-button type="button" (click)="goToPayment()">Payer maintenant</button>
+      </div>
+    } @else if (o.status === 'REJECTED') {
+      <button mat-flat-button type="button" class="od-full" (click)="goToPayment()">Resoumettre le paiement</button>
+    } @else if (o.status === 'COMPLETED') {
+      <div class="od-panel">
+        <div class="od-doc">
+          <span class="icon-badge od-doc__badge od-doc__badge--premium"><mat-icon fontSet="material-icons-outlined">workspace_premium</mat-icon></span>
+          <span class="list-card__main">
+            <span class="t-eyebrow">Justificatif officiel</span>
+            <span class="t-caption">Transfert #{{ o.reference }} — termine</span>
+          </span>
+        </div>
+        <button type="button" class="od-pill od-pill--premium" (click)="downloadReceipt()" [disabled]="downloadingReceipt()">
+          <mat-icon>download</mat-icon>
+          {{ downloadingReceipt() ? 'Preparation...' : 'Telecharger le recu' }}
+        </button>
+      </div>
+    }
+
+    <a [routerLink]="['/orders', o.id, 'tracking']" class="od-panel od-link pressable">
+      <span class="icon-badge od-small-badge"><mat-icon>timeline</mat-icon></span>
+      <span class="od-link__label">Voir le suivi du transfert</span>
+      <mat-icon class="od-chevron">chevron_right</mat-icon>
+    </a>
+
+    @if (o.status === 'PROCESSING' || o.status === 'COMPLETED') {
+      @if (settlementView(); as settlement) {
+        <div class="od-panel od-doc od-doc--top">
+          <span class="icon-badge od-small-badge"><mat-icon fontSet="material-icons-outlined">local_shipping</mat-icon></span>
+          <span class="list-card__main">
+            <span class="t-eyebrow">Reglement en Chine</span>
+            <span class="t-body-strong od-gap">{{ settlement.label }}</span>
+            <span class="t-caption">{{ settlement.description }}</span>
+          </span>
+        </div>
+      }
+    }
+
+    <div class="od-panel">
+      <p class="t-eyebrow">Fournisseur</p>
+      <p class="t-body-strong od-gap">{{ o.beneficiary.fullName }}</p>
+      <p class="t-caption">
+        {{ beneficiaryTypeLabel() }} · {{ o.beneficiary.identifier }}@if (o.beneficiary.bankName) { · {{ o.beneficiary.bankName }}}
+      </p>
+      @if (purposeLabel()) {
+        <p class="t-body od-purpose">
+          Motif : {{ purposeLabel() }}@if (o.purposeDetails) { — {{ o.purposeDetails }}}
+        </p>
+      }
+      @if (o.supplierId) {
+        <a mat-flat-button class="od-full od-pay-again" [routerLink]="['/suppliers', o.supplierId, 'pay-again']">Payer a nouveau</a>
+      }
+    </div>
   </div>
 }

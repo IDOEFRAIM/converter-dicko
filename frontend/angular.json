@@ -31,6 +31,8 @@
               }
             ],
             "styles": [
+              "node_modules/material-icons/iconfont/filled.css",
+              "node_modules/material-icons/iconfont/outlined.css",
               "src/styles.scss"
             ],
             "serviceWorker": "ngsw-config.json"

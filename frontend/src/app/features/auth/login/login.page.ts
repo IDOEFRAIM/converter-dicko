@@ -50,7 +50,7 @@ export class LoginPage {
       next: (response) => {
         this.loading.set(false);
         const isAdmin = response.data.user.roles.includes('ADMIN');
-        this.router.navigate([isAdmin ? '/admin' : '/dashboard']);
+        this.router.navigate([isAdmin ? '/admin' : '/home']);
       },
       error: (error) => {
         this.loading.set(false);

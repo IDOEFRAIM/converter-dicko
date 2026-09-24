@@ -38,6 +38,21 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         color: var(--mat-sys-on-surface-variant, #616161);
         font-size: 0.9rem;
       }
+      /* Espace client : le titre est deja dans la barre d'application (comme l'app
+         mobile) — seules les actions de la page restent affichees ici. */
+      :host-context(.app-frame) .page-header > div:first-child {
+        display: none;
+      }
+      :host-context(.app-frame) .page-header {
+        margin-bottom: 16px;
+        justify-content: flex-end;
+      }
+      :host-context(.app-frame) .page-header__actions:empty {
+        display: none;
+      }
+      :host-context(.app-frame) .page-header:has(.page-header__actions:empty) {
+        display: none;
+      }
       .page-header__actions {
         display: flex;
         gap: 0.5rem;

@@ -7,14 +7,12 @@ import { InboxNotificationService } from '../../core/services/inbox-notification
 import { PushNotificationService } from '../../core/services/push-notification.service';
 import { extractErrorMessage } from '../../core/services/api-error.util';
 import { InboxNotification, notificationIcon } from '../../core/models/inbox-notification.model';
-import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
-import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 
 /** Notifications internes du client, les plus recentes en premier. */
 @Component({
   selector: 'app-notifications-page',
   standalone: true,
-  imports: [DatePipe, MatButtonModule, MatIconModule, MatProgressSpinnerModule, EmptyStateComponent, PageHeaderComponent],
+  imports: [DatePipe, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './notifications.page.html',
   styleUrl: './notifications.page.scss',

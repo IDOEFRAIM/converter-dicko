@@ -24,7 +24,7 @@ describe('guestGuard', () => {
     setup(true, false);
     const router = TestBed.inject(Router);
     const result = TestBed.runInInjectionContext(() => guestGuard({} as never, {} as never));
-    expect(router.serializeUrl(result as never)).toBe('/dashboard');
+    expect(router.serializeUrl(result as never)).toBe('/home');
   });
 
   it('redirects an already-authenticated ADMIN to /admin', () => {

@@ -1,4 +1,8 @@
-<h1 class="form-title">Connexion</h1>
+<div class="auth-hero">
+  <p class="t-metric-medium auth-hero__corridor">🇧🇫 → 🇨🇳</p>
+  <h1 class="t-title-large">Bon retour</h1>
+  <p class="t-caption">Connectez-vous pour suivre vos paiements vers la Chine.</p>
+</div>
 
 @if (sessionExpired()) {
   <p class="form-notice form-notice--warn">Votre session a expire. Reconnectez-vous.</p>
@@ -31,5 +35,5 @@
 </form>
 
 <p class="form-footer">
-  Pas encore de compte ? <a routerLink="/register">Creer un compte</a>
+  <a mat-button routerLink="/register">Creer un compte</a>
 </p>

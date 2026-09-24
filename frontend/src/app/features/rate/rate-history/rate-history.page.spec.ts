@@ -39,7 +39,7 @@ describe('RateHistoryPage', () => {
   it('shows the empty state with a refresh action when there is no history', async () => {
     await createWith([]);
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('Aucun historique disponible');
+    expect(text).toContain('Aucun historique');
     const button = fixture.nativeElement.querySelector('button');
     expect(button.textContent).toContain('Actualiser');
   });

@@ -1,5 +1,12 @@
-<app-page-header title="Historique" subtitle="Tous vos transferts vers la Chine" />
+<!-- Liste "Activite" identique a l'app ; les filtres (propres au web) restent replies. -->
+<div class="history-toolbar">
+  <button mat-button type="button" (click)="showFilters.set(!showFilters())">
+    <mat-icon>{{ showFilters() ? 'expand_less' : 'tune' }}</mat-icon>
+    Filtrer
+  </button>
+</div>
 
+@if (showFilters()) {
 <form class="history-filters" [formGroup]="filters" (ngSubmit)="applyFilters()">
   <mat-form-field appearance="outline">
     <mat-label>Statut</mat-label>
@@ -46,46 +53,40 @@
     <button mat-flat-button class="brand-button" type="submit">Filtrer</button>
   </div>
 </form>
+}
 
 @if (loading()) {
-  <div class="loading-row"><mat-spinner diameter="32" /></div>
+  <div class="m-loading"><mat-spinner diameter="32" /></div>
 } @else if (errorMessage()) {
-  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+  <div class="m-empty">
+    <mat-icon>error_outline</mat-icon>
+    <p class="t-body-strong">{{ errorMessage() }}</p>
+    <button mat-button type="button" (click)="applyFilters()">Reessayer</button>
+  </div>
 } @else if (orders().length === 0) {
-  <app-empty-state
-    title="Aucun transfert"
-    description="Aucun ordre ne correspond a ces criteres."
-  />
+  <div class="m-empty">
+    <mat-icon fontSet="material-icons-outlined">receipt_long</mat-icon>
+    <p class="t-body-strong">Aucune operation</p>
+  </div>
 } @else {
-  <p class="history-count">{{ totalElements() }} transfert(s)</p>
-  <ul class="history-list">
+  <div class="list-stack">
     @for (order of orders(); track order.id) {
-      <li>
-        <a [routerLink]="['/orders', order.id]" class="page-card history-card">
-          <div class="history-card__main">
-            <div class="history-card__top">
-              <span class="history-card__reference">{{ order.reference }}</span>
-              <app-status-badge [status]="order.status" />
-            </div>
-            <p class="history-card__amounts">
-              {{ order.amountXof | money: 'XOF' }} &rarr; {{ order.amountCny | money: 'CNY' }}
-            </p>
-            <p class="history-card__meta">
-              @if (order.purpose) { {{ purposeLabels[order.purpose] }} · }
-              {{ order.createdAt | date: 'dd/MM/yyyy' }}
-            </p>
-          </div>
-          <mat-icon>chevron_right</mat-icon>
-        </a>
-      </li>
+      <a [routerLink]="['/orders', order.id]" class="list-card pressable">
+        <span class="list-card__main">
+          <span class="t-body-strong">#{{ order.reference }}</span>
+          <span class="t-caption history-gap">{{ order.amountXof | money: 'XOF' }}</span>
+          <span class="t-caption">{{ order.createdAt | date: 'dd/MM/yyyy' }}</span>
+        </span>
+        <app-status-badge [status]="order.status" />
+      </a>
     }
-  </ul>
+  </div>
 
   @if (totalPages() > 1) {
     <div class="history-pager">
-      <button mat-stroked-button (click)="previousPage()" [disabled]="page() === 0">Precedent</button>
-      <span>Page {{ page() + 1 }} / {{ totalPages() }}</span>
-      <button mat-stroked-button (click)="nextPage()" [disabled]="page() + 1 >= totalPages()">Suivant</button>
+      <button mat-button (click)="previousPage()" [disabled]="page() === 0">Precedent</button>
+      <span class="t-caption">Page {{ page() + 1 }} / {{ totalPages() }}</span>
+      <button mat-button (click)="nextPage()" [disabled]="page() + 1 >= totalPages()">Suivant</button>
     </div>
   }
 }

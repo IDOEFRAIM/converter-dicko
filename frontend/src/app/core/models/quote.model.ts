@@ -18,6 +18,8 @@ export interface Quote {
   status: QuoteStatus;
   createdAt: string;
   expiresAt: string;
+  /** Vrai si le rabais d'une Ruee reussie a ete applique a ce devis. */
+  poolRewardApplied?: boolean;
 }
 
 export interface CreateQuoteRequest {

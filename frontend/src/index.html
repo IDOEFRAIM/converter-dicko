@@ -1,26 +1,38 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="utf-8" />
     <title>YUAN PAY BF</title>
     <base href="/" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Payez vos fournisseurs en Chine depuis le Burkina Faso (XOF → CNY), suivez chaque transfert." />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
-    <link rel="icon" type="image/png" sizes="256x256" href="logo.png" />
-    <link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+    <!-- PWA : manifeste + meta iOS (Safari ignore une partie du manifeste). -->
     <link rel="manifest" href="manifest.webmanifest" />
     <meta name="theme-color" content="#1b325e" />
-    <!-- PWA installable sur iOS (Safari ne lit pas le manifest pour ces reglages) -->
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="YUAN PAY" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="YUAN PAY BF" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap"
       rel="stylesheet"
     />
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <script>
+      // Capture AVANT le demarrage d'Angular : Chrome peut emettre
+      // `beforeinstallprompt` des le chargement, bien avant que le service
+      // d'installation (PwaInstallService) n'existe. Sans cette capture
+      // precoce, l'evenement est perdu et l'installation n'est jamais proposee.
+      window.addEventListener('beforeinstallprompt', function (event) {
+        event.preventDefault();
+        window.__yuanpayInstallPrompt = event;
+        window.dispatchEvent(new Event('yuanpay-installable'));
+      });
+    </script>
   </head>
   <body>
     <app-root></app-root>

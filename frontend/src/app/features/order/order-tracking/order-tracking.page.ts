@@ -1,6 +1,7 @@
+import { AppBarActionsDirective } from '../../../shared/directives/app-bar-actions.directive';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -15,9 +16,6 @@ import {
 import { OrderStatus } from '../../../core/models/order.model';
 
 const TERMINAL_STATUSES: ReadonlySet<OrderStatus> = new Set(['COMPLETED', 'CANCELLED', 'REJECTED', 'EXPIRED']);
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
-import { CorridorComponent } from '../../../shared/components/corridor/corridor.component';
 
 /**
  * Suivi d'un ordre : affiche telle quelle la timeline agregee par le backend. Aucune
@@ -28,20 +26,34 @@ import { CorridorComponent } from '../../../shared/components/corridor/corridor.
   selector: 'app-order-tracking-page',
   standalone: true,
   imports: [
-    RouterLink,
+    AppBarActionsDirective,
     DatePipe,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    PageHeaderComponent,
-    StatusBadgeComponent,
-    CorridorComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './order-tracking.page.html',
   styleUrl: './order-tracking.page.scss',
 })
 export class OrderTrackingPage implements OnInit {
+  /** Position (0..1) d'une station le long du fil du corridor. */
+  stationX(i: number, n: number): number {
+    return n <= 1 ? 0.5 : 0.06 + (0.88 * i) / (n - 1);
+  }
+
+  /** Meme courbe que le corridor d'accueil, evaluee a t (Bezier cubique). */
+  stationY(t: number): number {
+    const mid = 66;
+    const amp = 26;
+    const p0 = mid + amp * 0.15;
+    const p1 = mid + amp;
+    const p2 = mid - amp;
+    const p3 = mid - amp * 0.15;
+    const u = 1 - t;
+    return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3;
+  }
+
   private readonly route = inject(ActivatedRoute);
   private readonly orderService = inject(OrderService);
 
@@ -69,6 +81,10 @@ export class OrderTrackingPage implements OnInit {
     if (!this.refreshing()) {
       this.load(false);
     }
+  }
+
+  hasNegative(): boolean {
+    return (this.tracking()?.timeline ?? []).some((e) => this.isNegative(e));
   }
 
   isNegative(event: TrackingEvent): boolean {

@@ -15,8 +15,6 @@ import { OrderHistoryEntry, OrderHistoryQuery, OrderStatus } from '../../core/mo
 import { Purpose, PURPOSE_LABELS, PURPOSE_OPTIONS } from '../../core/models/common.model';
 import { SupplierSummary } from '../../core/models/supplier.model';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
-import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
-import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { MoneyPipe } from '../../shared/pipes/money.pipe';
 
 const STATUS_OPTIONS: OrderStatus[] = [
@@ -50,8 +48,6 @@ const STATUS_OPTIONS: OrderStatus[] = [
     MatProgressSpinnerModule,
     MatSelectModule,
     StatusBadgeComponent,
-    EmptyStateComponent,
-    PageHeaderComponent,
     MoneyPipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -65,6 +61,7 @@ export class HistoryPage implements OnInit {
   readonly orders = signal<OrderHistoryEntry[]>([]);
   readonly suppliers = signal<SupplierSummary[]>([]);
   readonly loading = signal(true);
+  readonly showFilters = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly page = signal(0);
   readonly totalPages = signal(0);

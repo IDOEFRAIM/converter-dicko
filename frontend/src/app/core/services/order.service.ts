@@ -92,4 +92,9 @@ export class OrderService {
   downloadReceipt(id: string): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/${id}/receipt`, { responseType: 'blob' });
   }
+
+  /** Facture proforma PDF — memes regles que le justificatif (`GET /v1/orders/{id}/proforma`). */
+  downloadProforma(id: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/proforma`, { responseType: 'blob' });
+  }
 }

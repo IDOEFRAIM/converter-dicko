@@ -1,23 +1,33 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { KycService } from '../../core/services/kyc.service';
-import { extractErrorMessage } from '../../core/services/api-error.util';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import {
   KYC_DOCUMENT_TYPE_LABELS,
   KycDocumentType,
   KycSubmission,
-  kycDocumentNeedsBack,
+  kycNeedsBack,
 } from '../../core/models/kyc.model';
+import { extractErrorMessage } from '../../core/services/api-error.util';
+import { AuthService } from '../../core/services/auth.service';
+import { KycService } from '../../core/services/kyc.service';
 
-type KycSlot = 'front' | 'back' | 'selfie';
+type Slot = 'front' | 'back' | 'selfie';
 
 /**
- * Verification d'identite en libre-service (remarque produit #6) — parite web du parcours
- * mobile (`KycPage`) : memes trois photos (recto/verso/selfie), memes trois vues pilotees par le
- * statut du dernier dossier (PENDING / APPROVED / REJECTED / aucun dossier -> formulaire).
+ * Verification d'identite — copie de `KycPage` (mobile) : statut du dernier dossier
+ * (verifie / en examen / a corriger), puis choix de la piece et trois photos. Sur le
+ * web, `<input type="file" accept="image/*">` propose nativement appareil photo OU galerie.
  */
 @Component({
   selector: 'app-kyc-page',
@@ -29,108 +39,104 @@ type KycSlot = 'front' | 'back' | 'selfie';
 })
 export class KycPage implements OnInit {
   private readonly kycService = inject(KycService);
+  private readonly auth = inject(AuthService);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly destroyRef = inject(DestroyRef);
+
+  readonly documentTypes = Object.keys(KYC_DOCUMENT_TYPE_LABELS) as KycDocumentType[];
+  readonly labels = KYC_DOCUMENT_TYPE_LABELS;
 
   readonly loading = signal(true);
   readonly submitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly submission = signal<KycSubmission | null>(null);
-
   readonly documentType = signal<KycDocumentType>('NATIONAL_ID');
-  readonly documentTypes: KycDocumentType[] = ['NATIONAL_ID', 'PASSPORT', 'RESIDENCE_PERMIT'];
-  readonly documentLabels = KYC_DOCUMENT_TYPE_LABELS;
+  readonly files = signal<Record<Slot, File | null>>({ front: null, back: null, selfie: null });
+  readonly previews = signal<Record<Slot, string | null>>({
+    front: null,
+    back: null,
+    selfie: null,
+  });
 
-  readonly frontFile = signal<File | null>(null);
-  readonly backFile = signal<File | null>(null);
-  readonly selfieFile = signal<File | null>(null);
-  readonly frontPreview = signal<string | null>(null);
-  readonly backPreview = signal<string | null>(null);
-  readonly selfiePreview = signal<string | null>(null);
+  readonly status = computed(() => this.submission()?.status ?? 'NONE');
+  readonly showForm = computed(() => this.status() === 'NONE' || this.status() === 'REJECTED');
+  readonly needsBack = computed(() => kycNeedsBack(this.documentType()));
+  readonly captureSlots = computed<{ slot: Slot; label: string; hint: string }[]>(() => [
+    { slot: 'front', label: 'Recto de la piece', hint: 'Lisible, sans reflet' },
+    ...(this.needsBack()
+      ? [{ slot: 'back' as Slot, label: 'Verso de la piece', hint: 'Lisible, sans reflet' }]
+      : []),
+    { slot: 'selfie', label: 'Selfie', hint: 'Visage bien visible' },
+  ]);
+  readonly canSubmit = computed(() => {
+    const f = this.files();
+    return !this.submitting() && !!f.front && !!f.selfie && (!this.needsBack() || !!f.back);
+  });
 
-  ngOnInit(): void {
-    this.load();
-  }
-
-  private load(): void {
-    this.loading.set(true);
-    this.kycService.mySubmission().subscribe({
-      next: (response) => {
-        this.submission.set(response.data);
-        this.loading.set(false);
-      },
-      error: (error) => {
-        this.errorMessage.set(extractErrorMessage(error));
-        this.loading.set(false);
-      },
-    });
-  }
-
-  needsBack(): boolean {
-    return kycDocumentNeedsBack(this.documentType());
-  }
-
-  showForm(): boolean {
-    const status = this.submission()?.status;
-    return status === undefined || status === 'REJECTED';
-  }
-
-  selectDocumentType(type: KycDocumentType): void {
-    if (this.documentType() === type) return;
-    this.documentType.set(type);
-    if (!kycDocumentNeedsBack(type)) {
-      this.setFile('back', null);
-    }
-  }
-
-  onFileSelected(slot: KycSlot, event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0] ?? null;
-    this.setFile(slot, file);
-    // Autorise de reprendre la MEME photo (meme nom/contenu) : sans ce reset, le navigateur ne
-    // redeclenche pas l'evenement 'change' pour une selection identique a la precedente.
-    input.value = '';
-  }
-
-  canSubmit(): boolean {
-    return (
-      !this.submitting() &&
-      this.frontFile() !== null &&
-      this.selfieFile() !== null &&
-      (!this.needsBack() || this.backFile() !== null)
+  constructor() {
+    this.destroyRef.onDestroy(() =>
+      Object.values(this.previews()).forEach((url) => url && URL.revokeObjectURL(url)),
     );
   }
 
-  submit(): void {
-    if (!this.canSubmit()) return;
-    const front = this.frontFile();
-    const selfie = this.selfieFile();
-    if (!front || !selfie) return;
-
-    this.submitting.set(true);
-    this.errorMessage.set(null);
-    this.kycService.submit(this.documentType(), front, this.needsBack() ? this.backFile() : null, selfie).subscribe({
-      next: (response) => {
-        this.submitting.set(false);
-        this.submission.set(response.data);
-        this.setFile('front', null);
-        this.setFile('back', null);
-        this.setFile('selfie', null);
+  ngOnInit(): void {
+    this.kycService.mySubmission().subscribe({
+      next: (r) => {
+        this.submission.set(r.data);
+        this.loading.set(false);
       },
       error: (error) => {
-        this.submitting.set(false);
         this.errorMessage.set(extractErrorMessage(error));
+        this.loading.set(false);
       },
     });
   }
 
-  private setFile(slot: KycSlot, file: File | null): void {
-    const fileSignal = slot === 'front' ? this.frontFile : slot === 'back' ? this.backFile : this.selfieFile;
-    const previewSignal =
-      slot === 'front' ? this.frontPreview : slot === 'back' ? this.backPreview : this.selfiePreview;
-    const previousUrl = previewSignal();
-    if (previousUrl) {
-      URL.revokeObjectURL(previousUrl);
+  hasFile(slot: Slot): boolean {
+    return !!this.files()[slot];
+  }
+
+  preview(slot: Slot): string | null {
+    return this.previews()[slot];
+  }
+
+  onFile(slot: Slot, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    input.value = '';
+    if (!file) {
+      return;
     }
-    fileSignal.set(file);
-    previewSignal.set(file ? URL.createObjectURL(file) : null);
+    const previous = this.previews()[slot];
+    if (previous) {
+      URL.revokeObjectURL(previous);
+    }
+    this.files.update((f) => ({ ...f, [slot]: file }));
+    this.previews.update((p) => ({ ...p, [slot]: URL.createObjectURL(file) }));
+  }
+
+  submit(): void {
+    const f = this.files();
+    if (!this.canSubmit() || !f.front || !f.selfie) {
+      return;
+    }
+    this.submitting.set(true);
+    this.errorMessage.set(null);
+    this.kycService
+      .submit(this.documentType(), f.front, this.needsBack() ? f.back : null, f.selfie)
+      .subscribe({
+        next: (r) => {
+          this.submission.set(r.data);
+          this.submitting.set(false);
+          this.snackBar.open('Dossier envoye.', undefined, { duration: 3000 });
+          this.auth.restoreSession().subscribe({ error: () => undefined });
+        },
+        error: (error) => {
+          const message = extractErrorMessage(error);
+          this.errorMessage.set(message);
+          this.submitting.set(false);
+          this.snackBar.open(message, undefined, { duration: 4000 });
+        },
+      });
   }
 }

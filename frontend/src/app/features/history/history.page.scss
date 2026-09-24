@@ -78,3 +78,13 @@
   margin-top: 1rem;
   font-size: 0.875rem;
 }
+
+.history-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: -8px 0 8px;
+}
+
+.history-gap {
+  margin-top: 4px;
+}

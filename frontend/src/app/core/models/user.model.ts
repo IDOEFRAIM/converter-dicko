@@ -1,5 +1,11 @@
 export type RoleCode = 'USER' | 'ADMIN';
 
+/**
+ * Habillage choisi par le client (miroir de `ExperienceProfile` cote backend et mobile).
+ * Pilote UNIQUEMENT les couleurs et le ton de l'interface — jamais le taux ni les frais.
+ */
+export type ExperienceProfile = 'PRO' | 'STUDENT_MALE' | 'STUDENT_FEMALE';
+
 export interface CurrentUser {
   id: string;
   phone: string;
@@ -10,9 +16,12 @@ export interface CurrentUser {
   roles: string[];
   createdAt: string;
   lastLoginAt: string | null;
-  /** Faux pour un compte cree via Google Sign-In (jamais de mot de passe) — pilote l'ecran de
-   * suppression de compte : demander une re-confirmation par mot de passe uniquement si vrai. */
-  hasPassword: boolean;
+  /** Absent sur un backend plus ancien : traite comme `PRO`. */
+  experienceProfile?: ExperienceProfile | null;
+  /** Identite verifiee (KYC) — requis au-dela d'un seuil de montant. */
+  kycVerified?: boolean;
+  /** Faux pour un compte cree via Google (pas de mot de passe). */
+  hasPassword?: boolean;
 }
 
 export interface AuthResponse {

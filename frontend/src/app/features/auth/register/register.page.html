@@ -1,4 +1,7 @@
-<h1 class="form-title">Creer un compte</h1>
+<div class="auth-bar">
+  <a mat-icon-button routerLink="/login" aria-label="Retour"><mat-icon>arrow_back</mat-icon></a>
+  <h1 class="auth-bar__title">Creer un compte</h1>
+</div>
 
 @if (errorMessage()) {
   <p class="form-notice form-notice--error">{{ errorMessage() }}</p>

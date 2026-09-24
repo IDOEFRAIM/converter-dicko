@@ -33,17 +33,17 @@ describe('Navigation principale', () => {
     expect(await navigate('/dashboard')).toBe('/login');
   });
 
-  it('redirects an authenticated USER away from /admin to /dashboard', async () => {
+  it('redirects an authenticated USER away from /admin to /home', async () => {
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter(routes),
-        { provide: AuthService, useValue: { isAuthenticated: () => true, isAdmin: () => false, currentUser: () => ({ firstName: 'Test', lastName: 'User' }) } },
+        { provide: AuthService, useValue: { isAuthenticated: () => true, isAdmin: () => false, experienceProfile: () => 'PRO', currentUser: () => ({ firstName: 'Test', lastName: 'User' }) } },
       ],
     });
 
-    expect(await navigate('/admin/orders')).toBe('/dashboard');
+    expect(await navigate('/admin/orders')).toBe('/home');
   });
 
   it('lets an authenticated ADMIN reach the admin area', async () => {
@@ -65,10 +65,10 @@ describe('Navigation principale', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter(routes),
-        { provide: AuthService, useValue: { isAuthenticated: () => true, isAdmin: () => false, currentUser: () => ({ firstName: 'Test', lastName: 'User' }) } },
+        { provide: AuthService, useValue: { isAuthenticated: () => true, isAdmin: () => false, experienceProfile: () => 'PRO', currentUser: () => ({ firstName: 'Test', lastName: 'User' }) } },
       ],
     });
 
-    expect(await navigate('/login')).toBe('/dashboard');
+    expect(await navigate('/login')).toBe('/home');
   });
 });

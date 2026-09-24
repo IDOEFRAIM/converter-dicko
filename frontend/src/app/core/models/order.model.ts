@@ -198,4 +198,6 @@ export interface OrderDetail {
   supplierId: string | null;
   purpose: Purpose | null;
   purposeDetails: string | null;
+  /** Facture proforma telechargeable (parcours "payer un fournisseur"). */
+  proformaAvailable?: boolean;
 }

@@ -1,31 +1,75 @@
-.page-title {
-  font-size: 1.375rem;
-  font-weight: 700;
-  margin: 0.5rem 0 0.75rem;
-  color: var(--brand-navy, #1b325e);
-}
-
-.page-corridor {
-  display: block;
-  margin-bottom: 1.5rem;
-}
-
-.direction-toggle {
+.qc-top {
   display: flex;
-  width: 100%;
-  margin-bottom: 0.75rem;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 24px;
+}
 
-  ::ng-deep .mat-button-toggle {
-    flex: 1;
+.qc-corridor {
+  flex: 1 1 auto;
+}
+
+.qc-pools {
+  color: var(--accent);
+}
+
+.qc-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.qc-send-badge {
+  --badge-size: 32px;
+  --badge-color: var(--role-send);
+  background: var(--role-send-surface);
+}
+
+.qc-amount input {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+.qc-suffix {
+  padding-right: 8px;
+  color: var(--c-ink-muted);
+}
+
+.qc-reward {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--c-positive-surface);
+  color: var(--c-positive);
+  font-weight: 600;
+
+  .mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
   }
 }
 
-.direction-hint {
-  color: var(--mat-sys-on-surface-variant, #616161);
-  font-size: 0.875rem;
-  margin: 0 0 1.5rem;
+.qc-primary {
+  width: 100%;
+  margin-top: 24px;
 }
 
-.amount-field {
-  font-size: 1.125rem;
+.qc-secondary {
+  display: block;
+  margin: 8px auto 0;
+}
+
+.qc-negative {
+  color: var(--c-negative);
+}
+
+.qc-gap-md {
+  margin-top: 12px;
 }

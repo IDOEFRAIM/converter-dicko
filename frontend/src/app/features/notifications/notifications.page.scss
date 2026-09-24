@@ -1,67 +1,64 @@
-.notification-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.875rem;
-  width: 100%;
-  text-align: left;
-  border: 1px solid var(--mat-sys-outline-variant, #e6e9f0);
-  font: inherit;
-  cursor: pointer;
-  position: relative;
-}
-
-.notification-row--unread {
-  background: rgba(27, 50, 94, 0.05);
-  border-color: rgba(27, 50, 94, 0.25);
-}
-
-.notification-row__icon {
+.notif-push {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  flex: 0 0 auto;
-  border-radius: 12px;
-  background: rgba(27, 50, 94, 0.1);
-  color: var(--brand-navy, #1b325e);
-
-  mat-icon {
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
-  }
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 12px;
+  color: inherit;
+  cursor: pointer;
 }
 
-.notification-row__body {
+.notif-error {
+  color: var(--c-negative);
+  margin-bottom: 12px;
+}
+
+.notif {
   display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  min-width: 0;
-}
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-outline);
+  border-radius: var(--radius-md);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
 
-.notification-row__title {
-  font-weight: 700;
-  color: var(--mat-sys-on-surface, #1a1c1e);
-}
+  &--unread {
+    background: var(--c-ivory-dim);
+  }
 
-.notification-row__message {
-  font-size: 0.875rem;
-  color: var(--mat-sys-on-surface-variant, #616161);
-}
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
 
-.notification-row__date {
-  font-size: 0.75rem;
-  color: var(--mat-sys-on-surface-variant, #78829a);
-  margin-top: 0.125rem;
-}
+    .mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
 
-.notification-row__dot {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--brand-navy, #1b325e);
+  &__gap {
+    margin-top: 4px;
+  }
+
+  &__dot {
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    margin-top: 4px;
+    border-radius: 50%;
+    background: var(--brand-red);
+  }
 }

@@ -39,6 +39,12 @@ const WHATSAPP_CONFIRMATION_PHONE_E164 = '22665382337';
 
 type BeneficiarySource = 'SUPPLIER' | 'MANUAL';
 
+const BENEFICIARY_TYPE_LABELS_FOR_LIST: Record<string, string> = {
+  ALIPAY: 'Alipay',
+  WECHAT_PAY: 'WeChat Pay',
+  CHINESE_BANK_ACCOUNT: 'Compte bancaire chinois',
+};
+
 /**
  * Choix du beneficiaire pour un ordre : un fournisseur deja enregistre (le backend copie
  * ses coordonnees dans un snapshot immuable), ou une saisie ponctuelle. Une cle d'idempotence
@@ -50,6 +56,7 @@ type BeneficiarySource = 'SUPPLIER' | 'MANUAL';
   imports: [
     RouterLink,
     ReactiveFormsModule,
+    MoneyPipe,
     MatButtonModule,
     MatButtonToggleModule,
     MatFormFieldModule,
@@ -60,6 +67,7 @@ type BeneficiarySource = 'SUPPLIER' | 'MANUAL';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './order-create.page.html',
+  styleUrl: './order-create.page.scss',
 })
 export class OrderCreatePage implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -79,6 +87,8 @@ export class OrderCreatePage implements OnInit {
   /** null tant que non vérifié ; false = liquidité CNY actuellement insuffisante pour ce devis. */
   readonly liquiditySufficient = signal<boolean | null>(null);
   readonly quoteAmountXof = signal<string | null>(null);
+  readonly quoteAmountCny = signal<string | null>(null);
+  readonly typeLabels = BENEFICIARY_TYPE_LABELS_FOR_LIST;
 
   readonly purposeOptions = PURPOSE_OPTIONS;
 
@@ -135,7 +145,10 @@ export class OrderCreatePage implements OnInit {
     // un echec ici ne bloque jamais la suite du parcours, le montant reste affiche par
     // l'ecran de devis precedent.
     this.quoteService.get(quoteId).subscribe({
-      next: (response) => this.quoteAmountXof.set(response.data.amountXof),
+      next: (response) => {
+        this.quoteAmountXof.set(response.data.amountXof);
+        this.quoteAmountCny.set(response.data.amountCny);
+      },
       error: () => undefined,
     });
 
@@ -216,7 +229,7 @@ export class OrderCreatePage implements OnInit {
         // "differenciation marketing", Lot 3) : son detail (thermometre, celebration eventuelle)
         // prime, l'ordre restant accessible depuis l'historique comme d'habitude.
         const poolId = this.poolId();
-        this.router.navigate(poolId ? ['/pools', poolId] : ['/orders', order.id, 'payment']);
+        this.router.navigate(poolId ? ['/pay/pools', poolId] : ['/orders', order.id, 'payment']);
       },
       error: (error) => {
         this.loading.set(false);

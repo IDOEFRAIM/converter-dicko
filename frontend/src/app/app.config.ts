@@ -43,7 +43,10 @@ export const appConfig: ApplicationConfig = {
     // gere pas nativement (voir push-worker.js).
     provideServiceWorker('push-worker.js', {
       enabled: !isDevMode(),
-      registrationStrategy: 'registerWhenStable:30000',
+      // Enregistrement quasi immediat : l'application n'est JAMAIS "stable" (sondage des
+      // notifications toutes les 30 s), 'registerWhenStable:30000' retardait donc toujours le
+      // service worker de 30 s -- et avec lui la proposition d'installation de Chrome.
+      registrationStrategy: 'registerWithDelay:2000',
     }),
   ],
 };

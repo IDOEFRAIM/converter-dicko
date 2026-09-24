@@ -14,6 +14,7 @@ import { PURPOSE_LABELS } from '../../../core/models/common.model';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { CorridorComponent } from '../../../shared/components/corridor/corridor.component';
 import { MoneyPipe } from '../../../shared/pipes/money.pipe';
+import { TicketRow, TransferTicketComponent } from '../../../shared/components/transfer-ticket/transfer-ticket.component';
 import { openConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 const BENEFICIARY_TYPE_LABELS: Record<string, string> = {
@@ -32,7 +33,7 @@ const BENEFICIARY_TYPE_LABELS: Record<string, string> = {
     MatProgressSpinnerModule,
     StatusBadgeComponent,
     CorridorComponent,
-    MoneyPipe,
+    TransferTicketComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './order-detail.page.html',
@@ -50,6 +51,20 @@ export class OrderDetailPage implements OnInit {
   readonly loading = signal(true);
   readonly cancelling = signal(false);
   readonly downloadingReceipt = signal(false);
+  readonly downloadingProforma = signal(false);
+  private readonly money = new MoneyPipe();
+
+  /** Lignes du ticket de transfert (TransferTicket mobile). */
+  readonly ticketRows = computed<TicketRow[]>(() => {
+    const o = this.order();
+    return o
+      ? [
+          { label: 'Taux', value: `1 CNY = ${o.customerRate} XOF` },
+          { label: 'Frais', value: this.money.transform(o.feeXof, 'XOF') },
+          { label: 'Reference', value: o.reference, copyable: true },
+        ]
+      : [];
+  });
   readonly errorMessage = signal<string | null>(null);
 
   readonly purposeLabel = computed(() => {
@@ -126,6 +141,27 @@ export class OrderDetailPage implements OnInit {
       },
       error: (error) => {
         this.downloadingReceipt.set(false);
+        tab?.close();
+        this.notification.error(extractErrorMessage(error));
+      },
+    });
+  }
+
+  /** Facture proforma — meme mecanique d'onglet que le justificatif. */
+  downloadProforma(): void {
+    const order = this.order();
+    if (!order || this.downloadingProforma()) {
+      return;
+    }
+    const tab = openPendingTab();
+    this.downloadingProforma.set(true);
+    this.orderService.downloadProforma(order.id).subscribe({
+      next: (blob) => {
+        this.downloadingProforma.set(false);
+        resolveBlobTab(tab, blob);
+      },
+      error: (error) => {
+        this.downloadingProforma.set(false);
         tab?.close();
         this.notification.error(extractErrorMessage(error));
       },

@@ -118,19 +118,19 @@ describe('OrderDetailPage', () => {
 
   it('shows the receipt download action only once the order is COMPLETED', async () => {
     await createWith(baseOrder('COMPLETED'));
-    expect(fixture.nativeElement.textContent).toContain('Telecharger le justificatif');
+    expect(fixture.nativeElement.textContent).toContain('Telecharger le recu');
   });
 
   it('never shows the receipt download action before completion', async () => {
     await createWith(baseOrder('PROCESSING'));
-    expect(fixture.nativeElement.textContent).not.toContain('Telecharger le justificatif');
+    expect(fixture.nativeElement.textContent).not.toContain('Telecharger le recu');
   });
 
-  it('frames the receipt CTA in a dedicated "Justificatif" zone, distinct from the payment CTA', async () => {
+  it('frames the receipt CTA in a dedicated "Justificatif officiel" zone, distinct from the payment CTA', async () => {
     await createWith(baseOrder('COMPLETED'));
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('Justificatif');
-    expect(text).toContain('Votre transfert est termine.');
+    expect(text).toContain('Justificatif officiel');
+    expect(text).toContain('termine');
     expect(text).not.toContain('Payer maintenant');
   });
 

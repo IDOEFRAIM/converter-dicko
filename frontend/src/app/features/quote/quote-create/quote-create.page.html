@@ -1,47 +1,80 @@
-<app-page-header title="Payer un fournisseur">
-  @if (!poolId()) {
-    <a mat-icon-button routerLink="/pools" aria-label="Mes Ruees">
-      <mat-icon>groups</mat-icon>
-    </a>
+<div class="screen">
+  @if (!poolId) {
+    <ng-template appBarActions>
+      <a mat-icon-button routerLink="/pay/pools" aria-label="Mes Ruees" title="Mes Ruees">
+        <mat-icon fontSet="material-icons-outlined">groups</mat-icon>
+      </a>
+    </ng-template>
   }
-</app-page-header>
-<app-corridor [compact]="true" class="page-corridor" />
+  <div class="qc-top">
+    <app-corridor class="qc-corridor" />
+  </div>
 
-<mat-button-toggle-group
-  class="direction-toggle"
-  [value]="direction()"
-  (change)="setDirection($event.value)"
->
-  <mat-button-toggle value="SEND_XOF">J'envoie des XOF</mat-button-toggle>
-  <mat-button-toggle value="RECEIVE_CNY">Il recoit des CNY</mat-button-toggle>
-</mat-button-toggle-group>
-
-<p class="direction-hint">
-  @if (direction() === 'SEND_XOF') {
-    Indiquez le montant en XOF que vous souhaitez envoyer.
-  } @else {
-    Indiquez le montant en CNY que le beneficiaire doit recevoir.
-  }
-</p>
-
-@if (errorMessage()) {
-  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
-}
-
-<form [formGroup]="form" (ngSubmit)="submit()" class="form">
-  <mat-form-field appearance="outline" class="form__field amount-field">
-    <mat-label>Montant en {{ direction() === 'SEND_XOF' ? 'XOF' : 'CNY' }}</mat-label>
-    <input matInput type="number" min="1" [formControl]="amountControl" />
-    @if (amountControl.invalid && amountControl.touched) {
-      <mat-error>Saisissez un montant valide.</mat-error>
+  @if (quote(); as q) {
+    @if (q.poolRewardApplied) {
+      <div class="qc-reward">
+        <mat-icon>celebration</mat-icon>
+        <span>Remise Ruee appliquee</span>
+      </div>
     }
-  </mat-form-field>
+    <app-transfer-ticket [sendXof]="q.amountXof" [receiveCny]="q.amountCny" [receiveApprox]="true" [rows]="ticketRows()">
+      @if (isExpired()) {
+        <span class="qc-negative">Devis expire.</span>
+      } @else {
+        Valable jusqu'a {{ q.expiresAt | date: 'dd/MM/yyyy HH:mm' }}.
+      }
+    </app-transfer-ticket>
 
-  <button mat-flat-button type="submit" class="form__submit brand-button" [disabled]="loading()">
-    @if (loading()) {
-      <mat-spinner diameter="20" />
+    @if (errorMessage()) {
+      <p class="t-body qc-negative qc-gap-md">{{ errorMessage() }}</p>
+    }
+
+    @if (isExpired()) {
+      <button mat-flat-button type="button" class="qc-primary" (click)="reset()">Nouveau devis</button>
     } @else {
-      Obtenir un devis
+      <button mat-flat-button type="button" class="qc-primary" [disabled]="accepting()" (click)="continueToOrder()">
+        @if (accepting()) {
+          <mat-spinner diameter="20" />
+        } @else {
+          Continuer
+        }
+      </button>
     }
-  </button>
-</form>
+    <button mat-button type="button" class="qc-secondary" [disabled]="accepting()" (click)="reset()">Modifier</button>
+  } @else {
+    <div class="qc-label">
+      <span class="icon-badge qc-send-badge"><mat-icon fontSet="material-icons-outlined">send</mat-icon></span>
+      <span class="t-eyebrow">Vous envoyez</span>
+    </div>
+
+    <form (ngSubmit)="submit()">
+      <mat-form-field appearance="outline" class="form__field qc-amount">
+        <input
+          matInput
+          type="number"
+          inputmode="decimal"
+          min="1"
+          placeholder="0"
+          [formControl]="amountControl"
+          aria-label="Montant en XOF"
+        />
+        <span matTextSuffix class="qc-suffix">XOF</span>
+        @if (amountControl.invalid && amountControl.touched) {
+          <mat-error>Saisissez un montant valide.</mat-error>
+        }
+      </mat-form-field>
+
+      @if (errorMessage()) {
+        <p class="t-body qc-negative">{{ errorMessage() }}</p>
+      }
+
+      <button mat-flat-button type="submit" class="qc-primary" [disabled]="loading()">
+        @if (loading()) {
+          <mat-spinner diameter="20" />
+        } @else {
+          Continuer
+        }
+      </button>
+    </form>
+  }
+</div>

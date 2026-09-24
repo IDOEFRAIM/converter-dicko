@@ -48,6 +48,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         line-height: 1;
       }
       .corridor__line {
+        color: var(--accent, currentColor);
         flex: 1 1 auto;
         height: 2px;
         min-width: 1.5rem;

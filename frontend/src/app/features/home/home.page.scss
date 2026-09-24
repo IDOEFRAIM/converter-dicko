@@ -1,0 +1,188 @@
+.home-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+
+  &__greeting {
+    flex: 1 1 auto;
+  }
+
+  &__bell {
+    color: var(--c-ink-muted);
+  }
+}
+
+.home-block {
+  display: block;
+}
+
+.home-block--xl {
+  margin-top: 24px;
+}
+
+.home-block--xxl {
+  margin-top: 32px;
+}
+
+.home-gap-xs {
+  margin-top: 4px;
+}
+
+.home-inline-state {
+  padding: 8px 0;
+}
+
+.kyc-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 16px;
+  text-decoration: none;
+  color: inherit;
+
+  &__badge {
+    --badge-color: var(--brand-gold);
+    background: rgba(211, 175, 55, 0.14);
+  }
+}
+
+.quick-actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.quick-action {
+  width: 68px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+
+  &__disc {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+
+    .mat-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+    }
+
+    &--send {
+      background: var(--role-send-surface);
+      color: var(--role-send);
+    }
+
+    &--group {
+      background: var(--role-group-surface);
+      color: var(--role-group);
+    }
+
+    &--rate {
+      background: var(--role-rate-surface);
+      color: var(--role-rate);
+    }
+  }
+}
+
+.rate-hero {
+  padding: 16px;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  &__eyebrow {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  // FilledButton StadiumBorder, couleur du role "envoyer".
+  &__cta {
+    flex: 0 0 auto;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--role-send);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  &__value {
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+}
+
+.gains {
+  display: block;
+
+  &__strip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  &__chevron {
+    color: var(--c-ink-muted);
+
+    &--lacquer {
+      color: var(--c-on-lacquer-muted);
+    }
+  }
+
+  &__rank {
+    color: var(--c-keyline);
+  }
+
+  &__xp {
+    color: var(--c-on-lacquer);
+  }
+
+  &__next {
+    color: var(--c-on-lacquer-muted);
+  }
+}
+
+// RankSeal (simplifie) : sceau rond cercle d'or.
+.seal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1.5px solid var(--c-keyline);
+  background: var(--accent-gradient);
+  color: var(--accent-gradient-fg);
+  font-size: 18px;
+  font-weight: 800;
+
+  &--locked {
+    background: transparent;
+    color: var(--c-on-lacquer-muted);
+    border-color: var(--c-on-lacquer-muted);
+  }
+}
+
+.home-star {
+  color: var(--brand-gold);
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}

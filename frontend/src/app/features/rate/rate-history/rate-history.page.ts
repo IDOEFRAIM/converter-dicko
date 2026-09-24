@@ -1,3 +1,4 @@
+import { AppBarActionsDirective } from '../../../shared/directives/app-bar-actions.directive';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -7,8 +8,6 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RateHistoryService } from '../../../core/services/rate-history.service';
 import { extractErrorMessage } from '../../../core/services/api-error.util';
 import { PublicRateHistoryEntry } from '../../../core/models/rate-history.model';
-import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { CorridorComponent } from '../../../shared/components/corridor/corridor.component';
 
 const CHART_WIDTH = 320;
@@ -28,8 +27,7 @@ const CHART_HEIGHT = 90;
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    EmptyStateComponent,
-    PageHeaderComponent,
+    AppBarActionsDirective,
     CorridorComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,

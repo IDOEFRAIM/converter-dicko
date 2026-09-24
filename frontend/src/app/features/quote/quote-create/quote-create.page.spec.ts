@@ -55,15 +55,19 @@ describe('QuoteCreatePage', () => {
     req.flush({ data: { id: 'q2' }, message: 'ok' });
   });
 
-  it('navigates to the quote detail page using the id returned by the backend', () => {
+  it('shows the quote returned by the backend, then accepts it and moves to the beneficiary step', () => {
     const navigateSpy = vi.spyOn(router, 'navigate');
     fixture.componentInstance.setDirection('SEND_XOF');
     fixture.componentInstance.amountControl.setValue(100000);
 
     fixture.componentInstance.submit();
     httpMock.expectOne('/api/v1/quotes').flush({ data: { id: 'q1' }, message: 'ok' });
+    expect(fixture.componentInstance.quote()?.id).toBe('q1');
 
-    expect(navigateSpy).toHaveBeenCalledWith(['/quote', 'q1']);
+    fixture.componentInstance.continueToOrder();
+    httpMock.expectOne('/api/v1/quotes/q1/accept').flush({ data: { id: 'q1' }, message: 'ok' });
+
+    expect(navigateSpy).toHaveBeenCalledWith(['/order/new'], { queryParams: { quoteId: 'q1' } });
   });
 
   it('does not call the API with an invalid amount', () => {

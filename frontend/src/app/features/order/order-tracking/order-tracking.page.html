@@ -1,55 +1,83 @@
+<ng-template appBarActions>
+  <button mat-icon-button type="button" (click)="refresh()" [disabled]="refreshing()" aria-label="Actualiser" title="Actualiser">
+    <mat-icon>refresh</mat-icon>
+  </button>
+</ng-template>
+
+<!-- Copie de OrderTrackingPage + CorridorTimeline (mobile). -->
 @if (loading()) {
-  <div class="loading-row"><mat-spinner diameter="32" /></div>
+  <div class="m-loading"><mat-spinner diameter="32" /></div>
 } @else if (errorMessage() && !tracking()) {
-  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
-  <a routerLink="/history" mat-stroked-button>Retour a l'historique</a>
-} @else if (tracking(); as t) {
-  <app-page-header title="Suivi du transfert" subtitle="Progression de votre ordre">
-    <button mat-stroked-button (click)="refresh()" [disabled]="refreshing()">
-      <mat-icon>refresh</mat-icon>
-      Actualiser
-    </button>
-  </app-page-header>
-
-  <app-corridor [compact]="true" class="tracking-corridor" />
-
-  <div class="tracking-status panel">
-    <span>Statut actuel</span>
-    <app-status-badge [status]="t.currentStatus" />
+  <div class="m-empty">
+    <mat-icon>error_outline</mat-icon>
+    <p class="t-body-strong">{{ errorMessage() }}</p>
+    <button mat-button type="button" (click)="refresh()">Reessayer</button>
   </div>
-  @if (lastUpdatedAt(); as updatedAt) {
-    <p class="tracking-updated">Derniere mise a jour affichee : {{ updatedAt | date: 'dd/MM/yyyy HH:mm' }}</p>
-  }
+} @else if (tracking(); as t) {
+  <section class="surface-lacquer ct">
+    <p class="t-eyebrow ct__keyline">Le corridor</p>
+
+    <svg class="ct__map" viewBox="0 0 320 118" preserveAspectRatio="none" aria-hidden="true">
+      <path class="ct__rail" d="M0,69.9 C96,92 224,40 320,62.1" />
+      <path
+        class="ct__track"
+        [class.ct__track--negative]="hasNegative()"
+        d="M0,69.9 C96,92 224,40 320,62.1"
+        pathLength="1"
+        [attr.stroke-dasharray]="'1 1'"
+        [attr.stroke-dashoffset]="1 - (t.currentStatus === 'COMPLETED' ? 1 : stationX(t.timeline.length - 1, t.timeline.length))"
+      />
+    </svg>
+    <div class="ct__stations" aria-hidden="true">
+      @for (event of t.timeline; track event.code + event.occurredAt; let i = $index) {
+        <span
+          class="ct__dot"
+          [class.ct__dot--current]="isCurrent(event, i)"
+          [class.ct__dot--negative]="isNegative(event)"
+          [style.left.%]="stationX(i, t.timeline.length) * 100"
+          [style.top.px]="stationY(stationX(i, t.timeline.length))"
+        ></span>
+      }
+      <span class="ct__end ct__end--start">🇧🇫</span>
+      <span class="ct__end ct__end--stop">🇨🇳</span>
+    </div>
+
+    <div class="ct__divider"></div>
+
+    <ol class="ct__list">
+      @for (event of t.timeline; track event.code + event.occurredAt; let i = $index; let last = $last) {
+        <li
+          class="station"
+          [class.station--done]="!isNegative(event) && !isRefund(event) && !isCurrent(event, i)"
+          [class.station--current]="isCurrent(event, i) && !isNegative(event) && !isRefund(event)"
+          [class.station--negative]="isNegative(event)"
+          [class.station--refund]="isRefund(event) && !isNegative(event)"
+          [class.station--last]="last"
+        >
+          <span class="station__rail">
+            <span class="station__dot">
+              <mat-icon>{{ isNegative(event) ? 'priority_high' : isRefund(event) ? 'undo' : isCurrent(event, i) ? 'sync' : 'check' }}</mat-icon>
+            </span>
+            @if (!last) {
+              <span class="station__line" [class.station__line--negative]="isNegative(t.timeline[i + 1])"></span>
+            }
+          </span>
+          <span class="station__body">
+            @if (isRefund(event)) {
+              <span class="t-eyebrow station__refund">Remboursement</span>
+            }
+            <span class="t-body-strong station__label">{{ labelFor(event) }}</span>
+            <span class="station__time">{{ event.occurredAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+          </span>
+        </li>
+      }
+    </ol>
+  </section>
 
   @if (errorMessage()) {
-    <p class="form-notice form-notice--warn">{{ errorMessage() }}</p>
+    <p class="t-caption ct-warning">{{ errorMessage() }}</p>
   }
-
-  <ol class="tracking-timeline">
-    @for (event of t.timeline; track event.code + event.occurredAt; let i = $index) {
-      <li
-        class="tracking-timeline__item"
-        [class.tracking-timeline__item--negative]="isNegative(event)"
-        [class.tracking-timeline__item--current]="isCurrent(event, i)"
-        [class.tracking-timeline__item--refund]="isRefund(event)"
-      >
-        <span class="tracking-timeline__dot">
-          <mat-icon>
-            {{ isNegative(event) ? 'error' : isRefund(event) ? 'undo' : isCurrent(event, i) ? 'sync' : 'check' }}
-          </mat-icon>
-        </span>
-        <div class="tracking-timeline__body">
-          @if (isRefund(event)) {
-            <p class="tracking-timeline__eyebrow">Remboursement</p>
-          }
-          <p class="tracking-timeline__label">{{ labelFor(event) }}</p>
-          <p class="tracking-timeline__date">{{ event.occurredAt | date: 'dd/MM/yyyy HH:mm' }}</p>
-        </div>
-      </li>
-    }
-  </ol>
-
-  <div class="form__actions">
-    <a [routerLink]="['/orders', t.orderId]" mat-stroked-button>Voir le detail de l'ordre</a>
-  </div>
+  @if (lastUpdatedAt(); as updatedAt) {
+    <p class="t-caption ct-updated">Actualise {{ updatedAt | date: 'dd/MM/yyyy HH:mm' }}</p>
+  }
 }

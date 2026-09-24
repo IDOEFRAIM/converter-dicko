@@ -1,79 +1,77 @@
-@if (loading()) {
-  <div class="loading-row"><mat-spinner diameter="32" /></div>
-} @else if (errorMessage() && !supplier()) {
-  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
-  <a routerLink="/suppliers" mat-stroked-button>Retour aux fournisseurs</a>
-} @else if (supplier(); as s) {
-  <app-page-header [title]="s.displayName" [subtitle]="typeLabel()">
-    <button mat-icon-button (click)="toggleFavorite()" [disabled]="actionInProgress()"
-            [attr.aria-label]="s.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'">
-      <mat-icon [style.color]="'var(--brand-accent)'">{{ s.favorite ? 'star' : 'star_border' }}</mat-icon>
+<!-- Copie de SupplierDetailPage (mobile). Favori / Modifier sont dans la barre du haut. -->
+@if (supplier(); as s) {
+  <ng-template appBarActions>
+    <button mat-icon-button type="button" (click)="toggleFavorite()" [disabled]="actionInProgress()"
+            [attr.aria-label]="s.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+            [title]="s.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'">
+      <mat-icon [class.sd-star]="s.favorite">{{ s.favorite ? 'star' : 'star_border' }}</mat-icon>
     </button>
-  </app-page-header>
+    <button mat-icon-button type="button" (click)="edit()" aria-label="Modifier" title="Modifier">
+      <mat-icon fontSet="material-icons-outlined">edit</mat-icon>
+    </button>
+  </ng-template>
+}
 
+@if (loading()) {
+  <div class="m-loading"><mat-spinner diameter="32" /></div>
+} @else if (errorMessage() && !supplier()) {
+  <div class="m-empty">
+    <mat-icon>error_outline</mat-icon>
+    <p class="t-body-strong">{{ errorMessage() }}</p>
+    <a routerLink="/suppliers" mat-button>Retour aux fournisseurs</a>
+  </div>
+} @else if (supplier(); as s) {
   @if (s.status === 'INACTIVE') {
-    <p class="form-notice form-notice--warn">
-      Ce fournisseur est desactive. Reactivez-le en le modifiant pour l'utiliser a nouveau,
-      ou creez-en un nouveau.
-    </p>
+    <div class="sd-warn t-body">Fournisseur desactive. Modifiez-le pour le reactiver.</div>
   }
 
-  <mat-card class="page-card">
-    @if (requiresQrCode() && !s.qrCodeUploaded) {
-      <p class="form-notice form-notice--warn">
-        Code QR manquant : ce fournisseur ne peut pas encore etre utilise pour un nouveau paiement.
-        Modifiez-le pour en ajouter un.
-      </p>
-    }
-    <dl class="detail-list">
-      @if (requiresQrCode()) {
-        @if (s.qrCodeUploaded) {
-          <div>
-            <dt>Code QR</dt>
-            <dd class="qr-code-cell">
-              <mat-icon class="qr-code-cell__check">check_circle</mat-icon>
-              <span>{{ s.qrCodeFileName || 'Enregistre' }}</span>
-              <button mat-button (click)="viewQrCode()" [disabled]="openingQrCode()">
-                {{ openingQrCode() ? 'Ouverture...' : 'Voir' }}
-              </button>
-            </dd>
-          </div>
-        }
-        @if (s.accountNumber) {
-          <div><dt>Reference complementaire</dt><dd>{{ s.accountNumber }}</dd></div>
-        }
-      } @else if (s.accountNumber) {
-        <div><dt>Identifiant de compte</dt><dd>{{ s.accountNumber }}</dd></div>
-      }
-      @if (s.accountName) { <div><dt>Titulaire</dt><dd>{{ s.accountName }}</dd></div> }
-      <div><dt>Devise</dt><dd>{{ s.currency }}</dd></div>
-      @if (s.bankName) { <div><dt>Banque</dt><dd>{{ s.bankName }}</dd></div> }
-      @if (s.bankBranch) { <div><dt>Agence</dt><dd>{{ s.bankBranch }}</dd></div> }
-      @if (s.bankAddress) { <div><dt>Adresse banque</dt><dd>{{ s.bankAddress }}</dd></div> }
-      @if (s.swiftCode) { <div><dt>SWIFT</dt><dd>{{ s.swiftCode }}</dd></div> }
-      @if (purposeLabel()) { <div><dt>Motif par defaut</dt><dd>{{ purposeLabel() }}</dd></div> }
-      @if (s.legalName) { <div><dt>Raison sociale</dt><dd>{{ s.legalName }}</dd></div> }
-      @if (s.phone) { <div><dt>Telephone</dt><dd>{{ s.phone }}</dd></div> }
-      @if (s.email) { <div><dt>Email</dt><dd>{{ s.email }}</dd></div> }
-      @if (s.city || s.country) {
-        <div><dt>Localisation</dt><dd>{{ s.city }}@if (s.city && s.country) {, }{{ s.country }}</dd></div>
-      }
-      @if (s.notes) { <div><dt>Notes</dt><dd>{{ s.notes }}</dd></div> }
-      <div><dt>Ajoute le</dt><dd>{{ s.createdAt | date: 'dd/MM/yyyy' }}</dd></div>
-    </dl>
-  </mat-card>
+  <div class="sd-card">
+    <div class="sd-card__head">
+      <span class="t-eyebrow">{{ typeLabel() }}</span>
+      <app-status-badge [status]="s.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE'" />
+    </div>
 
-  <div class="form__actions">
-    <button mat-stroked-button (click)="edit()" [disabled]="actionInProgress()">
-      <mat-icon>edit</mat-icon> Modifier
-    </button>
-    @if (s.status === 'ACTIVE') {
-      <button mat-stroked-button color="warn" (click)="deactivate()" [disabled]="actionInProgress()">
-        Desactiver
-      </button>
-      <button mat-flat-button class="brand-button" (click)="payAgain()" [disabled]="actionInProgress()">
-        <mat-icon>send</mat-icon> Payer a nouveau
-      </button>
+    @if (requiresQrCode()) {
+      @if (s.qrCodeUploaded) {
+        <div class="sd-row sd-row--qr">
+          <div>
+            <p class="t-caption">CODE QR</p>
+            <p class="t-body-strong sd-qr"><mat-icon>check_circle</mat-icon>{{ s.qrCodeFileName || 'Enregistre' }}</p>
+          </div>
+          <button mat-button type="button" (click)="viewQrCode()" [disabled]="openingQrCode()">
+            {{ openingQrCode() ? 'Ouverture...' : 'Voir' }}
+          </button>
+        </div>
+      } @else {
+        <div class="sd-warn sd-warn--inline t-body">
+          Code QR manquant : ce fournisseur ne peut pas encore etre utilise pour un nouveau paiement. Modifiez-le pour en ajouter un.
+        </div>
+      }
+      @if (s.accountNumber) {
+        <div class="sd-row"><p class="t-caption">REFERENCE COMPLEMENTAIRE</p><p class="t-body-strong">{{ s.accountNumber }}</p></div>
+      }
+    } @else if (s.accountNumber) {
+      <div class="sd-row"><p class="t-caption">NUMERO DE COMPTE</p><p class="t-body-strong">{{ s.accountNumber }}</p></div>
     }
+    @if (s.accountName) { <div class="sd-row"><p class="t-caption">TITULAIRE</p><p class="t-body-strong">{{ s.accountName }}</p></div> }
+    @if (s.bankName) { <div class="sd-row"><p class="t-caption">BANQUE</p><p class="t-body-strong">{{ s.bankName }}</p></div> }
+    @if (s.bankBranch) { <div class="sd-row"><p class="t-caption">AGENCE</p><p class="t-body-strong">{{ s.bankBranch }}</p></div> }
+    @if (s.phone) { <div class="sd-row"><p class="t-caption">TELEPHONE</p><p class="t-body-strong">{{ s.phone }}</p></div> }
+    @if (s.email) { <div class="sd-row"><p class="t-caption">EMAIL</p><p class="t-body-strong">{{ s.email }}</p></div> }
+    @if (s.city || s.country) {
+      <div class="sd-row"><p class="t-caption">LOCALISATION</p><p class="t-body-strong">{{ s.city }}@if (s.city && s.country) {, }{{ s.country }}</p></div>
+    }
+    @if (purposeLabel()) { <div class="sd-row"><p class="t-caption">MOTIF PAR DEFAUT</p><p class="t-body-strong">{{ purposeLabel() }}</p></div> }
+    @if (s.notes) { <div class="sd-row"><p class="t-caption">NOTES</p><p class="t-body-strong">{{ s.notes }}</p></div> }
   </div>
+
+  @if (s.status === 'ACTIVE') {
+    <button mat-flat-button type="button" class="sd-full sd-pay" (click)="payAgain()" [disabled]="actionInProgress()">
+      <mat-icon fontSet="material-icons-outlined">send</mat-icon>
+      Payer a nouveau
+    </button>
+    <button mat-stroked-button type="button" class="sd-full sd-deactivate" (click)="deactivate()" [disabled]="actionInProgress()">
+      Desactiver
+    </button>
+  }
 }

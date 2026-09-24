@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -15,9 +14,6 @@ import { extractErrorMessage } from '../../../core/services/api-error.util';
 import { SupplierSummary } from '../../../core/models/supplier.model';
 import { PURPOSE_LABELS } from '../../../core/models/common.model';
 import { BENEFICIARY_TYPE_LABELS } from '../../../core/models/order.model';
-import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 
 type SupplierFilter = 'ALL' | 'FAVORITES' | 'INACTIVE';
 
@@ -31,7 +27,6 @@ type SupplierFilter = 'ALL' | 'FAVORITES' | 'INACTIVE';
   standalone: true,
   imports: [
     RouterLink,
-    DatePipe,
     ReactiveFormsModule,
     MatButtonModule,
     MatButtonToggleModule,
@@ -39,9 +34,6 @@ type SupplierFilter = 'ALL' | 'FAVORITES' | 'INACTIVE';
     MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
-    EmptyStateComponent,
-    PageHeaderComponent,
-    StatusBadgeComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './supplier-list.page.html',
