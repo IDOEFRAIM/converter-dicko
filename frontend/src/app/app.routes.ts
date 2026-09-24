@@ -75,6 +75,12 @@ export const routes: Routes = [
           import('./features/quote/quote-create/quote-create.page').then((m) => m.QuoteCreatePage),
       },
       { path: 'quote/new', pathMatch: 'full', redirectTo: 'pay' },
+      // Anciennes URL (premiere version PWA) -> ecrans calques sur le mobile.
+      { path: 'pools', pathMatch: 'full', redirectTo: 'pay/pools' },
+      { path: 'pools/new', pathMatch: 'full', redirectTo: 'pay/pools/new' },
+      { path: 'pools/join', pathMatch: 'full', redirectTo: 'pay/pools/join' },
+      { path: 'pools/:id', pathMatch: 'full', redirectTo: 'pay/pools/:id' },
+      { path: 'gains', pathMatch: 'full', redirectTo: 'home/gains' },
       {
         path: 'quote/:id',
         data: { tab: 'pay', title: 'Votre devis' },

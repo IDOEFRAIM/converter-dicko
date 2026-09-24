@@ -87,6 +87,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login",
                                 "/api/auth/google", "/api/auth/google/complete").permitAll()
                         .requestMatchers("/api/settings/public").permitAll()
+                        // La cle publique VAPID n'est pas un secret (RFC 8292) : le frontend doit pouvoir
+                        // savoir si le push est disponible et l'utiliser meme avant la connexion.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/push/config").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/health/**").permitAll()
                         // ---- Administration : role ADMIN uniquement ----

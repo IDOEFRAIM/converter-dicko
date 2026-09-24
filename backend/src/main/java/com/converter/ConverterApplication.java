@@ -6,6 +6,7 @@ import com.converter.config.props.CorsProperties;
 import com.converter.config.props.GoogleAuthProperties;
 import com.converter.config.props.JwtProperties;
 import com.converter.config.props.LoginProtectionProperties;
+import com.converter.config.props.PushProperties;
 import com.converter.config.props.StorageProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -23,7 +24,8 @@ import java.util.TimeZone;
         LoginProtectionProperties.class,
         AbuseProtectionProperties.class,
         StorageProperties.class,
-        GoogleAuthProperties.class
+        GoogleAuthProperties.class,
+        PushProperties.class
 })
 public class ConverterApplication {
 

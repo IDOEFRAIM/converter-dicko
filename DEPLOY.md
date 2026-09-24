@@ -61,6 +61,21 @@ l'activer :
    `CFBundleURLSchemes`, marqués `CHANGE_ME` dans le dépôt — impossible à
    vérifier sans Xcode/Mac, à faire sur une machine qui en dispose).
 
+**Notifications push (PWA) — facultatives.** Sans `VAPID_PUBLIC_KEY`/
+`VAPID_PRIVATE_KEY`, `GET /api/v1/push/config` répond `available: false` (le
+site masque le bouton "Activer les alertes") : ça ne bloque **jamais** le
+reste du déploiement. Pour l'activer :
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+Renseigner `VAPID_PUBLIC_KEY` et `VAPID_PRIVATE_KEY` dans `.env` (une seule
+paire par déploiement — ne jamais régénérer sans raison : les abonnements déjà
+enregistrés en base deviendraient invalides). `VAPID_PUBLIC_KEY` n'est pas un
+secret (envoyée telle quelle au navigateur) ; `VAPID_PRIVATE_KEY` signe les
+envois au nom de ce serveur et doit rester secrète.
+
 ---
 
 ## 3. Déploiement

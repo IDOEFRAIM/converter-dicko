@@ -12,6 +12,7 @@ type KnownStatus =
   | 'SUBMITTED'
   | 'CONFIRMED'
   | 'ACTIVE'
+  | 'SUCCEEDED'
   | 'ACCEPTED'
   | 'PENDING'
   | 'EXECUTED'
@@ -31,6 +32,7 @@ const LABELS: Record<string, string> = {
   SUBMITTED: 'Soumis',
   CONFIRMED: 'Confirme',
   ACTIVE: 'Actif',
+  SUCCEEDED: 'Reussie',
   ACCEPTED: 'Accepte',
   PENDING: 'En attente',
   EXECUTED: 'Execute',
@@ -38,7 +40,6 @@ const LABELS: Record<string, string> = {
   INACTIVE: 'Desactive',
   TRIGGERED: 'Declenchee',
   BLOCKED: 'Bloque',
-  SUCCEEDED: 'Reussie',
 };
 
 /** Categorie visuelle : determine la couleur, independamment du module d'origine du statut. */
@@ -54,6 +55,7 @@ const TONE: Record<string, 'neutral' | 'positive' | 'negative' | 'progress'> = {
   SUBMITTED: 'progress',
   CONFIRMED: 'positive',
   ACTIVE: 'neutral',
+  SUCCEEDED: 'positive',
   ACCEPTED: 'progress',
   STARTED: 'progress',
   PENDING: 'neutral',
@@ -61,7 +63,6 @@ const TONE: Record<string, 'neutral' | 'positive' | 'negative' | 'progress'> = {
   INACTIVE: 'neutral',
   TRIGGERED: 'positive',
   BLOCKED: 'negative',
-  SUCCEEDED: 'positive',
 };
 
 /** Pastille de statut reutilisable pour Quote/Order/Payment/Settlement. */

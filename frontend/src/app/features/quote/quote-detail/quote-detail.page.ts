@@ -44,8 +44,10 @@ export class QuoteDetailPage implements OnInit {
   readonly loading = signal(true);
   readonly actionInProgress = signal(false);
   readonly errorMessage = signal<string | null>(null);
+  private poolId: string | null = null;
 
   ngOnInit(): void {
+    this.poolId = this.route.snapshot.queryParamMap.get('poolId');
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
       this.errorMessage.set('Devis introuvable.');
@@ -79,7 +81,11 @@ export class QuoteDetailPage implements OnInit {
       next: (response) => {
         this.actionInProgress.set(false);
         this.notification.success('Devis accepte.');
-        this.router.navigate(['/order/new'], { queryParams: { quoteId: response.data.id } });
+        const queryParams: Record<string, string> = { quoteId: response.data.id };
+        if (this.poolId) {
+          queryParams['poolId'] = this.poolId;
+        }
+        this.router.navigate(['/order/new'], { queryParams });
       },
       error: (error) => {
         this.actionInProgress.set(false);

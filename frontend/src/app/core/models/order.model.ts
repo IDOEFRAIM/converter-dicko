@@ -108,7 +108,8 @@ export interface CreateOrderRequest {
   supplierId?: string | null;
   purpose?: Purpose | null;
   purposeDetails?: string | null;
-  /** Contribution a une Ruee collective (parcours "Payer maintenant" d'une Ruee). */
+  /** Ruee collective a laquelle cet ordre contribue, optionnelle — le client doit deja l'avoir
+   * rejointe (voir PoolService.join). */
   poolId?: string | null;
 }
 

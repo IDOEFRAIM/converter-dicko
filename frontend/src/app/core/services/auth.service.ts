@@ -78,16 +78,6 @@ export class AuthService {
       .pipe(tap((response) => this.currentUserSignal.set(response.data)));
   }
 
-  /**
-   * Suppression definitive du compte (exigence stores / RGPD, meme parcours que l'app).
-   * `currentPassword` est obligatoire pour un compte telephone + mot de passe.
-   */
-  deleteAccount(currentPassword: string | null): Observable<ApiResponse<void>> {
-    return this.http
-      .delete<ApiResponse<void>>(`${this.baseUrl}/me`, { body: { currentPassword } })
-      .pipe(tap(() => this.logout()));
-  }
-
   hasToken(): boolean {
     return this.tokenStorage.getToken() !== null;
   }
@@ -99,5 +89,14 @@ export class AuthService {
   logout(): void {
     this.tokenStorage.clear();
     this.currentUserSignal.set(null);
+  }
+
+  /** {@code currentPassword} obligatoire sauf pour un compte cree via Google (voir CurrentUser.hasPassword). */
+  deleteAccount(currentPassword?: string | null): Observable<ApiResponse<void>> {
+    return this.http
+      .delete<ApiResponse<void>>(`${this.baseUrl}/me`, {
+        body: currentPassword ? { currentPassword } : {},
+      })
+      .pipe(tap(() => this.logout()));
   }
 }

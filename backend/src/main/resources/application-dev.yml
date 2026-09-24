@@ -36,6 +36,13 @@ app:
     # demarrage et affiche UNE SEULE FOIS dans les logs.
     password: ${ADMIN_PASSWORD:}
 
+  push:
+    # Paire de cles VAPID de DEVELOPPEMENT UNIQUEMENT, generee localement (`npx web-push
+    # generate-vapid-keys`) -- publique par construction (voir application.yml). Le profil `prod`
+    # n'en herite pas : VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY doivent y etre fournies explicitement.
+    public-key: ${VAPID_PUBLIC_KEY:BJ_3g-6BszaDsuauqEKgcY3kXEf34L-w69BrgiJOJM5mAPGTlha3HqIryrHM9AvFSyFljjotQxvImZaTdHXMLsM}
+    private-key: ${VAPID_PRIVATE_KEY:VuVej63Vl7P1D1CLIlll3-3jn-7vv3iZjXZklpusma4}
+
 logging:
   level:
     com.converter: DEBUG
