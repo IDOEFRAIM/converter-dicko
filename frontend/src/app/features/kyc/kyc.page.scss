@@ -1,0 +1,162 @@
+.page-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.page-subtitle {
+  margin: 0 0 1.5rem;
+  color: var(--mat-sys-on-surface-variant, #616161);
+  font-size: 0.875rem;
+}
+
+.kyc-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.kyc-status--approved {
+  background: var(--brand-gradient);
+  color: #fff;
+
+  mat-icon {
+    color: #fff;
+  }
+}
+
+.kyc-status__title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kyc-status__text {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+.kyc-rejection-reason {
+  margin: 0.25rem 0 0;
+}
+
+.section-title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  margin: 1.5rem 0 0.75rem;
+  color: var(--brand-navy, #1b325e);
+}
+
+.doc-type-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.doc-type-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--mat-sys-outline-variant, #e6e9f0);
+  background: var(--mat-sys-surface-container-low, #fff);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  mat-icon {
+    color: var(--mat-sys-on-surface-variant, #9aa3b5);
+    flex-shrink: 0;
+  }
+}
+
+.doc-type-option--selected {
+  border-color: var(--brand-navy, #1b325e);
+  border-width: 1.6px;
+
+  mat-icon {
+    color: var(--brand-navy, #1b325e);
+  }
+}
+
+.capture-tile {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--mat-sys-outline-variant, #e6e9f0);
+  margin-bottom: 1rem;
+  cursor: pointer;
+
+  input[type='file'] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+  }
+}
+
+.capture-tile--done {
+  border-color: #1b5e20;
+}
+
+.capture-tile__thumb {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--mat-sys-surface-container, #f4f1e9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  mat-icon {
+    color: var(--mat-sys-on-surface-variant, #9aa3b5);
+  }
+}
+
+.capture-tile__text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  strong {
+    font-size: 0.9375rem;
+  }
+
+  small {
+    color: var(--mat-sys-on-surface-variant, #757575);
+    font-size: 0.8125rem;
+  }
+}
+
+.form__submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.kyc-disclaimer {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant, #757575);
+  text-align: center;
+}

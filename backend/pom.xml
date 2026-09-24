@@ -50,6 +50,11 @@
              (channelBinding=require n'est positionne nulle part) mais correctif
              mineur sans risque de rupture — audit de fermeture 2026-09. -->
         <postgresql.version>42.7.13</postgresql.version>
+        <!-- Notifications push web (PWA, mission "blocages Apple/Meta" oct. 2026) : implemente le
+             protocole Web Push (RFC 8291/8292, chiffrement des messages + signature VAPID) —
+             bibliotheque de reference pour la JVM, pas de reimplementation maison d'un protocole
+             cryptographique. -->
+        <web-push.version>5.1.2</web-push.version>
     </properties>
 
     <dependencies>
@@ -109,6 +114,25 @@
             <groupId>com.google.api-client</groupId>
             <artifactId>google-api-client</artifactId>
             <version>${google-api-client.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>nl.martijndwars</groupId>
+            <artifactId>web-push</artifactId>
+            <version>${web-push.version}</version>
+        </dependency>
+        <!-- web-push declare bcprov-jdk15on en `optional` (jamais transitif) : fournisseur JCE
+             requis pour le chiffrement des messages push (ECDH + AES-GCM, RFC 8291). -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>1.70</version>
+        </dependency>
+        <!-- web-push declare jose4j en scope `runtime` alors que son API publique (PushService#send)
+             expose JoseException dans sa signature : nécessaire en scope `compile` cote consommateur. -->
+        <dependency>
+            <groupId>org.bitbucket.b_c</groupId>
+            <artifactId>jose4j</artifactId>
+            <version>0.7.9</version>
         </dependency>
 
         <!-- ====================== Cache en memoire ===================== -->

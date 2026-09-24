@@ -2,11 +2,14 @@ import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal 
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { AuthService } from '../../core/services/auth.service';
 import { InboxNotificationService } from '../../core/services/inbox-notification.service';
+import { NotificationService } from '../../core/services/notification.service';
+import { openDeleteAccountDialog } from '../../shared/components/delete-account-dialog/delete-account-dialog.component';
 
 const UNREAD_POLL_INTERVAL_MS = 30_000;
 
@@ -31,6 +34,8 @@ export class ClientLayoutComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly notificationService = inject(InboxNotificationService);
+  private readonly notification = inject(NotificationService);
+  private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly currentUser = this.auth.currentUser;
@@ -52,5 +57,17 @@ export class ClientLayoutComponent implements OnInit {
   logout(): void {
     this.auth.logout();
     this.router.navigate(['/login']);
+  }
+
+  deleteAccount(): void {
+    const user = this.currentUser();
+    if (!user) return;
+    openDeleteAccountDialog(this.dialog, { requiresPassword: user.hasPassword }).subscribe((deleted) => {
+      if (!deleted) return;
+      // AuthService.deleteAccount() a deja purge la session (voir son tap()) -- il reste
+      // seulement a rediriger, meme principe que logout() ci-dessus.
+      this.router.navigate(['/login']);
+      this.notification.success('Compte supprime.');
+    });
   }
 }

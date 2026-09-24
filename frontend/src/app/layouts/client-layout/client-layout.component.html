@@ -12,7 +12,10 @@
     <a mat-menu-item routerLink="/rate-alerts"><mat-icon>notifications_active</mat-icon><span>Alertes de taux</span></a>
     <a mat-menu-item routerLink="/wallet"><mat-icon>account_balance_wallet</mat-icon><span>Portefeuille</span></a>
     <a mat-menu-item routerLink="/preferred-rate"><mat-icon>tune</mat-icon><span>Taux preferentiel</span></a>
+    <a mat-menu-item routerLink="/gains"><mat-icon>emoji_events</mat-icon><span>Mes gains</span></a>
+    <a mat-menu-item routerLink="/pools"><mat-icon>groups</mat-icon><span>Mes Ruees</span></a>
     <a mat-menu-item routerLink="/business"><mat-icon>business_center</mat-icon><span>Espace pro</span></a>
+    <a mat-menu-item routerLink="/kyc"><mat-icon>verified_user</mat-icon><span>Verification d'identite</span></a>
     <a mat-menu-item routerLink="/support"><mat-icon>forum</mat-icon><span>Messagerie / Reclamation</span></a>
   </mat-menu>
   <button mat-icon-button routerLink="/notifications" aria-label="Notifications" class="toolbar__avatar">
@@ -32,6 +35,10 @@
     <button mat-menu-item (click)="logout()">
       <mat-icon>logout</mat-icon>
       <span>Deconnexion</span>
+    </button>
+    <button mat-menu-item (click)="deleteAccount()" class="user-menu__delete">
+      <mat-icon color="warn">delete_outline</mat-icon>
+      <span>Supprimer mon compte</span>
     </button>
   </mat-menu>
 </mat-toolbar>

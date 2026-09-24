@@ -70,6 +70,9 @@ export class OrderCreatePage implements OnInit {
   private readonly dialog = inject(MatDialog);
 
   readonly quoteId = signal<string | null>(null);
+  /** Non nul quand cet ordre contribue a une Ruee collective (mission "differenciation
+   * marketing", Lot 3) — voir quote-create.page.ts / quote-detail.page.ts. */
+  readonly poolId = signal<string | null>(null);
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly suppliers = signal<SupplierSummary[]>([]);
@@ -119,6 +122,7 @@ export class OrderCreatePage implements OnInit {
       return;
     }
     this.quoteId.set(quoteId);
+    this.poolId.set(this.route.snapshot.queryParamMap.get('poolId'));
 
     // Vérifie la faisabilité AVANT que l'utilisateur ne saisisse le bénéficiaire :
     // le devis est-il utilisable et la liquidité CNY couvre-t-elle son montant ?
@@ -173,8 +177,9 @@ export class OrderCreatePage implements OnInit {
     const purposeDetails = v.purposeDetails?.trim() || null;
     const note = v.note?.trim() || null;
 
+    const poolId = this.poolId();
     const request: CreateOrderRequest = this.useSupplier
-      ? { quoteId, beneficiary: null, supplierId: v.supplierId || null, purpose, purposeDetails, note }
+      ? { quoteId, beneficiary: null, supplierId: v.supplierId || null, purpose, purposeDetails, note, poolId }
       : {
           quoteId,
           beneficiary: {
@@ -187,6 +192,7 @@ export class OrderCreatePage implements OnInit {
           purpose,
           purposeDetails,
           note,
+          poolId,
         };
 
     // Meme requete rejouee apres un echec => meme cle ; requete modifiee => nouvelle cle.
@@ -205,8 +211,12 @@ export class OrderCreatePage implements OnInit {
         // Retour beta-testeur sept. 2026 : "il est oblige de tourner et reflechir" -- un ordre
         // vient toujours de naitre AWAITING_PAYMENT (voir OrderService.create backend), l'etape
         // suivante est TOUJOURS payer. On y va donc directement plutot que de faire atterrir sur
-        // le detail de l'ordre, ou l'utilisateur devait chercher lui-meme comment payer.
-        this.router.navigate(['/orders', order.id, 'payment']);
+        // le detail de l'ordre, ou l'utilisateur devait chercher lui-meme comment payer. Une
+        // contribution a une Ruee collective reste une exception deliberee (mission
+        // "differenciation marketing", Lot 3) : son detail (thermometre, celebration eventuelle)
+        // prime, l'ordre restant accessible depuis l'historique comme d'habitude.
+        const poolId = this.poolId();
+        this.router.navigate(poolId ? ['/pools', poolId] : ['/orders', order.id, 'payment']);
       },
       error: (error) => {
         this.loading.set(false);

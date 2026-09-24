@@ -1,0 +1,118 @@
+<h1 class="page-title">Verification d'identite</h1>
+<p class="page-subtitle">Trois photos, un envoi, un statut.</p>
+
+@if (errorMessage()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+}
+
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else {
+  @if (submission()?.status === 'APPROVED') {
+    <div class="panel kyc-status kyc-status--approved">
+      <mat-icon>verified</mat-icon>
+      <div>
+        <p class="kyc-status__title">Identite verifiee</p>
+        <p class="kyc-status__text">Aucune limite de montant.</p>
+      </div>
+    </div>
+  }
+
+  @if (submission()?.status === 'PENDING') {
+    <div class="panel kyc-status">
+      <mat-icon>hourglass_top</mat-icon>
+      <div>
+        <p class="kyc-status__title">Dossier en cours d'examen</p>
+        <p class="kyc-status__text">Soumis le {{ submission()!.submittedAt | date: 'dd/MM/yyyy HH:mm' }}</p>
+        <p class="kyc-status__text">Reponse sous 24 a 48 h. Rien d'autre a faire.</p>
+      </div>
+    </div>
+  }
+
+  @if (showForm()) {
+    @if (submission()?.status === 'REJECTED') {
+      <div class="form-notice form-notice--warn">
+        <strong>Dossier a corriger.</strong>
+        @if (submission()!.rejectionReason) {
+          <p class="kyc-rejection-reason">{{ submission()!.rejectionReason }}</p>
+        }
+        <p class="kyc-rejection-reason">Reprenez les photos et renvoyez.</p>
+      </div>
+    }
+
+    <p class="section-title">Votre piece</p>
+    <div class="doc-type-list">
+      @for (type of documentTypes; track type) {
+        <button
+          type="button"
+          class="doc-type-option"
+          [class.doc-type-option--selected]="documentType() === type"
+          (click)="selectDocumentType(type)"
+        >
+          <mat-icon>{{ documentType() === type ? 'radio_button_checked' : 'radio_button_unchecked' }}</mat-icon>
+          <span>{{ documentLabels[type] }}</span>
+        </button>
+      }
+    </div>
+
+    <label class="capture-tile" [class.capture-tile--done]="frontPreview() !== null">
+      <input type="file" accept="image/*" capture="environment" (change)="onFileSelected('front', $event)" />
+      <span class="capture-tile__thumb">
+        @if (frontPreview(); as preview) {
+          <img [src]="preview" alt="" />
+        } @else {
+          <mat-icon>photo_camera</mat-icon>
+        }
+      </span>
+      <span class="capture-tile__text">
+        <strong>Recto de la piece</strong>
+        <small>Lisible, sans reflet</small>
+      </span>
+      <mat-icon>{{ frontPreview() !== null ? 'check_circle' : 'chevron_right' }}</mat-icon>
+    </label>
+
+    @if (needsBack()) {
+      <label class="capture-tile" [class.capture-tile--done]="backPreview() !== null">
+        <input type="file" accept="image/*" capture="environment" (change)="onFileSelected('back', $event)" />
+        <span class="capture-tile__thumb">
+          @if (backPreview(); as preview) {
+            <img [src]="preview" alt="" />
+          } @else {
+            <mat-icon>photo_camera</mat-icon>
+          }
+        </span>
+        <span class="capture-tile__text">
+          <strong>Verso de la piece</strong>
+          <small>Lisible, sans reflet</small>
+        </span>
+        <mat-icon>{{ backPreview() !== null ? 'check_circle' : 'chevron_right' }}</mat-icon>
+      </label>
+    }
+
+    <label class="capture-tile" [class.capture-tile--done]="selfiePreview() !== null">
+      <input type="file" accept="image/*" capture="user" (change)="onFileSelected('selfie', $event)" />
+      <span class="capture-tile__thumb">
+        @if (selfiePreview(); as preview) {
+          <img [src]="preview" alt="" />
+        } @else {
+          <mat-icon>photo_camera</mat-icon>
+        }
+      </span>
+      <span class="capture-tile__text">
+        <strong>Selfie</strong>
+        <small>Visage bien visible</small>
+      </span>
+      <mat-icon>{{ selfiePreview() !== null ? 'check_circle' : 'chevron_right' }}</mat-icon>
+    </label>
+
+    <button mat-flat-button class="brand-button form__submit" type="button" [disabled]="!canSubmit()" (click)="submit()">
+      @if (submitting()) {
+        <mat-spinner diameter="20" />
+        <span>Envoi en cours...</span>
+      } @else {
+        Envoyer le dossier
+      }
+    </button>
+    <p class="kyc-disclaimer">Transmission securisee. Sert uniquement a verifier votre identite.</p>
+  }
+}

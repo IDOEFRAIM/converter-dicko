@@ -1,0 +1,69 @@
+<app-page-header title="Mes Ruees">
+  <a mat-icon-button routerLink="/pools/join" aria-label="Rejoindre avec un code">
+    <mat-icon>qr_code</mat-icon>
+  </a>
+</app-page-header>
+
+<div class="panel pool-explainer">
+  <mat-icon>bolt</mat-icon>
+  <p>
+    Groupez vos transferts avec d'autres : objectif atteint a temps = reduction pour chacun sur
+    son prochain transfert.
+  </p>
+</div>
+
+<a mat-flat-button routerLink="/pools/new" class="brand-button pool-launch">
+  <mat-icon>bolt</mat-icon>
+  Lancer une Ruee
+</a>
+
+@if (errorMessage()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+}
+
+@if (loading()) {
+  <div class="loading-row"><mat-spinner diameter="32" /></div>
+} @else if (pools().length === 0) {
+  <app-empty-state title="Aucune Ruee" description="Lancez-en une ou rejoignez-en une." />
+} @else {
+  @if (active().length > 0) {
+    <p class="section-title">En cours</p>
+    @for (pool of active(); track pool.id) {
+      <a [routerLink]="['/pools', pool.id]" class="page-card pool-tile">
+        <div class="pool-tile__header">
+          <div>
+            <p class="pool-tile__code">Code {{ pool.code }}</p>
+            <p class="pool-tile__meta">
+              {{ pool.currentAmountXof | money: 'XOF' }} / {{ pool.targetAmountXof | money: 'XOF' }}
+              · {{ pool.participantCount }} participant(s)
+            </p>
+          </div>
+          <app-status-badge [status]="pool.status" />
+        </div>
+        <div class="pool-tile__progress">
+          <div class="pool-tile__progress-fill" [style.width.%]="progress(pool) * 100"></div>
+        </div>
+      </a>
+    }
+  }
+  @if (closed().length > 0) {
+    <p class="section-title">Terminees</p>
+    @for (pool of closed(); track pool.id) {
+      <a [routerLink]="['/pools', pool.id]" class="page-card pool-tile">
+        <div class="pool-tile__header">
+          <div>
+            <p class="pool-tile__code">Code {{ pool.code }}</p>
+            <p class="pool-tile__meta">
+              {{ pool.currentAmountXof | money: 'XOF' }} / {{ pool.targetAmountXof | money: 'XOF' }}
+              · {{ pool.participantCount }} participant(s)
+            </p>
+          </div>
+          <app-status-badge [status]="pool.status" />
+        </div>
+        <div class="pool-tile__progress">
+          <div class="pool-tile__progress-fill" [style.width.%]="progress(pool) * 100"></div>
+        </div>
+      </a>
+    }
+  }
+}

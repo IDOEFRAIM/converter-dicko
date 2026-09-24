@@ -108,6 +108,9 @@ export interface CreateOrderRequest {
   supplierId?: string | null;
   purpose?: Purpose | null;
   purposeDetails?: string | null;
+  /** Ruee collective a laquelle cet ordre contribue, optionnelle — le client doit deja l'avoir
+   * rejointe (voir PoolService.join). */
+  poolId?: string | null;
 }
 
 export interface CancelOrderRequest {

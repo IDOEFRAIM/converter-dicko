@@ -1,4 +1,10 @@
-<h1 class="page-title">Payer un fournisseur</h1>
+<app-page-header title="Payer un fournisseur">
+  @if (!poolId()) {
+    <a mat-icon-button routerLink="/pools" aria-label="Mes Ruees">
+      <mat-icon>groups</mat-icon>
+    </a>
+  }
+</app-page-header>
 <app-corridor [compact]="true" class="page-corridor" />
 
 <mat-button-toggle-group

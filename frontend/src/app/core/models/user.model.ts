@@ -10,6 +10,9 @@ export interface CurrentUser {
   roles: string[];
   createdAt: string;
   lastLoginAt: string | null;
+  /** Faux pour un compte cree via Google Sign-In (jamais de mot de passe) — pilote l'ecran de
+   * suppression de compte : demander une re-confirmation par mot de passe uniquement si vrai. */
+  hasPassword: boolean;
 }
 
 export interface AuthResponse {

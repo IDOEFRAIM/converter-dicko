@@ -73,4 +73,13 @@ export class AuthService {
     this.tokenStorage.clear();
     this.currentUserSignal.set(null);
   }
+
+  /** {@code currentPassword} obligatoire sauf pour un compte cree via Google (voir CurrentUser.hasPassword). */
+  deleteAccount(currentPassword?: string | null): Observable<ApiResponse<void>> {
+    return this.http
+      .delete<ApiResponse<void>>(`${this.baseUrl}/me`, {
+        body: currentPassword ? { currentPassword } : {},
+      })
+      .pipe(tap(() => this.logout()));
+  }
 }

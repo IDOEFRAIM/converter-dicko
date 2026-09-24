@@ -2,10 +2,12 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   ApplicationConfig,
   inject,
+  isDevMode,
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { provideServiceWorker } from '@angular/service-worker';
 import { provideRouter } from '@angular/router';
 import { catchError, of } from 'rxjs';
 import { routes } from './app.routes';
@@ -30,6 +32,18 @@ export const appConfig: ApplicationConfig = {
         return of(null);
       }
       return authService.restoreSession().pipe(catchError(() => of(null)));
+    }),
+    // PWA (mission "blocages Apple/Meta" oct. 2026) : jamais actif en dev (isDevMode), et
+    // jamais avant que l'app soit stable -- un enregistrement immediat entrerait en concurrence
+    // avec le chargement initial. Aucun `dataGroups` dans ngsw-config.json : les reponses de
+    // l'API (donnees financieres) ne sont JAMAIS mises en cache par le service worker, seule la
+    // coquille applicative (JS/CSS/icones) l'est -- une donnee perimee ne doit jamais paraitre
+    // fraiche sur cette application. Fichier `push-worker.js` (pas `ngsw-worker.js` directement) :
+    // il importe ngsw-worker.js ET ajoute la reception des notifications Web Push, qu'Angular ne
+    // gere pas nativement (voir push-worker.js).
+    provideServiceWorker('push-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000',
     }),
   ],
 };

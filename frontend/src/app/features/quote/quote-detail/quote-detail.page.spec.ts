@@ -29,7 +29,10 @@ describe('QuoteDetailPage', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'q1' } } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { paramMap: { get: () => 'q1' }, queryParamMap: { get: () => null } } },
+        },
       ],
     }).compileComponents();
 

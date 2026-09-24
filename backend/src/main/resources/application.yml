@@ -119,6 +119,16 @@ app:
     # Google Sign-In cote mobile (meme Client ID des deux cotes).
     client-id: ${GOOGLE_OAUTH_CLIENT_ID:}
 
+  push:
+    # Facultatif : sans valeur, GET /api/v1/push/config repond available=false et le frontend
+    # masque toute UI d'activation, au lieu d'empecher le service de demarrer -- voir
+    # PushProperties/PushNotificationSender. Paire de cles VAPID (RFC 8292), generee une seule
+    # fois par deploiement (ex. `npx web-push generate-vapid-keys`) : publicKey est envoyee telle
+    # quelle au navigateur, jamais un secret ; privateKey signe les envois au nom de ce serveur.
+    public-key: ${VAPID_PUBLIC_KEY:}
+    private-key: ${VAPID_PRIVATE_KEY:}
+    subject: ${VAPID_SUBJECT:mailto:support@yuanpay.space}
+
   login-protection:
     max-attempts: ${LOGIN_MAX_ATTEMPTS:5}
     lock-duration-minutes: ${LOGIN_LOCK_MINUTES:15}

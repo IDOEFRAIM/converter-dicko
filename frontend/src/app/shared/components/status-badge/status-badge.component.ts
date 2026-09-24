@@ -12,6 +12,7 @@ type KnownStatus =
   | 'SUBMITTED'
   | 'CONFIRMED'
   | 'ACTIVE'
+  | 'SUCCEEDED'
   | 'ACCEPTED'
   | 'PENDING'
   | 'EXECUTED'
@@ -31,6 +32,7 @@ const LABELS: Record<string, string> = {
   SUBMITTED: 'Soumis',
   CONFIRMED: 'Confirme',
   ACTIVE: 'Actif',
+  SUCCEEDED: 'Reussie',
   ACCEPTED: 'Accepte',
   PENDING: 'En attente',
   EXECUTED: 'Execute',
@@ -53,6 +55,7 @@ const TONE: Record<string, 'neutral' | 'positive' | 'negative' | 'progress'> = {
   SUBMITTED: 'progress',
   CONFIRMED: 'positive',
   ACTIVE: 'neutral',
+  SUCCEEDED: 'positive',
   ACCEPTED: 'progress',
   STARTED: 'progress',
   PENDING: 'neutral',

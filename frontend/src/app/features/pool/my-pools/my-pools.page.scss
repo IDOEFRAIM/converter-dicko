@@ -1,0 +1,72 @@
+.pool-explainer {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.875rem;
+  color: var(--mat-sys-on-surface-variant, #616161);
+
+  mat-icon {
+    color: var(--brand-navy, #1b325e);
+    flex-shrink: 0;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.pool-launch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.section-title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  margin: 1.5rem 0 0.75rem;
+  color: var(--brand-navy, #1b325e);
+}
+
+.pool-tile {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.pool-tile__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pool-tile__code {
+  margin: 0;
+  font-weight: 700;
+}
+
+.pool-tile__meta {
+  margin: 0.125rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant, #616161);
+}
+
+.pool-tile__progress {
+  margin-top: 0.75rem;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--mat-sys-outline-variant, #e6e9f0);
+  overflow: hidden;
+}
+
+.pool-tile__progress-fill {
+  height: 100%;
+  background: var(--brand-navy, #1b325e);
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}

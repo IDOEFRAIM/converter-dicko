@@ -7,6 +7,7 @@ import com.converter.notification.domain.Notification;
 import com.converter.notification.domain.NotificationType;
 import com.converter.notification.dto.NotificationResponse;
 import com.converter.notification.repository.NotificationRepository;
+import com.converter.push.service.PushNotificationSender;
 import com.converter.security.OwnershipService;
 import com.converter.user.domain.ExperienceProfile;
 import com.converter.user.repository.UserRepository;
@@ -21,9 +22,11 @@ import java.time.Clock;
 import java.util.UUID;
 
 /**
- * Point d'entree unique de creation et de lecture des notifications
- * internes. MVP : canal {@code IN_APP} uniquement, persistees avant
- * toute consultation -- aucun envoi SMS/WhatsApp/email/push externe.
+ * Point d'entree unique de creation et de lecture des notifications internes. Persistees avant
+ * toute consultation (canal {@code IN_APP}) ; un envoi Web Push (PWA, mission "blocages Apple/
+ * Meta" oct. 2026) est tente en best-effort en plus -- voir {@link PushNotificationSender}, qui
+ * n'est lui-meme actif que si des cles VAPID sont configurees sur ce serveur. Aucun SMS/WhatsApp/
+ * email n'est integre.
  */
 @Service
 public class NotificationService {
@@ -33,15 +36,18 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final OwnershipService ownershipService;
     private final UserRepository userRepository;
+    private final PushNotificationSender pushNotificationSender;
     private final Clock clock;
 
     public NotificationService(NotificationRepository notificationRepository,
                                OwnershipService ownershipService,
                                UserRepository userRepository,
+                               PushNotificationSender pushNotificationSender,
                                Clock clock) {
         this.notificationRepository = notificationRepository;
         this.ownershipService = ownershipService;
         this.userRepository = userRepository;
+        this.pushNotificationSender = pushNotificationSender;
         this.clock = clock;
     }
 
@@ -70,7 +76,9 @@ public class NotificationService {
                     .orElse(ExperienceProfile.PRO);
             String personalizedTitle = NotificationCopy.title(type, profile, title);
             Notification notification = new Notification(userId, type, personalizedTitle, message, clock.instant());
-            return notificationRepository.save(notification);
+            Notification saved = notificationRepository.save(notification);
+            pushNotificationSender.sendToUser(userId, personalizedTitle, message);
+            return saved;
         } catch (RuntimeException ex) {
             log.error("Echec d'ecriture de la notification {} pour l'utilisateur {}", type, userId, ex);
             return null;

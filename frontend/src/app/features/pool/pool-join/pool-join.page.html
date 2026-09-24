@@ -1,0 +1,21 @@
+<h1 class="page-title">Rejoindre une Ruee</h1>
+<p class="page-subtitle">Entrez le code recu pour rejoindre une Ruee.</p>
+
+@if (errorMessage()) {
+  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+}
+
+<form [formGroup]="form" (ngSubmit)="lookup()" class="form">
+  <mat-form-field appearance="outline" class="form__field">
+    <mat-label>Code de la Ruee</mat-label>
+    <input matInput formControlName="code" placeholder="EX. AB12CD" (input)="onCodeInput($event)" />
+  </mat-form-field>
+
+  <button mat-flat-button type="submit" class="form__submit brand-button" [disabled]="submitting()">
+    @if (submitting()) {
+      <mat-spinner diameter="20" />
+    } @else {
+      Continuer
+    }
+  </button>
+</form>

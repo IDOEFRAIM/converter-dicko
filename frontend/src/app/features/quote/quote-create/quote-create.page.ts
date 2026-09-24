@@ -1,15 +1,17 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { QuoteService } from '../../../core/services/quote.service';
 import { QuoteDirection } from '../../../core/models/quote.model';
 import { extractErrorMessage } from '../../../core/services/api-error.util';
 import { CorridorComponent } from '../../../shared/components/corridor/corridor.component';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 /**
  * Point d'entree du parcours principal : "J'envoie X XOF" ou "Je veux
@@ -22,24 +24,35 @@ import { CorridorComponent } from '../../../shared/components/corridor/corridor.
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     MatButtonModule,
     MatButtonToggleModule,
     MatFormFieldModule,
+    MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
     CorridorComponent,
+    PageHeaderComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './quote-create.page.html',
   styleUrl: './quote-create.page.scss',
 })
-export class QuoteCreatePage {
+export class QuoteCreatePage implements OnInit {
+  private readonly route = inject(ActivatedRoute);
   private readonly quoteService = inject(QuoteService);
   private readonly router = inject(Router);
 
   readonly direction = signal<QuoteDirection>('SEND_XOF');
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
+  /** Non nul quand cette page a ete ouverte depuis une Ruee collective (mission "differenciation
+   * marketing", Lot 3) : l'ordre cree en bout de parcours y contribuera (voir order-create.page.ts). */
+  readonly poolId = signal<string | null>(null);
+
+  ngOnInit(): void {
+    this.poolId.set(this.route.snapshot.queryParamMap.get('poolId'));
+  }
 
   readonly amountControl = new FormControl<number | null>(null, {
     validators: [Validators.required, Validators.min(1)],
@@ -70,7 +83,12 @@ export class QuoteCreatePage {
       .subscribe({
         next: (response) => {
           this.loading.set(false);
-          this.router.navigate(['/quote', response.data.id]);
+          const poolId = this.poolId();
+          if (poolId) {
+            this.router.navigate(['/quote', response.data.id], { queryParams: { poolId } });
+          } else {
+            this.router.navigate(['/quote', response.data.id]);
+          }
         },
         error: (error) => {
           this.loading.set(false);

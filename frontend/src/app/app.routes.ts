@@ -116,6 +116,30 @@ export const routes: Routes = [
         loadComponent: () => import('./features/business/business.page').then((m) => m.BusinessPage),
       },
       {
+        path: 'kyc',
+        loadComponent: () => import('./features/kyc/kyc.page').then((m) => m.KycPage),
+      },
+      {
+        path: 'pools',
+        loadComponent: () => import('./features/pool/my-pools/my-pools.page').then((m) => m.MyPoolsPage),
+      },
+      {
+        path: 'pools/new',
+        loadComponent: () => import('./features/pool/pool-create/pool-create.page').then((m) => m.PoolCreatePage),
+      },
+      {
+        path: 'pools/join',
+        loadComponent: () => import('./features/pool/pool-join/pool-join.page').then((m) => m.PoolJoinPage),
+      },
+      {
+        path: 'pools/:id',
+        loadComponent: () => import('./features/pool/pool-detail/pool-detail.page').then((m) => m.PoolDetailPage),
+      },
+      {
+        path: 'gains',
+        loadComponent: () => import('./features/achievements/my-gains/my-gains.page').then((m) => m.MyGainsPage),
+      },
+      {
         path: 'support',
         loadComponent: () => import('./features/support/support.page').then((m) => m.SupportPage),
       },

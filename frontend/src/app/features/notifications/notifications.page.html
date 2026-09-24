@@ -1,4 +1,23 @@
-<app-page-header title="Notifications" subtitle="Vos messages internes" />
+<app-page-header title="Notifications" subtitle="Vos messages internes">
+  @if (showPushToggle()) {
+    <button
+      mat-stroked-button
+      [disabled]="push.busy()"
+      (click)="togglePush()"
+    >
+      @if (push.busy()) {
+        <mat-spinner diameter="18" />
+      } @else {
+        <mat-icon>{{ push.subscribed() ? 'notifications_off' : 'notifications_active' }}</mat-icon>
+      }
+      {{ push.subscribed() ? 'Desactiver les alertes' : 'Activer les alertes' }}
+    </button>
+  }
+</app-page-header>
+
+@if (push.errorMessage()) {
+  <p class="form-notice form-notice--error">{{ push.errorMessage() }}</p>
+}
 
 @if (errorMessage()) {
   <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
