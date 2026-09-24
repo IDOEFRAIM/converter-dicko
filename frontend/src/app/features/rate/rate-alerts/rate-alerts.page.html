@@ -1,48 +1,31 @@
-<app-page-header title="Mes alertes" subtitle="Surveillez un taux cible et soyez averti(e) lorsqu'il est atteint">
-  <a routerLink="/rates" mat-stroked-button>
-    <mat-icon>show_chart</mat-icon>
-    Historique du taux
-  </a>
-</app-page-header>
+<p class="t-caption">Surveillez un taux cible et soyez averti(e) lorsqu'il est atteint.</p>
 
-<form class="form panel" [formGroup]="form" (ngSubmit)="create()">
-  <p class="section-heading">Creer une alerte</p>
-  <p class="form-notice">
-    Vous serez notifie(e) lorsque le taux client (1 CNY = X XOF) descend a votre cible ou en dessous.
-    Creer une alerte ne declenche aucun paiement.
-  </p>
-
-  <p class="alert-form__prompt">Je veux etre averti(e) lorsque :</p>
-  <div class="form__row">
-    <mat-form-field appearance="outline" class="form__field">
-      <mat-label>Taux cible</mat-label>
-      <span matTextPrefix class="alert-form__rate-prefix">1 CNY &le;&nbsp;</span>
-      <input matInput type="number" inputmode="decimal" formControlName="targetRate" step="0.01" min="0" />
-      <span matTextSuffix>&nbsp;XOF</span>
-      @if (form.controls.targetRate.invalid && form.controls.targetRate.touched) {
-        <mat-error>Saisissez un taux cible strictement positif.</mat-error>
-      }
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="form__field">
-      <mat-label>Expiration (optionnelle)</mat-label>
-      <input matInput type="date" formControlName="expiresAt" />
-    </mat-form-field>
-  </div>
-
-  <div class="form__actions">
-    <button mat-flat-button class="brand-button" type="submit" [disabled]="creating()">
-      @if (creating()) {
-        <mat-spinner diameter="20" />
-      } @else {
-        Creer l'alerte
-      }
-    </button>
-  </div>
+<form class="ra-card ra-form" [formGroup]="form" (ngSubmit)="create()">
+  <p class="t-eyebrow">Creer une alerte</p>
+  <p class="t-caption ra-gap-sm">Notification quand le taux atteint votre cible. Aucun paiement declenche.</p>
+  <mat-form-field appearance="outline" class="form__field ra-gap-md">
+    <mat-label>1 CNY &le;</mat-label>
+    <input matInput type="number" inputmode="decimal" formControlName="targetRate" step="0.01" min="0" />
+    <span matTextSuffix>&nbsp;XOF</span>
+    @if (form.controls.targetRate.invalid && form.controls.targetRate.touched) {
+      <mat-error>Saisissez un taux cible strictement positif.</mat-error>
+    }
+  </mat-form-field>
+  <mat-form-field appearance="outline" class="form__field">
+    <mat-label>Expiration</mat-label>
+    <input matInput type="date" formControlName="expiresAt" />
+  </mat-form-field>
+  <button mat-flat-button class="ra-submit" type="submit" [disabled]="creating()">
+    @if (creating()) {
+      <mat-spinner diameter="20" />
+    } @else {
+      Creer l'alerte
+    }
+  </button>
 </form>
 
 @if (loading()) {
-  <div class="loading-row"><mat-spinner diameter="32" /></div>
+  <div class="m-loading"><mat-spinner diameter="32" /></div>
 } @else if (errorMessage()) {
   <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
   <button mat-stroked-button (click)="load()">
@@ -50,10 +33,13 @@
     Reessayer
   </button>
 } @else if (alerts().length === 0) {
-  <app-empty-state title="Aucune alerte" description="Creez une alerte ci-dessus pour suivre le taux." />
+  <div class="m-empty">
+    <mat-icon>notifications_none</mat-icon>
+    <p class="t-body-strong">Aucune alerte</p>
+  </div>
 } @else {
   @if (activeAlerts().length > 0) {
-    <p class="alert-section-title">Alertes actives</p>
+    <p class="t-eyebrow alert-section-title">Alertes actives</p>
     <ul class="alert-list">
       @for (alert of activeAlerts(); track alert.id) {
         <li class="page-card alert-card">
@@ -74,7 +60,7 @@
           </div>
           <div class="alert-card__side">
             <app-status-badge [status]="alert.status" />
-            <button mat-stroked-button (click)="cancel(alert)">Annuler</button>
+            <button mat-button (click)="cancel(alert)">Annuler</button>
           </div>
         </li>
       }
@@ -82,7 +68,7 @@
   }
 
   @if (closedAlerts().length > 0) {
-    <p class="alert-section-title">Alertes terminees</p>
+    <p class="t-eyebrow alert-section-title">Alertes terminees</p>
     <ul class="alert-list">
       @for (alert of closedAlerts(); track alert.id) {
         <li class="page-card alert-card alert-card--closed">

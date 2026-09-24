@@ -12,8 +12,6 @@ import { RateHistoryService } from '../../../core/services/rate-history.service'
 import { NotificationService } from '../../../core/services/notification.service';
 import { extractErrorMessage } from '../../../core/services/api-error.util';
 import { RateAlert } from '../../../core/models/rate-history.model';
-import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { openConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
@@ -38,8 +36,6 @@ const ACTIVE: RateAlert['status'] = 'ACTIVE';
     MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
-    EmptyStateComponent,
-    PageHeaderComponent,
     StatusBadgeComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,

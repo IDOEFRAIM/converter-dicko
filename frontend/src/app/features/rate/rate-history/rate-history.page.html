@@ -1,87 +1,79 @@
-<app-page-header title="Taux XOF / CNY" subtitle="Historique du taux client">
-  <a routerLink="/rate-alerts" mat-stroked-button>
-    <mat-icon>notifications_active</mat-icon>
-    Mes alertes
+<!-- Copie de RateHistoryPage (mobile). "Mes alertes" est dans la barre du haut. -->
+<ng-template appBarActions>
+  <a mat-icon-button routerLink="/rate-alerts" aria-label="Mes alertes" title="Mes alertes">
+    <mat-icon fontSet="material-icons-outlined">notifications_active</mat-icon>
   </a>
-</app-page-header>
+</ng-template>
 
 @if (loading()) {
-  <div class="loading-row"><mat-spinner diameter="32" /></div>
+  <div class="m-loading"><mat-spinner diameter="32" /></div>
 } @else if (errorMessage()) {
-  <p class="form-notice form-notice--error">Impossible de charger l'historique du taux.</p>
-  <button mat-stroked-button (click)="load()">
-    <mat-icon>refresh</mat-icon>
-    Reessayer
-  </button>
+  <div class="m-empty">
+    <mat-icon>error_outline</mat-icon>
+    <p class="t-body-strong">Impossible de charger l'historique du taux.</p>
+    <button mat-button type="button" (click)="load()">Reessayer</button>
+  </div>
 } @else if (entries().length === 0) {
-  <app-empty-state
-    title="Aucun historique disponible"
-    description="Les taux publies apparaitront ici."
-  >
-    <button mat-stroked-button (click)="load()">
+  <div class="m-empty">
+    <mat-icon>show_chart</mat-icon>
+    <p class="t-body-strong">Aucun historique</p>
+    <button mat-stroked-button type="button" class="rh-refresh" (click)="load()">
       <mat-icon>refresh</mat-icon>
       Actualiser
     </button>
-  </app-empty-state>
+  </div>
 } @else {
-  <app-corridor [compact]="true" class="rate-corridor" />
+  <app-corridor [compact]="true" />
 
   @if (latest(); as latest) {
-    <div class="rate-hero">
-      <span class="rate-hero__label">Taux actuel</span>
-      <span class="rate-hero__value metric">1 CNY = {{ latest.customerRate }} XOF</span>
-      <span class="rate-hero__date">Mis a jour le {{ latest.recordedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+    <div class="rh-hero">
+      <p class="t-eyebrow rh-hero__soft">Taux actuel</p>
+      <p class="t-metric-large rh-hero__value">1 CNY = {{ latest.customerRate }} XOF</p>
+      <p class="t-caption rh-hero__soft">Mis a jour le {{ latest.recordedAt | date: 'dd/MM/yyyy HH:mm' }}</p>
       @if (variation(); as v) {
-        <span
-          class="rate-hero__variation"
-          [class.rate-hero__variation--up]="v.percent > 0"
-          [class.rate-hero__variation--down]="v.percent < 0"
-        >
+        <p class="t-caption rh-hero__variation" [class.rh-hero__variation--down]="v.percent < 0">
           {{ v.percent > 0 ? '+' : '' }}{{ v.percent.toFixed(2) }}% depuis le releve precedent
-        </span>
+        </p>
       }
     </div>
   }
 
   @if (chartPoints()) {
-    <div class="rate-chart">
+    <div class="rh-box rh-chart">
       <svg
         [attr.viewBox]="'0 0 ' + chartWidth + ' ' + chartHeight"
         preserveAspectRatio="none"
         role="img"
         [attr.aria-label]="'Evolution du taux client, valeur actuelle 1 CNY = ' + latest()?.customerRate + ' XOF'"
       >
-        <polyline [attr.points]="chartPoints()" fill="none" stroke="var(--mat-sys-primary, #1b325e)" stroke-width="2" />
+        <polyline [attr.points]="chartPoints()" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke" />
       </svg>
     </div>
 
     @if (rangeLabel(); as range) {
-      <dl class="detail-list rate-stats">
-        <div>
-          <dt>Minimum (periode)</dt>
-          <dd>{{ range.min }} XOF</dd>
+      <div class="rh-stats">
+        <div class="rh-box">
+          <p class="t-caption">MINIMUM (PERIODE)</p>
+          <p class="t-body-strong rh-gap">{{ range.min }} XOF</p>
         </div>
-        <div>
-          <dt>Maximum (periode)</dt>
-          <dd>{{ range.max }} XOF</dd>
+        <div class="rh-box">
+          <p class="t-caption">MAXIMUM (PERIODE)</p>
+          <p class="t-body-strong rh-gap">{{ range.max }} XOF</p>
         </div>
-      </dl>
+      </div>
     }
   }
 
-  <div class="form__actions">
-    <a routerLink="/rate-alerts" mat-flat-button class="brand-button rate-cta">
-      <mat-icon>add_alert</mat-icon>
-      Creer une alerte
-    </a>
-  </div>
+  <a routerLink="/rate-alerts" mat-flat-button class="rh-cta">
+    <mat-icon fontSet="material-icons-outlined">add_alert</mat-icon>
+    Creer une alerte
+  </a>
 
-  <ul class="rate-list">
-    @for (entry of entries(); track entry.recordedAt) {
-      <li class="rate-list__row">
-        <span class="rate-list__value">1 CNY = {{ entry.customerRate }} XOF</span>
-        <span class="rate-list__date">{{ entry.recordedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
-      </li>
-    }
-  </ul>
+  <p class="t-eyebrow rh-title">Historique</p>
+  @for (entry of entries(); track entry.recordedAt) {
+    <div class="rh-row">
+      <span class="t-body-strong">1 CNY = {{ entry.customerRate }} XOF</span>
+      <span class="t-caption">{{ entry.recordedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+    </div>
+  }
 }

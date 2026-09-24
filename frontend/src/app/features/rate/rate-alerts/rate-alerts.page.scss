@@ -104,3 +104,40 @@
     justify-content: space-between;
   }
 }
+
+// ---- Alignement mobile (RateAlertsPage) ----
+.ra-card {
+  padding: 16px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-outline);
+  border-radius: var(--radius-md);
+}
+
+.ra-form {
+  display: flex;
+  flex-direction: column;
+  margin-top: 16px;
+}
+
+.ra-gap-sm {
+  margin-top: 8px;
+}
+
+.ra-gap-md {
+  margin-top: 12px;
+}
+
+.ra-submit {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.alert-card.page-card {
+  background: var(--c-surface);
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.alert-section-title {
+  margin: 24px 0 8px;
+}

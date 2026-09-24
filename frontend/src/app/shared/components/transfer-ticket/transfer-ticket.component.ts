@@ -125,6 +125,15 @@ export interface TicketRow {
         gap: 12px;
         width: 100%;
       }
+      .ticket__row--copy {
+        border: 0;
+        background: none;
+        padding: 0;
+        font: inherit;
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
       .ticket__value {
         flex: 1 1 auto;
         min-width: 0;

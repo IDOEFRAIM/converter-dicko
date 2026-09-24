@@ -41,7 +41,7 @@
       }
 
       <mat-form-field appearance="outline" class="form__field">
-        <mat-label>Nom du payeur *</mat-label>
+        <mat-label>Nom du payeur</mat-label>
         <input matInput formControlName="payerName" maxlength="160" autocomplete="name" />
         @if (form.controls.payerName.invalid && form.controls.payerName.touched) {
           <mat-error>Le nom du payeur est obligatoire.</mat-error>
@@ -49,7 +49,7 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="form__field">
-        <mat-label>Numero du payeur *</mat-label>
+        <mat-label>Numero du payeur</mat-label>
         <input matInput type="tel" formControlName="payerPhone" maxlength="20" autocomplete="tel" />
         @if (form.controls.payerPhone.invalid && form.controls.payerPhone.touched) {
           <mat-error>Le numero du payeur est obligatoire.</mat-error>
