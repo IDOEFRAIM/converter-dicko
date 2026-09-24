@@ -1,219 +1,127 @@
-.order-header {
-  margin: 0.5rem 0 0.5rem;
-}
-
-.order-header__label {
-  margin: 0;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--mat-sys-on-surface-variant, #757575);
-}
-
-.order-header__reference {
-  margin: 0.125rem 0 0;
-  font-weight: 700;
-  font-size: 1.0625rem;
-  color: var(--brand-navy, #1b325e);
-}
-
-.order-corridor {
+// _panel (mobile) : carte blanche, filet fin, padding lg.
+.od-panel {
   display: block;
-  margin-bottom: 1rem;
-}
-
-// ---- Statut ----
-
-.order-status {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-bottom: 1.25rem;
-}
-
-.order-status__description {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--mat-sys-on-surface-variant, #616161);
-}
-
-.order-status__reason {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--brand-red, #ce1922);
-}
-
-// ---- Vous envoyez / le beneficiaire recoit ----
-
-.order-flow {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-}
-
-.order-flow__block {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.order-flow__label {
-  margin: 0;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--mat-sys-on-surface-variant, #757575);
-}
-
-.order-flow__amount {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.order-flow__amount--accent {
-  color: var(--brand-navy, #1b325e);
-}
-
-.order-flow__meta {
-  display: flex;
-  gap: 1.5rem;
-  margin: 0;
-
-  div {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-  }
-
-  dt {
-    font-size: 0.75rem;
-    color: var(--mat-sys-on-surface-variant, #757575);
-  }
-
-  dd {
-    margin: 0;
-    font-weight: 600;
-    font-size: 0.875rem;
-  }
-}
-
-// ---- CTA selon statut ----
-
-.order-cta-row {
-  display: flex;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-
-  button {
-    flex: 1;
-    height: 46px;
-  }
-}
-
-.order-cta-row__full {
-  width: 100%;
-  height: 46px;
-  margin-bottom: 1.5rem;
-
-  mat-icon {
-    margin-right: 0.375rem;
-  }
-}
-
-// ---- Justificatif (ordre COMPLETED) ----
-
-.receipt-panel {
-  margin-bottom: 1.5rem;
-}
-
-.receipt-panel__description {
-  margin: 0 0 0.875rem;
-  font-size: 0.9rem;
-  color: var(--mat-sys-on-surface-variant, #616161);
-}
-
-.receipt-panel__cta {
-  width: 100%;
-  height: 46px;
-}
-
-// ---- Lien vers le suivi ----
-
-.order-track-link {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  margin-bottom: 1rem;
+  padding: 16px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-outline);
+  border-radius: var(--radius-md);
+  color: inherit;
   text-decoration: none;
-  color: var(--mat-sys-on-surface, #1a1c1e);
-  font-weight: 600;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
 
-  mat-icon:first-child {
-    color: var(--brand-navy, #1b325e);
-  }
+.od-status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 
-  span {
-    flex: 1;
-  }
-
-  &:hover {
-    border-color: var(--brand-navy, #1b325e);
-    box-shadow: var(--shadow-xs);
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 }
 
-.order-track-link__chevron {
-  color: var(--mat-sys-on-surface-variant, #9aa0ab);
+.od-muted {
+  color: var(--c-ink-muted);
 }
 
-// ---- Reglement / Fournisseur ----
+.od-negative {
+  color: var(--c-negative);
+}
 
-.section-heading {
+.od-chevron {
+  color: var(--c-ink-faint);
+}
+
+.od-gap {
+  margin-top: 4px;
+}
+
+.od-doc {
   display: flex;
   align-items: center;
-  gap: 0.375rem;
-  font-weight: 700;
-  margin: 0 0 0.75rem;
-  color: var(--brand-navy, #1b325e);
+  gap: 12px;
+
+  &--top {
+    align-items: flex-start;
+  }
+
+  &__badge--send {
+    --badge-color: var(--role-send);
+    background: var(--role-send-surface);
+  }
+
+  &__badge--premium {
+    --badge-color: var(--role-premium);
+    background: var(--role-premium-surface);
+  }
 }
 
-.settlement-card__label {
-  font-weight: 600;
-  margin: 0 0 0.25rem;
+// FilledButton.icon StadiumBorder, couleur du role.
+.od-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 40px;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+
+  .mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &--send {
+    background: var(--role-send);
+  }
+
+  &--premium {
+    background: var(--role-premium);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
 }
 
-.settlement-card__description {
-  margin: 0;
-  color: var(--mat-sys-on-surface-variant, #616161);
-  font-size: 0.875rem;
+.od-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
-.supplier-name {
-  margin: 0;
-  font-weight: 700;
-  font-size: 1rem;
+.od-full {
+  width: 100%;
 }
 
-.supplier-meta {
-  margin: 0.2rem 0 0;
-  font-size: 0.875rem;
-  color: var(--mat-sys-on-surface-variant, #616161);
+.od-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  &__label {
+    flex: 1 1 auto;
+    font-size: 15px;
+  }
 }
 
-.supplier-purpose {
-  margin: 0.5rem 0 0;
-  font-size: 0.875rem;
+.od-small-badge {
+  --badge-size: 36px;
 }
 
-.supplier-pay-again {
-  margin-top: 1rem;
+.od-purpose {
+  margin-top: 8px;
 }
 
-.panel + .panel {
-  margin-top: 0.875rem;
+.od-pay-again {
+  margin-top: 12px;
 }

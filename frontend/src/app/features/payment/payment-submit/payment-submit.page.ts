@@ -3,6 +3,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -36,6 +37,7 @@ const METHOD_LABELS: Record<PaymentMethod, string> = {
   imports: [
     ReactiveFormsModule,
     MatButtonModule,
+    MatIconModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -63,6 +65,9 @@ export class PaymentSubmitPage implements OnInit {
   readonly proofUploaded = signal(false);
   readonly methods = signal<{ value: PaymentMethod; label: string }[]>([]);
   readonly paymentInstructions = signal<string>('');
+  /** REQUIRE_PAYMENT_PROOF (reglage public) : sans preuve, l'admin ne peut pas confirmer. */
+  readonly proofRequired = signal(true);
+  readonly proofFileName = signal<string | null>(null);
 
   private readonly idempotency = new IdempotencyAttempt();
 
@@ -109,6 +114,7 @@ export class PaymentSubmitPage implements OnInit {
         })),
       );
       this.paymentInstructions.set(response.data.paymentInstructionsText);
+      this.proofRequired.set(response.data.requirePaymentProof ?? true);
     });
   }
 
@@ -164,6 +170,7 @@ export class PaymentSubmitPage implements OnInit {
     }
     this.uploading.set(true);
     this.errorMessage.set(null);
+    this.proofFileName.set(file.name);
 
     this.paymentService.uploadProof(payment.id, file).subscribe({
       next: () => {
