@@ -14,7 +14,6 @@ import { extractErrorMessage } from '../../../core/services/api-error.util';
 import { SupplierDetail, SupplierRequest } from '../../../core/models/supplier.model';
 import { BeneficiaryType, BENEFICIARY_IDENTIFIER_LABELS, BENEFICIARY_TYPE_OPTIONS } from '../../../core/models/order.model';
 import { Currency, PURPOSE_OPTIONS } from '../../../core/models/common.model';
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 /**
  * Creation et modification d'un fournisseur (meme formulaire). La modification n'affecte
@@ -32,7 +31,6 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
     MatInputModule,
     MatProgressSpinnerModule,
     MatSelectModule,
-    PageHeaderComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './supplier-form.page.html',

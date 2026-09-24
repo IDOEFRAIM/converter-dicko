@@ -1,15 +1,9 @@
-<app-page-header [title]="title()" subtitle="Ces coordonnees serviront a preparer le reglement en Chine" />
-
 @if (loading()) {
-  <div class="loading-row"><mat-spinner diameter="32" /></div>
+  <div class="m-loading"><mat-spinner diameter="32" /></div>
 } @else {
-  @if (errorMessage()) {
-    <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
-  }
-
   <form class="form" [formGroup]="form" (ngSubmit)="submit()">
     <mat-form-field appearance="outline" class="form__field">
-      <mat-label>Type de beneficiaire</mat-label>
+      <mat-label>Type de compte</mat-label>
       <mat-select formControlName="type">
         @for (option of typeOptions; track option.value) {
           <mat-option [value]="option.value">{{ option.label }}</mat-option>
@@ -18,7 +12,7 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="form__field">
-      <mat-label>Nom d'affichage</mat-label>
+      <mat-label>Nom affiche</mat-label>
       <input matInput formControlName="displayName" maxlength="120" autocomplete="off" />
       @if (form.controls.displayName.invalid && form.controls.displayName.touched) {
         <mat-error>Le nom d'affichage est obligatoire.</mat-error>
@@ -27,7 +21,7 @@
 
     @if (requiresQrCode) {
       <div class="qr-code-field">
-        <label class="qr-code-field__label">{{ identifierLabel }} *</label>
+        <label class="t-body-strong qr-code-field__label">{{ identifierLabel }} *</label>
         <div class="qr-code-field__dropzone" (click)="qrFileInput.click()">
           @if (qrCodePreviewUrl()) {
             <img [src]="qrCodePreviewUrl()" alt="Apercu du code QR" class="qr-code-field__preview" />
@@ -61,7 +55,7 @@
     }
 
     <mat-form-field appearance="outline" class="form__field">
-      <mat-label>Nom du titulaire du compte</mat-label>
+      <mat-label>Titulaire du compte</mat-label>
       <input matInput formControlName="accountName" maxlength="120" autocomplete="off" />
     </mat-form-field>
 
@@ -77,14 +71,6 @@
         <mat-label>Agence (optionnel)</mat-label>
         <input matInput formControlName="bankBranch" maxlength="120" autocomplete="off" />
       </mat-form-field>
-      <mat-form-field appearance="outline" class="form__field">
-        <mat-label>Adresse de la banque (optionnel)</mat-label>
-        <input matInput formControlName="bankAddress" maxlength="255" autocomplete="off" />
-      </mat-form-field>
-      <mat-form-field appearance="outline" class="form__field">
-        <mat-label>Code SWIFT (optionnel)</mat-label>
-        <input matInput formControlName="swiftCode" maxlength="20" autocomplete="off" />
-      </mat-form-field>
     }
 
     <mat-form-field appearance="outline" class="form__field">
@@ -97,9 +83,9 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="form__field">
-      <mat-label>Motif par defaut (optionnel)</mat-label>
+      <mat-label>Motif par defaut</mat-label>
       <mat-select formControlName="purpose">
-        <mat-option [value]="''">Aucun</mat-option>
+        <mat-option [value]="''">Non precise</mat-option>
         @for (option of purposeOptions; track option.value) {
           <mat-option [value]="option.value">{{ option.label }}</mat-option>
         }
@@ -107,49 +93,42 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="form__field">
-      <mat-label>Raison sociale (optionnel)</mat-label>
-      <input matInput formControlName="legalName" maxlength="160" autocomplete="off" />
+      <mat-label>Telephone</mat-label>
+      <input matInput formControlName="phone" maxlength="30" autocomplete="off" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="form__field">
+      <mat-label>Email</mat-label>
+      <input matInput formControlName="email" type="email" maxlength="160" autocomplete="off" />
+      @if (form.controls.email.invalid && form.controls.email.touched) {
+        <mat-error>Adresse email invalide.</mat-error>
+      }
     </mat-form-field>
 
     <div class="form__row">
       <mat-form-field appearance="outline" class="form__field">
-        <mat-label>Telephone (optionnel)</mat-label>
-        <input matInput formControlName="phone" maxlength="30" autocomplete="off" />
-      </mat-form-field>
-      <mat-form-field appearance="outline" class="form__field">
-        <mat-label>Email (optionnel)</mat-label>
-        <input matInput formControlName="email" type="email" maxlength="160" autocomplete="off" />
-        @if (form.controls.email.invalid && form.controls.email.touched) {
-          <mat-error>Adresse email invalide.</mat-error>
-        }
-      </mat-form-field>
-    </div>
-
-    <div class="form__row">
-      <mat-form-field appearance="outline" class="form__field">
-        <mat-label>Pays (optionnel)</mat-label>
-        <input matInput formControlName="country" maxlength="100" autocomplete="off" />
-      </mat-form-field>
-      <mat-form-field appearance="outline" class="form__field">
-        <mat-label>Ville (optionnel)</mat-label>
+        <mat-label>Ville</mat-label>
         <input matInput formControlName="city" maxlength="100" autocomplete="off" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="form__field">
+        <mat-label>Pays</mat-label>
+        <input matInput formControlName="country" maxlength="100" autocomplete="off" />
       </mat-form-field>
     </div>
 
     <mat-form-field appearance="outline" class="form__field">
-      <mat-label>Notes (optionnel)</mat-label>
-      <textarea matInput formControlName="notes" rows="2" maxlength="1000"></textarea>
+      <mat-label>Notes</mat-label>
+      <textarea matInput formControlName="notes" rows="3" maxlength="1000"></textarea>
     </mat-form-field>
 
-    <div class="form__actions">
-      <button mat-stroked-button type="button" (click)="cancel()" [disabled]="saving()">Annuler</button>
-      <button mat-flat-button class="brand-button" type="submit" [disabled]="saving()">
-        @if (saving()) {
-          <mat-spinner diameter="20" />
-        } @else {
-          {{ isEdit() ? 'Enregistrer' : 'Ajouter le fournisseur' }}
-        }
-      </button>
-    </div>
+    @if (errorMessage()) {
+      <p class="t-body m-negative">{{ errorMessage() }}</p>
+    }
+    <button mat-flat-button class="m-primary" type="submit" [disabled]="saving()">
+      @if (saving()) {
+        <mat-spinner diameter="20" />
+      } @else {
+        {{ isEdit() ? 'Enregistrer' : 'Creer le fournisseur' }}
+      }
+    </button>
   </form>
 }

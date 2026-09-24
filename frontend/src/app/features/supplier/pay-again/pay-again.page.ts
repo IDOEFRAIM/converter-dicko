@@ -12,7 +12,6 @@ import { extractErrorMessage } from '../../../core/services/api-error.util';
 import { IdempotencyAttempt } from '../../../core/services/idempotency.util';
 import { SupplierDetail } from '../../../core/models/supplier.model';
 import { Purpose, PURPOSE_LABELS, PURPOSE_OPTIONS } from '../../../core/models/common.model';
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 /**
  * "Payer a nouveau" un fournisseur enregistre. Le montant est TOUJOURS saisi ici :
@@ -32,7 +31,6 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
     MatInputModule,
     MatProgressSpinnerModule,
     MatSelectModule,
-    PageHeaderComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './pay-again.page.html',

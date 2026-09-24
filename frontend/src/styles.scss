@@ -1068,3 +1068,46 @@ button.pressable {
     margin-top: 24px;
   }
 }
+
+// ---- Formulaires mobiles (PrimaryAction pleine largeur, gros montant) ----
+.app-frame {
+  .m-label {
+    margin: 0 0 8px;
+
+    &--lg {
+      margin-top: 16px;
+    }
+  }
+
+  .m-big-input input {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+    font-variant-numeric: tabular-nums slashed-zero;
+  }
+
+  .m-suffix {
+    padding-right: 8px;
+    color: var(--c-ink-muted);
+  }
+
+  .m-primary {
+    width: 100%;
+    margin-top: 24px;
+  }
+
+  .m-negative {
+    color: var(--c-negative);
+    margin-top: 8px;
+  }
+
+  .qr-code-field__dropzone {
+    background: var(--c-paper);
+    border: 1.5px solid var(--c-outline);
+    border-radius: var(--radius-md);
+  }
+}
+
+.app-frame .m-section {
+  margin: 24px 0 8px;
+}
