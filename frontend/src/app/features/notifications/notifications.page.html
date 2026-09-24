@@ -1,49 +1,52 @@
-<app-page-header title="Notifications" subtitle="Vos messages internes">
-  @if (showPushToggle()) {
-    <button
-      mat-stroked-button
-      [disabled]="push.busy()"
-      (click)="togglePush()"
-    >
-      @if (push.busy()) {
-        <mat-spinner diameter="18" />
-      } @else {
-        <mat-icon>{{ push.subscribed() ? 'notifications_off' : 'notifications_active' }}</mat-icon>
-      }
-      {{ push.subscribed() ? 'Desactiver les alertes' : 'Activer les alertes' }}
-    </button>
-  }
-</app-page-header>
-
-@if (push.errorMessage()) {
-  <p class="form-notice form-notice--error">{{ push.errorMessage() }}</p>
+<!-- Copie de NotificationsPage (mobile). Seul ajout web : activer les alertes push (PWA). -->
+@if (showPushToggle()) {
+  <button type="button" class="notif-push surface-paper pressable" [disabled]="push.busy()" (click)="togglePush()">
+    <span class="icon-badge"><mat-icon fontSet="material-icons-outlined">{{ push.subscribed() ? 'notifications_off' : 'notifications_active' }}</mat-icon></span>
+    <span class="list-card__main">
+      <span class="t-body-strong">{{ push.subscribed() ? 'Desactiver les alertes' : 'Activer les alertes' }}</span>
+      <span class="t-caption">Recevez une notification sur cet appareil a chaque etape de vos transferts.</span>
+    </span>
+    @if (push.busy()) {
+      <mat-spinner diameter="18" />
+    }
+  </button>
 }
 
-@if (errorMessage()) {
-  <p class="form-notice form-notice--error">{{ errorMessage() }}</p>
+@if (push.errorMessage()) {
+  <p class="t-body notif-error">{{ push.errorMessage() }}</p>
 }
 
 @if (loading()) {
-  <div class="loading-row"><mat-spinner diameter="32" /></div>
+  <div class="m-loading"><mat-spinner diameter="32" /></div>
+} @else if (errorMessage() && notifications().length === 0) {
+  <div class="m-empty">
+    <mat-icon>error_outline</mat-icon>
+    <p class="t-body-strong">{{ errorMessage() }}</p>
+  </div>
 } @else if (notifications().length === 0) {
-  <app-empty-state title="Aucune notification" description="Vos notifications apparaitront ici." />
+  <div class="m-empty">
+    <mat-icon>notifications_none</mat-icon>
+    <p class="t-body-strong">Aucune notification</p>
+  </div>
 } @else {
-  @for (notification of notifications(); track notification.id) {
-    <button
-      type="button"
-      class="page-card notification-row"
-      [class.notification-row--unread]="!notification.readAt"
-      (click)="markRead(notification)"
-    >
-      <span class="notification-row__icon"><mat-icon>{{ icon(notification.type) }}</mat-icon></span>
-      <span class="notification-row__body">
-        <span class="notification-row__title">{{ notification.title }}</span>
-        <span class="notification-row__message">{{ notification.message }}</span>
-        <span class="notification-row__date">{{ notification.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
-      </span>
-      @if (!notification.readAt) {
-        <span class="notification-row__dot" aria-hidden="true"></span>
-      }
-    </button>
-  }
+  <div class="list-stack">
+    @for (notification of notifications(); track notification.id) {
+      <button
+        type="button"
+        class="notif pressable"
+        [class.notif--unread]="!notification.readAt"
+        (click)="markRead(notification)"
+      >
+        <span class="notif__icon"><mat-icon>{{ icon(notification.type) }}</mat-icon></span>
+        <span class="list-card__main">
+          <span class="t-body-strong">{{ notification.title }}</span>
+          <span class="t-caption notif__gap">{{ notification.message }}</span>
+          <span class="t-caption notif__gap">{{ notification.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+        </span>
+        @if (!notification.readAt) {
+          <span class="notif__dot" aria-hidden="true"></span>
+        }
+      </button>
+    }
+  </div>
 }

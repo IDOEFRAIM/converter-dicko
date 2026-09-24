@@ -1,8 +1,6 @@
-import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -13,7 +11,9 @@ import { openPendingTab, resolveBlobTab } from '../../../core/services/file-down
 import { SupplierDetail } from '../../../core/models/supplier.model';
 import { BENEFICIARY_TYPE_LABELS } from '../../../core/models/order.model';
 import { PURPOSE_LABELS } from '../../../core/models/common.model';
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { AppBarService } from '../../../core/services/app-bar.service';
+import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
+import { AppBarActionsDirective } from '../../../shared/directives/app-bar-actions.directive';
 import { openConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
@@ -21,17 +21,25 @@ import { openConfirmDialog } from '../../../shared/components/confirm-dialog/con
   standalone: true,
   imports: [
     RouterLink,
-    DatePipe,
     MatButtonModule,
-    MatCardModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    PageHeaderComponent,
+    AppBarActionsDirective,
+    StatusBadgeComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './supplier-detail.page.html',
+  styleUrl: './supplier-detail.page.scss',
 })
 export class SupplierDetailPage implements OnInit {
+  private readonly appBar = inject(AppBarService);
+  // Titre de la barre = nom du fournisseur (AppBar(title: supplier.displayName) mobile).
+  private readonly titleEffect = effect(() => {
+    const name = this.supplier()?.displayName;
+    if (name) {
+      this.appBar.title.set(name);
+    }
+  });
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly supplierService = inject(SupplierService);

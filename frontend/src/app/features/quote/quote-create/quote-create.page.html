@@ -1,11 +1,13 @@
 <div class="screen">
-  <div class="qc-top">
-    <app-corridor class="qc-corridor" />
-    @if (!poolId) {
-      <a mat-icon-button routerLink="/pay/pools" aria-label="Mes Ruees" title="Mes Ruees" class="qc-pools">
+  @if (!poolId) {
+    <ng-template appBarActions>
+      <a mat-icon-button routerLink="/pay/pools" aria-label="Mes Ruees" title="Mes Ruees">
         <mat-icon fontSet="material-icons-outlined">groups</mat-icon>
       </a>
-    }
+    </ng-template>
+  }
+  <div class="qc-top">
+    <app-corridor class="qc-corridor" />
   </div>
 
   @if (quote(); as q) {

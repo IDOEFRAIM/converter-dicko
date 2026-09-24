@@ -1,3 +1,4 @@
+import { AppBarActionsDirective } from '../../../shared/directives/app-bar-actions.directive';
 import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -32,6 +33,11 @@ import { MoneyPipe } from '../../../shared/pipes/money.pipe';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <ng-template appBarActions>
+      <a mat-icon-button routerLink="/pay/pools/join" aria-label="Rejoindre avec un code" title="Rejoindre avec un code">
+        <mat-icon fontSet="material-icons-outlined">qr_code</mat-icon>
+      </a>
+    </ng-template>
     <div class="screen">
       <div class="surface-paper pool-explainer">
         <mat-icon>bolt</mat-icon>
@@ -44,10 +50,6 @@ import { MoneyPipe } from '../../../shared/pipes/money.pipe';
       <a mat-flat-button routerLink="/pay/pools/new" class="pool-cta">
         <mat-icon>bolt</mat-icon>
         Lancer une Ruee
-      </a>
-      <a mat-stroked-button routerLink="/pay/pools/join" class="pool-cta pool-cta--secondary">
-        <mat-icon>qr_code</mat-icon>
-        Rejoindre avec un code
       </a>
 
       <div class="pool-list">

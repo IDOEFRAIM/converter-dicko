@@ -1,3 +1,9 @@
+<ng-template appBarActions>
+  <button mat-icon-button type="button" (click)="refresh()" [disabled]="refreshing()" aria-label="Actualiser" title="Actualiser">
+    <mat-icon>refresh</mat-icon>
+  </button>
+</ng-template>
+
 <!-- Copie de OrderTrackingPage + CorridorTimeline (mobile). -->
 @if (loading()) {
   <div class="m-loading"><mat-spinner diameter="32" /></div>
@@ -9,12 +15,7 @@
   </div>
 } @else if (tracking(); as t) {
   <section class="surface-lacquer ct">
-    <div class="ct__head">
-      <p class="t-eyebrow ct__keyline">Le corridor</p>
-      <button type="button" class="ct__refresh" (click)="refresh()" [disabled]="refreshing()" aria-label="Actualiser" title="Actualiser">
-        <mat-icon>refresh</mat-icon>
-      </button>
-    </div>
+    <p class="t-eyebrow ct__keyline">Le corridor</p>
 
     <svg class="ct__map" viewBox="0 0 320 118" preserveAspectRatio="none" aria-hidden="true">
       <path class="ct__rail" d="M0,69.9 C96,92 224,40 320,62.1" />

@@ -7,6 +7,9 @@
         </button>
       }
       <h1 class="app-bar__title">{{ title() }}</h1>
+      @if (appBar.actions(); as tpl) {
+        <span class="app-bar__custom"><ng-container *ngTemplateOutlet="tpl" /></span>
+      }
       @if (action(); as a) {
         <a mat-icon-button [routerLink]="a.link" [attr.aria-label]="a.label" [title]="a.label" class="app-bar__action">
           <mat-icon>{{ a.icon }}</mat-icon>

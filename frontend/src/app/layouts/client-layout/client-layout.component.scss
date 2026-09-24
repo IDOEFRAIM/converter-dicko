@@ -53,6 +53,12 @@
   &__action {
     color: var(--accent);
   }
+
+  &__custom {
+    display: flex;
+    align-items: center;
+    color: var(--accent);
+  }
 }
 
 .app-body {

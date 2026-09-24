@@ -11,7 +11,9 @@ import {
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRouteSnapshot, NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { ActivatedRouteSnapshot, NavigationEnd, NavigationStart, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { NgTemplateOutlet } from '@angular/common';
+import { AppBarService } from '../../core/services/app-bar.service';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -75,7 +77,7 @@ const PROFILE_CLASSES: Record<ExperienceProfile, string> = {
 @Component({
   selector: 'app-client-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, MatButtonModule, MatIconModule, MatBadgeModule, InstallBannerComponent],
+  imports: [RouterOutlet, RouterLink, NgTemplateOutlet, MatButtonModule, MatIconModule, MatBadgeModule, InstallBannerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './client-layout.component.html',
   styleUrl: './client-layout.component.scss',
@@ -87,6 +89,7 @@ export class ClientLayoutComponent implements OnInit {
   private readonly document = inject(DOCUMENT);
   private readonly notificationService = inject(InboxNotificationService);
   private readonly destroyRef = inject(DestroyRef);
+  readonly appBar = inject(AppBarService);
 
   readonly destinations = DESTINATIONS;
   readonly unreadCount = signal(0);
@@ -103,7 +106,7 @@ export class ClientLayoutComponent implements OnInit {
   );
 
   readonly activeTab = computed(() => this.screen().tab);
-  readonly title = computed(() => this.screen().title);
+  readonly title = computed(() => this.appBar.title() ?? this.screen().title);
   readonly isRoot = computed(() => this.screen().root);
   readonly hideAppBar = computed(() => this.screen().hideAppBar);
   readonly action = computed(() => this.screen().action);
@@ -117,6 +120,10 @@ export class ClientLayoutComponent implements OnInit {
       body.classList.add(cls);
       onCleanup(() => body.classList.remove(cls));
     });
+
+    this.router.events
+      .pipe(filter((event) => event instanceof NavigationStart))
+      .subscribe(() => this.appBar.title.set(null));
 
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))

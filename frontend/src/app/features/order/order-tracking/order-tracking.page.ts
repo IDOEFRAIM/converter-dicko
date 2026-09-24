@@ -1,3 +1,4 @@
+import { AppBarActionsDirective } from '../../../shared/directives/app-bar-actions.directive';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -25,6 +26,7 @@ const TERMINAL_STATUSES: ReadonlySet<OrderStatus> = new Set(['COMPLETED', 'CANCE
   selector: 'app-order-tracking-page',
   standalone: true,
   imports: [
+    AppBarActionsDirective,
     DatePipe,
     MatButtonModule,
     MatIconModule,

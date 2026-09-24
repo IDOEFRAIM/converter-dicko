@@ -1,3 +1,4 @@
+import { AppBarActionsDirective } from '../../../shared/directives/app-bar-actions.directive';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -37,6 +38,7 @@ import { MoneyPipe } from '../../../shared/pipes/money.pipe';
     MatProgressSpinnerModule,
     CorridorComponent,
     TransferTicketComponent,
+    AppBarActionsDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './quote-create.page.html',

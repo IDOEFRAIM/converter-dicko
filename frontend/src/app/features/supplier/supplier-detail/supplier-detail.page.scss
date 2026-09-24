@@ -1,0 +1,65 @@
+.sd-star {
+  color: var(--brand-gold);
+}
+
+.sd-warn {
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--c-warning-surface);
+  color: var(--c-warning);
+
+  &--inline {
+    margin: 8px 0 0;
+  }
+}
+
+.sd-card {
+  padding: 16px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-outline);
+  border-radius: var(--radius-md);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+}
+
+.sd-row {
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+
+  &--qr {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+}
+
+.sd-qr {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  .mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: var(--c-positive);
+  }
+}
+
+.sd-full {
+  width: 100%;
+}
+
+.sd-pay {
+  margin-top: 24px;
+}
+
+.sd-deactivate {
+  margin-top: 12px;
+}
