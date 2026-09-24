@@ -1,0 +1,160 @@
+.kyc-state {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+
+  &__icon {
+    color: var(--c-keyline);
+  }
+}
+
+.kyc-keyline {
+  color: var(--c-keyline);
+  margin-bottom: 2px;
+}
+
+.kyc-muted {
+  color: var(--c-on-lacquer-muted);
+}
+
+.kyc-ink-muted {
+  color: var(--c-ink-muted);
+}
+
+.kyc-pending {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kyc-rejected {
+  margin-bottom: 16px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--c-warning-surface);
+  color: var(--c-warning);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    .mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  &__hint {
+    color: var(--c-warning);
+  }
+}
+
+.kyc-label {
+  margin-bottom: 4px;
+}
+
+.kyc-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 12px;
+  background: var(--c-paper);
+  border: 1px solid var(--c-paper-edge);
+  border-radius: var(--radius-md);
+  color: var(--c-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  .mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: var(--c-ink-faint);
+  }
+
+  &--selected {
+    border: 1.6px solid var(--accent);
+
+    .mat-icon {
+      color: var(--accent);
+    }
+  }
+}
+
+.kyc-captures {
+  margin-top: 12px;
+}
+
+.kyc-capture {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: var(--c-paper);
+  border: 1.5px solid var(--c-paper-edge);
+  border-radius: var(--radius-md);
+
+  &--done {
+    border-color: var(--c-positive);
+  }
+
+  &__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &__thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 56px;
+    height: 56px;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: var(--c-ivory-dim);
+    color: var(--c-ink-muted);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &__trail {
+    color: var(--c-ink-faint);
+  }
+}
+
+.kyc-positive {
+  color: var(--c-positive) !important;
+}
+
+.kyc-error {
+  color: var(--c-negative);
+  margin: 8px 0 0;
+}
+
+.kyc-submit {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.kyc-footnote {
+  margin-top: 8px;
+}

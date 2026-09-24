@@ -1,60 +1,52 @@
-<mat-toolbar class="toolbar">
-  <span class="toolbar__brand">
-    <span class="toolbar__mark"><img src="logo.png" alt="" /></span>
-    YUAN PAY BF
-  </span>
-  <span class="toolbar__spacer"></span>
-  <button mat-icon-button [matMenuTriggerFor]="moreMenu" aria-label="Plus" class="toolbar__avatar">
-    <mat-icon>apps</mat-icon>
-  </button>
-  <mat-menu #moreMenu="matMenu">
-    <a mat-menu-item routerLink="/rates"><mat-icon>show_chart</mat-icon><span>Historique du taux</span></a>
-    <a mat-menu-item routerLink="/rate-alerts"><mat-icon>notifications_active</mat-icon><span>Alertes de taux</span></a>
-    <a mat-menu-item routerLink="/wallet"><mat-icon>account_balance_wallet</mat-icon><span>Portefeuille</span></a>
-    <a mat-menu-item routerLink="/preferred-rate"><mat-icon>tune</mat-icon><span>Taux preferentiel</span></a>
-    <a mat-menu-item routerLink="/business"><mat-icon>business_center</mat-icon><span>Espace pro</span></a>
-    <a mat-menu-item routerLink="/support"><mat-icon>forum</mat-icon><span>Messagerie / Reclamation</span></a>
-  </mat-menu>
-  <button mat-icon-button routerLink="/notifications" aria-label="Notifications" class="toolbar__avatar">
-    <mat-icon [matBadge]="unreadCount() > 0 ? unreadCount() : null" matBadgeColor="warn" matBadgeSize="small">
-      notifications
-    </mat-icon>
-  </button>
-  <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="Menu utilisateur" class="toolbar__avatar">
-    <mat-icon>account_circle</mat-icon>
-  </button>
-  <mat-menu #userMenu="matMenu">
-    <div class="user-menu__name">{{ currentUser()?.firstName }} {{ currentUser()?.lastName }}</div>
-    <a mat-menu-item routerLink="/privacy" target="_blank">
-      <mat-icon>privacy_tip</mat-icon>
-      <span>Politique de confidentialite</span>
-    </a>
-    <button mat-menu-item (click)="logout()">
-      <mat-icon>logout</mat-icon>
-      <span>Deconnexion</span>
-    </button>
-  </mat-menu>
-</mat-toolbar>
+<div class="app-frame">
+  @if (!hideAppBar()) {
+    <header class="app-bar">
+      @if (!isRoot()) {
+        <button mat-icon-button type="button" class="app-bar__back" (click)="back()" aria-label="Retour">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+      }
+      <h1 class="app-bar__title">{{ title() }}</h1>
+      @if (action(); as a) {
+        <a mat-icon-button [routerLink]="a.link" [attr.aria-label]="a.label" [title]="a.label" class="app-bar__action">
+          <mat-icon>{{ a.icon }}</mat-icon>
+        </a>
+      }
+      <a mat-icon-button routerLink="/notifications" aria-label="Notifications" title="Notifications" class="app-bar__action">
+        <mat-icon
+          fontSet="material-icons-outlined"
+          [matBadge]="unreadCount() > 0 ? unreadCount() : null"
+          matBadgeColor="warn"
+          matBadgeSize="small"
+          aria-hidden="false"
+        >notifications</mat-icon>
+      </a>
+    </header>
+  }
 
-<nav class="bottom-nav">
-  <a routerLink="/dashboard" routerLinkActive="bottom-nav__link--active" class="bottom-nav__link">
-    <span class="bottom-nav__icon"><mat-icon>home</mat-icon></span>
-    <span>Accueil</span>
-  </a>
-  <a routerLink="/quote/new" routerLinkActive="bottom-nav__link--active" class="bottom-nav__link">
-    <span class="bottom-nav__icon"><mat-icon>swap_horiz</mat-icon></span>
-    <span>Envoyer</span>
-  </a>
-  <a routerLink="/suppliers" routerLinkActive="bottom-nav__link--active" class="bottom-nav__link">
-    <span class="bottom-nav__icon"><mat-icon>contacts</mat-icon></span>
-    <span>Fournisseurs</span>
-  </a>
-  <a routerLink="/history" routerLinkActive="bottom-nav__link--active" class="bottom-nav__link">
-    <span class="bottom-nav__icon"><mat-icon>history</mat-icon></span>
-    <span>Historique</span>
-  </a>
-</nav>
+  <main class="app-body">
+    <router-outlet />
+  </main>
 
-<main class="content">
-  <router-outlet />
-</main>
+  <div class="app-dock">
+    <div class="app-dock__banner">
+      <app-install-banner />
+    </div>
+    <nav class="nav-bar" aria-label="Navigation principale">
+      @for (d of destinations; track d.tab) {
+        <a
+          [routerLink]="d.link"
+          class="nav-bar__item"
+          [class.nav-bar__item--active]="activeTab() === d.tab"
+          [attr.aria-current]="activeTab() === d.tab ? 'page' : null"
+          [attr.aria-label]="d.label"
+        >
+          <span class="nav-bar__indicator">
+            <mat-icon [fontSet]="activeTab() === d.tab ? 'material-icons' : 'material-icons-outlined'">{{ d.icon }}</mat-icon>
+          </span>
+          <span class="nav-bar__label">{{ d.label }}</span>
+        </a>
+      }
+    </nav>
+  </div>
+</div>

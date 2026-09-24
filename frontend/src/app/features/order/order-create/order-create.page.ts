@@ -173,6 +173,7 @@ export class OrderCreatePage implements OnInit {
     const purposeDetails = v.purposeDetails?.trim() || null;
     const note = v.note?.trim() || null;
 
+    const poolId = this.route.snapshot.queryParamMap.get('poolId');
     const request: CreateOrderRequest = this.useSupplier
       ? { quoteId, beneficiary: null, supplierId: v.supplierId || null, purpose, purposeDetails, note }
       : {
@@ -188,6 +189,9 @@ export class OrderCreatePage implements OnInit {
           purposeDetails,
           note,
         };
+    if (poolId) {
+      request.poolId = poolId;
+    }
 
     // Meme requete rejouee apres un echec => meme cle ; requete modifiee => nouvelle cle.
     const idempotencyKey = this.idempotency.keyFor(request);

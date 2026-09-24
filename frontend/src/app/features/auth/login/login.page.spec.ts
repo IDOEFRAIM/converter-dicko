@@ -33,7 +33,7 @@ describe('LoginPage', () => {
     httpMock.expectNone('/api/auth/login');
   });
 
-  it('logs in and routes a USER to /dashboard', () => {
+  it('logs in and routes a USER to /home', () => {
     const navigateSpy = vi.spyOn(router, 'navigate');
     fixture.componentInstance.form.setValue({ phone: '+2250700000000', password: 'secret123' });
 
@@ -49,7 +49,7 @@ describe('LoginPage', () => {
       message: 'ok',
     });
 
-    expect(navigateSpy).toHaveBeenCalledWith(['/dashboard']);
+    expect(navigateSpy).toHaveBeenCalledWith(['/home']);
   });
 
   it('routes an ADMIN to /admin and surfaces a backend error otherwise', () => {

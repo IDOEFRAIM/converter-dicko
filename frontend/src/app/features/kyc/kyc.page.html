@@ -1,0 +1,105 @@
+<div class="screen">
+  @if (loading()) {
+    <div class="m-loading"><mat-spinner diameter="32" /></div>
+  } @else {
+    @switch (status()) {
+      @case ('APPROVED') {
+        <div class="surface-lacquer kyc-state">
+          <mat-icon class="kyc-state__icon">verified</mat-icon>
+          <div>
+            <p class="t-eyebrow kyc-keyline">Identite verifiee</p>
+            <p class="t-body kyc-muted">Aucune limite de montant.</p>
+          </div>
+        </div>
+      }
+      @case ('PENDING') {
+        <div class="surface-paper kyc-pending">
+          <p class="t-eyebrow">Dossier en cours d'examen</p>
+          <p class="t-caption">
+            Soumis le {{ submission()!.submittedAt | date: 'dd/MM/yyyy HH:mm' }}
+          </p>
+          <p class="t-body kyc-ink-muted">Reponse sous 24 a 48 h. Rien d'autre a faire.</p>
+        </div>
+      }
+      @case ('REJECTED') {
+        <div class="kyc-rejected">
+          <p class="t-body-strong kyc-rejected__title">
+            <mat-icon>error_outline</mat-icon> Dossier a corriger
+          </p>
+          @if (submission()!.rejectionReason) {
+            <p class="t-body">{{ submission()!.rejectionReason }}</p>
+          }
+          <p class="t-caption kyc-rejected__hint">Reprenez les photos et renvoyez.</p>
+        </div>
+      }
+    }
+
+    @if (showForm()) {
+      <p class="t-eyebrow kyc-label">Votre piece</p>
+      @for (type of documentTypes; track type) {
+        <button
+          type="button"
+          class="kyc-option pressable"
+          [class.kyc-option--selected]="documentType() === type"
+          (click)="documentType.set(type)"
+        >
+          <mat-icon>{{
+            documentType() === type ? 'radio_button_checked' : 'radio_button_unchecked'
+          }}</mat-icon>
+          <span class="t-body-strong">{{ labels[type] }}</span>
+        </button>
+      }
+
+      <div class="kyc-captures">
+        @for (c of captureSlots(); track c.slot) {
+          <label class="kyc-capture pressable" [class.kyc-capture--done]="hasFile(c.slot)">
+            <input
+              type="file"
+              accept="image/*"
+              class="kyc-capture__input"
+              (change)="onFile(c.slot, $event)"
+            />
+            <span class="kyc-capture__thumb">
+              @if (preview(c.slot); as src) {
+                <img [src]="src" alt="" />
+              } @else {
+                <mat-icon fontSet="material-icons-outlined">photo_camera</mat-icon>
+              }
+            </span>
+            <span class="list-card__main">
+              <span class="t-body-strong">{{ c.label }}</span>
+              <span class="t-caption">{{ c.hint }}</span>
+              @if (hasFile(c.slot)) {
+                <span class="t-caption kyc-positive">Toucher pour refaire</span>
+              }
+            </span>
+            <mat-icon [class.kyc-positive]="hasFile(c.slot)" class="kyc-capture__trail">
+              {{ hasFile(c.slot) ? 'check_circle' : 'chevron_right' }}
+            </mat-icon>
+          </label>
+        }
+      </div>
+
+      @if (errorMessage()) {
+        <p class="t-body kyc-error">{{ errorMessage() }}</p>
+      }
+
+      <button
+        mat-flat-button
+        type="button"
+        class="kyc-submit"
+        [disabled]="!canSubmit()"
+        (click)="submit()"
+      >
+        @if (submitting()) {
+          <mat-spinner diameter="20" />
+        } @else {
+          Envoyer le dossier
+        }
+      </button>
+      <p class="t-caption kyc-footnote">
+        Transmission securisee. Sert uniquement a verifier votre identite.
+      </p>
+    }
+  }
+</div>

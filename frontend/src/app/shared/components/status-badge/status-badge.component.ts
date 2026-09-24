@@ -38,6 +38,7 @@ const LABELS: Record<string, string> = {
   INACTIVE: 'Desactive',
   TRIGGERED: 'Declenchee',
   BLOCKED: 'Bloque',
+  SUCCEEDED: 'Reussie',
 };
 
 /** Categorie visuelle : determine la couleur, independamment du module d'origine du statut. */
@@ -60,6 +61,7 @@ const TONE: Record<string, 'neutral' | 'positive' | 'negative' | 'progress'> = {
   INACTIVE: 'neutral',
   TRIGGERED: 'positive',
   BLOCKED: 'negative',
+  SUCCEEDED: 'positive',
 };
 
 /** Pastille de statut reutilisable pour Quote/Order/Payment/Settlement. */

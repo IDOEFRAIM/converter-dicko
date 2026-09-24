@@ -20,11 +20,11 @@ describe('adminGuard', () => {
     expect(result).toBe(true);
   });
 
-  it('redirects an authenticated USER to /dashboard, never showing the admin screen', () => {
+  it('redirects an authenticated USER to /home, never showing the admin screen', () => {
     setup(true, false);
     const router = TestBed.inject(Router);
     const result = TestBed.runInInjectionContext(() => adminGuard({} as never, {} as never));
-    expect(router.serializeUrl(result as never)).toBe('/dashboard');
+    expect(router.serializeUrl(result as never)).toBe('/home');
   });
 
   it('redirects an anonymous visitor to /login', () => {

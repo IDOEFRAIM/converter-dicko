@@ -1,0 +1,28 @@
+{
+  "id": "/",
+  "name": "YUAN PAY BF",
+  "short_name": "YUAN PAY",
+  "description": "Payez vos fournisseurs en Chine depuis le Burkina Faso (XOF → CNY), suivez chaque transfert.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "/home?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#FFFDF8",
+  "theme_color": "#1B325E",
+  "categories": ["finance", "business"],
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Payer", "short_name": "Payer", "url": "/pay", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Activite", "short_name": "Activite", "url": "/activity", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Messages", "short_name": "Messages", "url": "/support", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

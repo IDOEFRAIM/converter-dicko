@@ -1,0 +1,109 @@
+<div class="screen stack-xl">
+  @if (user(); as u) {
+    <div class="more-account">
+      <span class="avatar avatar--solid">{{ initial() }}</span>
+      <div>
+        <p class="t-title-medium">{{ fullName() }}</p>
+        <p class="t-caption">{{ u.phone }}</p>
+      </div>
+    </div>
+  }
+
+  <section>
+    <h2 class="t-eyebrow more-section-title">Mes transferts</h2>
+    <div class="tile-group">
+      <a routerLink="/activity" class="tile">
+        <span class="icon-badge" style="--badge-color: var(--role-send)"
+          ><mat-icon fontSet="material-icons-outlined">receipt_long</mat-icon></span
+        >
+        <span class="tile__label">Voir mes transferts</span>
+        <mat-icon class="tile__chevron">chevron_right</mat-icon>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="t-eyebrow more-section-title">Taux</h2>
+    <div class="tile-group">
+      <a routerLink="/rates" class="tile">
+        <span class="icon-badge" style="--badge-color: var(--role-rate)"
+          ><mat-icon>show_chart</mat-icon></span
+        >
+        <span class="tile__label">Historique</span>
+        <mat-icon class="tile__chevron">chevron_right</mat-icon>
+      </a>
+      <a routerLink="/rate-alerts" class="tile">
+        <span class="icon-badge" style="--badge-color: var(--role-rate)"
+          ><mat-icon fontSet="material-icons-outlined">notifications_active</mat-icon></span
+        >
+        <span class="tile__label">Alertes</span>
+        <mat-icon class="tile__chevron">chevron_right</mat-icon>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="t-eyebrow more-section-title">Mon compte</h2>
+    <div class="tile-group">
+      @if (pwa.canInstall()) {
+        <button type="button" class="tile" (click)="install()">
+          <span class="icon-badge" style="--badge-color: var(--accent)"
+            ><mat-icon>install_mobile</mat-icon></span
+          >
+          <span class="tile__label">Installer l'application</span>
+          <mat-icon class="tile__chevron">chevron_right</mat-icon>
+        </button>
+      }
+      <a routerLink="/kyc" class="tile">
+        <span class="icon-badge" style="--badge-color: var(--brand-gold)"
+          ><mat-icon fontSet="material-icons-outlined">verified_user</mat-icon></span
+        >
+        <span class="tile__label">Verification d'identite</span>
+        <mat-icon class="tile__chevron">chevron_right</mat-icon>
+      </a>
+      <button type="button" class="tile" (click)="deleteAccount()">
+        <span class="icon-badge" style="--badge-color: var(--c-negative)"
+          ><mat-icon fontSet="material-icons-outlined">delete</mat-icon></span
+        >
+        <span class="tile__label">Supprimer mon compte</span>
+        <mat-icon class="tile__chevron">chevron_right</mat-icon>
+      </button>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="t-eyebrow more-section-title">Legal</h2>
+    <div class="tile-group">
+      <a [href]="legal.privacy" target="_blank" rel="noopener" class="tile">
+        <span class="icon-badge" style="--badge-color: var(--c-ink-muted)"
+          ><mat-icon fontSet="material-icons-outlined">privacy_tip</mat-icon></span
+        >
+        <span class="tile__label">Politique de confidentialite</span>
+        <mat-icon class="tile__chevron">chevron_right</mat-icon>
+      </a>
+      <a [href]="legal.terms" target="_blank" rel="noopener" class="tile">
+        <span class="icon-badge" style="--badge-color: var(--c-ink-muted)"
+          ><mat-icon fontSet="material-icons-outlined">description</mat-icon></span
+        >
+        <span class="tile__label">Conditions generales d'utilisation</span>
+        <mat-icon class="tile__chevron">chevron_right</mat-icon>
+      </a>
+      <a [href]="legal.eula" target="_blank" rel="noopener" class="tile">
+        <span class="icon-badge" style="--badge-color: var(--c-ink-muted)"
+          ><mat-icon fontSet="material-icons-outlined">gavel</mat-icon></span
+        >
+        <span class="tile__label">Contrat de licence utilisateur final</span>
+        <mat-icon class="tile__chevron">chevron_right</mat-icon>
+      </a>
+    </div>
+  </section>
+
+  <div class="tile-group">
+    <button type="button" class="tile more-logout" (click)="logout()">
+      <span class="icon-badge" style="--badge-color: var(--c-negative)"
+        ><mat-icon>logout</mat-icon></span
+      >
+      <span class="tile__label">Se deconnecter</span>
+    </button>
+  </div>
+</div>

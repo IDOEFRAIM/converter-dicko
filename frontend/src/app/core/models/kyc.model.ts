@@ -27,3 +27,17 @@ export const KYC_DOCUMENT_TYPE_LABELS: Record<KycDocumentType, string> = {
   PASSPORT: 'Passeport',
   RESIDENCE_PERMIT: 'Carte de sejour',
 };
+
+/** Dossier de l'utilisateur connecte — `GET /api/v1/kyc/submissions/me` (null si jamais soumis). */
+export interface KycSubmission {
+  status: KycSubmissionStatus;
+  documentType: KycDocumentType | null;
+  submittedAt: string;
+  reviewedAt: string | null;
+  rejectionReason: string | null;
+}
+
+/** Le passeport n'a pas de verso pertinent (meme regle que `KycDocumentType.needsBack` mobile). */
+export function kycNeedsBack(type: KycDocumentType): boolean {
+  return type !== 'PASSPORT';
+}

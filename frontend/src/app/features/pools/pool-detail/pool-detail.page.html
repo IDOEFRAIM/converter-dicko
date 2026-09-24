@@ -1,0 +1,170 @@
+<div class="screen">
+  @if (loading() && !pool()) {
+    <div class="m-loading"><mat-spinner diameter="32" /></div>
+  } @else if (pool(); as p) {
+    <section class="surface-lacquer thermo">
+      <div class="thermo__head">
+        <span class="t-eyebrow thermo__keyline">Code {{ p.code }}</span>
+        <app-status-badge [status]="p.status" />
+      </div>
+
+      <div class="gauge">
+        <svg viewBox="0 0 208 118" aria-hidden="true">
+          <path class="gauge__track" d="M14,104 A90,90 0 0 1 194,104" />
+          <path
+            class="gauge__fill"
+            d="M14,104 A90,90 0 0 1 194,104"
+            [attr.stroke-dasharray]="dialLength"
+            [attr.stroke-dashoffset]="dialOffset()"
+          />
+        </svg>
+        <div class="gauge__center">
+          @if (p.status === 'SUCCEEDED') {
+            <mat-icon class="thermo__keyline">workspace_premium</mat-icon>
+            <span class="t-eyebrow thermo__keyline">Objectif scelle</span>
+          } @else {
+            <span class="t-figure-medium thermo__fg">{{ p.currentAmountXof | money: 'XOF' }}</span>
+            <span class="t-caption thermo__muted">sur {{ p.targetAmountXof | money: 'XOF' }}</span>
+          }
+        </div>
+      </div>
+
+      <div class="reward">
+        <p class="t-eyebrow thermo__keyline">Rabais du taux</p>
+        <div class="reward__line">
+          <span>Part de base</span><span>{{ points(p.rewardBasePercentage) }}</span>
+        </div>
+        <div class="reward__line">
+          <span>{{ p.participantCount }} participants</span
+          ><span>{{ points(p.rewardParticipantBonusPercentage) }}</span>
+        </div>
+        <p class="t-caption thermo__muted">
+          +{{ fmt(p.rewardPerParticipantPercentage) }} pt par personne
+        </p>
+        <div class="reward__line">
+          <span>Volume du groupe</span><span>{{ points(p.rewardVolumeBonusPercentage) }}</span>
+        </div>
+        <p class="t-caption thermo__muted">
+          {{ p.currentAmountXof | money: 'XOF' }} · +{{ fmt(p.rewardPerMillionXofPercentage) }} pt
+          par million
+        </p>
+        <div class="reward__line reward__line--total">
+          <span>Rabais actuel</span><span>{{ points(p.rewardMarginReductionPercentage) }}</span>
+        </div>
+        <p class="t-caption thermo__muted">Plafond : -{{ fmt(p.rewardMaxPercentage) }} pts</p>
+      </div>
+
+      <div class="thermo__people">
+        <span class="monograms">
+          @for (pp of participants().slice(0, 4); track pp.userId) {
+            <span class="monogram">{{ initial(pp.firstName) }}</span>
+          }
+        </span>
+        <span class="t-caption thermo__muted">{{ p.participantCount }} participant(s)</span>
+      </div>
+      <p class="t-caption thermo__muted">
+        @if (p.status === 'ACTIVE') {
+          Expire le {{ p.expiresAt | date: 'dd/MM/yyyy HH:mm' }}
+        } @else {
+          Cloturee le {{ closedAt() | date: 'dd/MM/yyyy HH:mm' }}
+        }
+      </p>
+      @if (p.status === 'ACTIVE') {
+        <button mat-stroked-button type="button" class="thermo__share" (click)="share(p)">
+          <mat-icon>share</mat-icon>
+          Inviter des amis
+        </button>
+      }
+    </section>
+
+    @if (p.status === 'SUCCEEDED') {
+      <div class="surface-lacquer pool-banner">
+        <mat-icon class="thermo__keyline">workspace_premium</mat-icon>
+        <p class="t-body thermo__fg">
+          Objectif atteint ! -{{ fmt(p.rewardMarginReductionPercentage) }} points de marge sur ton
+          prochain transfert.
+        </p>
+      </div>
+    }
+    @if (p.status === 'EXPIRED' || p.status === 'CANCELLED') {
+      <div class="pool-closed t-body">
+        {{
+          p.status === 'EXPIRED'
+            ? 'Cette Ruee a expire sans atteindre son objectif.'
+            : 'Cette Ruee a ete annulee par son createur.'
+        }}
+      </div>
+    }
+
+    <h2 class="t-eyebrow pool-participants-title">Participants ({{ participants().length }})</h2>
+    <div class="list-stack">
+      @for (pp of participants(); track pp.userId) {
+        <div class="surface-paper participant">
+          <span class="avatar">{{ initial(pp.firstName) }}</span>
+          <span class="list-card__main">
+            <span class="t-body-strong">{{ pp.firstName }}</span>
+            <span class="t-caption">
+              @if (hasContributed(pp)) {
+                A contribue {{ pp.contributedAmountXof | money: 'XOF' }}
+              } @else {
+                A rejoint sans contribuer pour l'instant
+              }
+            </span>
+          </span>
+          @if (pp.isCreator) {
+            <mat-icon class="participant__star">star</mat-icon>
+          }
+        </div>
+      }
+    </div>
+
+    @if (p.status === 'ACTIVE') {
+      <div class="pool-actions">
+        @if (!p.viewerIsParticipant) {
+          @if (joinError()) {
+            <p class="t-body pool-error">{{ joinError() }}</p>
+          }
+          <button
+            mat-flat-button
+            type="button"
+            class="pool-actions__primary"
+            [disabled]="joining()"
+            (click)="join()"
+          >
+            @if (joining()) {
+              <mat-spinner diameter="20" />
+            } @else {
+              Rejoindre la Ruee
+            }
+          </button>
+        } @else {
+          <a
+            mat-flat-button
+            class="pool-actions__primary"
+            [routerLink]="['/pay/pools', p.id, 'checkout']"
+          >
+            <mat-icon fontSet="material-icons-outlined">send</mat-icon>
+            Payer maintenant
+          </a>
+          @if (p.viewerIsCreator) {
+            <button
+              mat-button
+              type="button"
+              class="pool-actions__cancel"
+              [disabled]="cancelling()"
+              (click)="cancel()"
+            >
+              {{ cancelling() ? 'Annulation...' : 'Annuler la Ruee' }}
+            </button>
+          }
+        }
+      </div>
+    }
+  } @else {
+    <div class="m-empty">
+      <mat-icon>error_outline</mat-icon>
+      <p class="t-body-strong">{{ error() ?? 'Impossible de charger cette Ruee.' }}</p>
+      <button mat-button type="button" (click)="load()">Reessayer</button>
+    </div>
+  }
+</div>

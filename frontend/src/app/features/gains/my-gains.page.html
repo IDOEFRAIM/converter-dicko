@@ -1,0 +1,147 @@
+<div class="screen">
+  @if (loadingSummary()) {
+    <div class="m-loading"><mat-spinner diameter="32" /></div>
+  } @else if (summary(); as s) {
+    @if (profile() === 'PRO') {
+      <!-- _ProConsole -->
+      <section class="surface-paper console">
+        <p class="t-eyebrow console__title"><mat-icon>speed</mat-icon> Console — volume du mois</p>
+        <div class="dial">
+          <svg viewBox="0 0 208 118" aria-hidden="true">
+            <path class="dial__track" d="M14,104 A90,90 0 0 1 194,104" />
+            <path
+              class="dial__fill"
+              d="M14,104 A90,90 0 0 1 194,104"
+              [attr.stroke-dasharray]="dialLength"
+              [attr.stroke-dashoffset]="dialOffset()"
+            />
+          </svg>
+          <div class="dial__center">
+            <p class="t-figure-medium">{{ s.currentMonthAmountXofCompleted | money: 'XOF' }}</p>
+            <p class="t-caption">ce mois-ci</p>
+          </div>
+        </div>
+        <div class="console__objective">
+          @if (objective(); as o) {
+            <span class="t-caption console__strong"
+              >Objectif {{ o | money: 'XOF' }} · {{ dialPercent() }} %</span
+            >
+            <button type="button" class="console__link" (click)="editObjective()">Modifier</button>
+          } @else {
+            <button mat-button type="button" (click)="editObjective()">
+              <mat-icon>add_chart</mat-icon>
+              Definir un objectif mensuel
+            </button>
+          }
+        </div>
+        <div class="console__instruments">
+          <div class="instrument">
+            <p class="t-eyebrow">Serie</p>
+            <p class="t-figure-medium">{{ streak().label }}</p>
+            <p class="t-caption">{{ streak().caption }}</p>
+          </div>
+          <div class="instrument">
+            <p class="t-eyebrow">Transferts</p>
+            <p class="t-figure-medium">{{ s.completedTransferCount }}</p>
+            <p class="t-caption">termines au total</p>
+          </div>
+        </div>
+        <div class="console__total">
+          <span class="t-eyebrow">Volume total</span>
+          <span class="console__figure">{{ s.totalAmountXofCompleted | money: 'XOF' }}</span>
+        </div>
+      </section>
+    } @else {
+      <!-- _SummaryHero (profils etudiants) -->
+      <section class="surface-lacquer rank">
+        <p class="t-eyebrow rank__eyebrow">
+          {{ s.badgeLabel ? 'Ton palier' : 'Aucun palier encore' }}
+        </p>
+        <div class="rank__meridian">
+          <svg viewBox="0 0 196 196" aria-hidden="true">
+            <circle class="rank__track" cx="98" cy="98" r="86" />
+            <circle
+              class="rank__fill"
+              cx="98"
+              cy="98"
+              r="86"
+              [attr.stroke-dasharray]="ringCircumference"
+              [attr.stroke-dashoffset]="ringOffset()"
+            />
+          </svg>
+          <div class="rank__center">
+            <span class="rank__seal" [class.rank__seal--locked]="!s.badgeLabel">{{
+              initial(s.badgeLabel)
+            }}</span>
+            <span class="t-figure-medium rank__xp">{{ s.xp }} points</span>
+          </div>
+        </div>
+        <p class="t-metric-medium rank__label">{{ s.badgeLabel ?? 'Pas encore de palier' }}</p>
+        <p class="t-caption rank__muted">Chaque operation terminee rapproche du palier suivant.</p>
+        @if (s.nextBadgeLabel) {
+          <p class="t-caption rank__next">
+            {{ s.transfersUntilNextBadge }} avant {{ s.nextBadgeLabel }}
+          </p>
+        }
+        @if (s.poolsSucceededCount > 0) {
+          <p class="t-caption rank__pools">{{ s.poolsSucceededCount }} Ruees reussies</p>
+        }
+        <div class="rank__total">
+          <span class="t-eyebrow rank__muted">Volume transfere</span>
+          <span class="rank__figure">{{ s.totalAmountXofCompleted | money: 'XOF' }}</span>
+        </div>
+      </section>
+    }
+  } @else {
+    <div class="m-empty">
+      <mat-icon>error_outline</mat-icon>
+      <p class="t-body-strong">{{ summaryError() ?? 'Impossible de charger vos gains.' }}</p>
+      <button mat-button type="button" (click)="loadSummary()">Reessayer</button>
+    </div>
+  }
+
+  <h2 class="t-eyebrow gains-history-title">
+    {{ profile() === 'PRO' ? 'Historique' : 'Registre des operations' }}
+  </h2>
+  @if (loadingHistory()) {
+    <div class="m-loading"><mat-spinner diameter="28" /></div>
+  } @else if (historyError() && history().length === 0) {
+    <div class="m-empty">
+      <mat-icon>error_outline</mat-icon>
+      <p class="t-body-strong">{{ historyError() }}</p>
+      <button mat-button type="button" (click)="loadHistory()">Reessayer</button>
+    </div>
+  } @else if (history().length === 0) {
+    <div class="m-empty">
+      <mat-icon fontSet="material-icons-outlined">emoji_events</mat-icon>
+      <p class="t-body-strong">Aucun transfert termine</p>
+    </div>
+  } @else {
+    <div class="list-stack">
+      @for (entry of history(); track entry.id; let i = $index) {
+        @if (profile() === 'PRO') {
+          <a [routerLink]="['/orders', entry.id]" class="list-card list-card--compact pressable">
+            <span class="list-card__main">
+              <span class="t-body-strong">#{{ entry.reference }}</span>
+              <span class="t-caption">{{ entry.amountXof | money: 'XOF' }}</span>
+              <span class="t-caption">{{ entry.createdAt | date: 'dd/MM/yyyy' }}</span>
+            </span>
+            <app-status-badge [status]="entry.status" />
+          </a>
+        } @else {
+          <a [routerLink]="['/orders', entry.id]" class="surface-paper album pressable">
+            <span class="album__disc"
+              ><mat-icon fontSet="material-icons-outlined">receipt_long</mat-icon></span
+            >
+            <span class="list-card__main">
+              <span class="t-eyebrow">Operation {{ history().length - i }}</span>
+              <span class="t-body-strong">{{ entry.amountXof | money: 'XOF' }}</span>
+              <span class="t-caption">Une operation de plus a ton registre.</span>
+              <span class="t-caption">{{ entry.createdAt | date: 'dd/MM/yyyy' }}</span>
+            </span>
+          </a>
+        }
+      }
+    </div>
+  }
+</div>
