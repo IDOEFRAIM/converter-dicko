@@ -8,6 +8,7 @@ import com.converter.config.props.JwtProperties;
 import com.converter.config.props.LoginProtectionProperties;
 import com.converter.config.props.PushProperties;
 import com.converter.config.props.StorageProperties;
+import com.converter.config.props.TransFiProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -25,7 +26,8 @@ import java.util.TimeZone;
         AbuseProtectionProperties.class,
         StorageProperties.class,
         GoogleAuthProperties.class,
-        PushProperties.class
+        PushProperties.class,
+        TransFiProperties.class
 })
 public class ConverterApplication {
 

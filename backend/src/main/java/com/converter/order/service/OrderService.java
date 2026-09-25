@@ -1,6 +1,7 @@
 package com.converter.order.service;
 
 import com.converter.achievement.service.AchievementService;
+import com.converter.ledger.service.LedgerService;
 import com.converter.audit.domain.AuditAction;
 import com.converter.audit.service.AuditService;
 import com.converter.common.api.PageResponse;
@@ -80,6 +81,7 @@ public class OrderService {
     private final AuditService auditService;
     private final PoolService poolService;
     private final AchievementService achievementService;
+    private final LedgerService ledgerService;
     private final Clock clock;
     private final FileStorageService fileStorageService;
 
@@ -96,6 +98,7 @@ public class OrderService {
                         AuditService auditService,
                         PoolService poolService,
                         AchievementService achievementService,
+                        LedgerService ledgerService,
                         Clock clock,
                         FileStorageService fileStorageService) {
         this.orderRepository = orderRepository;
@@ -112,6 +115,7 @@ public class OrderService {
         this.auditService = auditService;
         this.poolService = poolService;
         this.achievementService = achievementService;
+        this.ledgerService = ledgerService;
         this.clock = clock;
     }
 
@@ -404,6 +408,10 @@ public class OrderService {
         // marketing") -- effet de bord, jamais une condition de succes de la transition
         // elle-meme (meme discipline que NotificationService, qui isole deja son ecriture).
         achievementService.checkBadgeUnlock(order.getUserId());
+        // Revenu de frais de service (voir docs/TRANSFI_INTEGRATION.md) -- point d'entree UNIQUE,
+        // que le reglement ait ete execute manuellement (aujourd'hui) ou via TransFi (demain) :
+        // les deux chemins convergent ici, jamais deux endroits qui pourraient diverger.
+        ledgerService.recordServiceFeeForOrder(order);
     }
 
     /**

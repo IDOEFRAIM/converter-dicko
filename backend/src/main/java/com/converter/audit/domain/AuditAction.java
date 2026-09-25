@@ -74,6 +74,14 @@ public enum AuditAction {
     // ---- Configuration ----
     SETTING_UPDATED,
 
+    // ---- Ledger interne (grand livre de revenu/cout reel) ----
+    LEDGER_ENTRY_RECORDED,
+
+    // ---- Integration TransFi BizPay (payin/payout automatises) ----
+    TRANSFI_PAYIN_CREATED,
+    TRANSFI_PAYOUT_CREATED,
+    TRANSFI_WEBHOOK_PROCESSED,
+
     // ---- Fournisseurs (carnet reutilisable, Burkina <-> Chine) ----
     SUPPLIER_CREATED,
     SUPPLIER_UPDATED,

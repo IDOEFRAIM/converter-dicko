@@ -90,6 +90,10 @@ public class SecurityConfig {
                         // La cle publique VAPID n'est pas un secret (RFC 8292) : le frontend doit pouvoir
                         // savoir si le push est disponible et l'utiliser meme avant la connexion.
                         .requestMatchers(HttpMethod.GET, "/api/v1/push/config").permitAll()
+                        // Webhook TransFi : aucun jeton porte possible (appele par TransFi, pas par un
+                        // utilisateur connecte) -- authentifie autrement, par verification de signature
+                        // HMAC dans TransfiWebhookController lui-meme (voir docs/TRANSFI_INTEGRATION.md).
+                        .requestMatchers(HttpMethod.POST, "/api/webhooks/transfi").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/health/**").permitAll()
                         // ---- Administration : role ADMIN uniquement ----

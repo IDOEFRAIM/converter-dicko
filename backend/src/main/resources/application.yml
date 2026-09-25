@@ -129,6 +129,17 @@ app:
     private-key: ${VAPID_PRIVATE_KEY:}
     subject: ${VAPID_SUBJECT:mailto:support@yuanpay.space}
 
+  transfi:
+    # Integration TransFi BizPay, Phase 1 -- desactivee par defaut, voir TransFiProperties et
+    # docs/TRANSFI_INTEGRATION.md. `enabled` est une bascule SEPAREE des identifiants : meme
+    # renseignes, l'integration reste inactive tant que TRANSFI_ENABLED n'est pas explicitement
+    # mis a true. Le flux manuel (SettlementService) reste le chemin par defaut dans tous les cas.
+    enabled: ${TRANSFI_ENABLED:false}
+    base-url: ${TRANSFI_BASE_URL:}
+    client-id: ${TRANSFI_CLIENT_ID:}
+    client-secret: ${TRANSFI_CLIENT_SECRET:}
+    webhook-secret: ${TRANSFI_WEBHOOK_SECRET:}
+
   login-protection:
     max-attempts: ${LOGIN_MAX_ATTEMPTS:5}
     lock-duration-minutes: ${LOGIN_LOCK_MINUTES:15}
